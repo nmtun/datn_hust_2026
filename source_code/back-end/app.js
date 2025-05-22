@@ -16,9 +16,9 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());    // Parse JSON request body
-app.use(cors());    // Enable CORS
-app.use(helmet());  // Set security HTTP headers
-app.use(morgan("dev")); // Log HTTP requests
+app.use(cors());            // Enable CORS
+app.use(helmet());          // Set security HTTP headers
+app.use(morgan("dev"));     // Log HTTP requests
 
 // Test route
 app.get("/", (req, res) => {
@@ -30,7 +30,7 @@ app.get("/", (req, res) => {
 // Tạo bảng và chạy server
 (async () => {
     try {
-        //await sequelize.sync(); // tạo bảng nếu chưa có
+        //await sequelize.sync();                // tạo bảng nếu chưa có
         //await sequelize.sync({ alter: true }); // tạo bảng nếu chưa có và cập nhật bảng nếu có thay đổi trong model
         //await sequelize.sync({ force: true }); // xóa bảng và tạo lại - dùng khi cần làm mới cơ sở dữ liệu, sẽ bị mất dữ liệu
 
