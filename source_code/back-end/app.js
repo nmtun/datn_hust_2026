@@ -6,6 +6,9 @@ import helmet from "helmet";
 import sequelize from "./src/config/dbsetup.js"; 
 
 // Import models here
+import "./src/models/User.js";
+import "./src/models/CandidateInfo.js";
+import "./src/models/EmployeeInfo.js";
 
 // Import routes here
 
@@ -30,7 +33,7 @@ app.get("/", (req, res) => {
 // Tạo bảng và chạy server
 (async () => {
     try {
-        //await sequelize.sync();                // tạo bảng nếu chưa có
+        await sequelize.sync();                // tạo bảng nếu chưa có
         //await sequelize.sync({ alter: true }); // tạo bảng nếu chưa có và cập nhật bảng nếu có thay đổi trong model
         //await sequelize.sync({ force: true }); // xóa bảng và tạo lại - dùng khi cần làm mới cơ sở dữ liệu, sẽ bị mất dữ liệu
 
