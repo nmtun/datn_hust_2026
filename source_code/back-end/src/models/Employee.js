@@ -1,7 +1,7 @@
 import sequelize from "../config/dbsetup.js";
 import { DataTypes } from "sequelize";
 
-const EmployeeInfo = sequelize.define("Employee_Info", {
+const Employee = sequelize.define("Employee", {
     employee_info_id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -57,9 +57,9 @@ const EmployeeInfo = sequelize.define("Employee_Info", {
         allowNull: true,
     },
 }, {
-    tableName: "Employee_Info",
+    tableName: "Employee",
     timestamps: false,
     underscored: true,
 });
 
-export default EmployeeInfo;
+export default Employee;

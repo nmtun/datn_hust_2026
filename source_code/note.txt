@@ -1,0 +1,1 @@
+Khi khách tạo tk -> ứng viên với status là "Mới"

@@ -1,8 +1,8 @@
 import sequelize from "../config/dbsetup.js";
 import { DataTypes } from "sequelize";
 
-const CandidateInfo = sequelize.define("Candidate_Info", {
-    candidate_info_id: {
+const Candidate = sequelize.define("Candidate", {
+    candidate_id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true
@@ -20,8 +20,8 @@ const CandidateInfo = sequelize.define("Candidate_Info", {
         allowNull: true,
     },
     candidate_status: {
-        type: DataTypes.ENUM("new", "screening", "interview", "offered", "hired", "rejected"),
-        defaultValue: "new",
+        type: DataTypes.ENUM("Mới", "Sàng lọc", "Phỏng vấn", "Đề nghị", "Đã nhận", "Loại"),
+        defaultValue: "Mới",
         allowNull: false,
     },
     source_of_application: {
@@ -50,9 +50,9 @@ const CandidateInfo = sequelize.define("Candidate_Info", {
         allowNull: true,
     },
 }, {
-    tableName: "Candidate_Info",
+    tableName: "Candidate",
     timestamps: false,
     underscored: true,
 });
 
-export default CandidateInfo;
+export default Candidate;
