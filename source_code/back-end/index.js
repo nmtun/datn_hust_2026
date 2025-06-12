@@ -14,6 +14,7 @@ import "./src/models/Employee.js";
 // Import routes here
 import UserRoutes from "./src/routes/UserRoutes.js";
 import CandidateRoutes from "./src/routes/CandidateRoutes.js";
+import EmployeeRoutes from "./src/routes/EmployeeRoutes.js";
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.get("/", (req, res) => {
 // Routes using
 app.use("/api/users", UserRoutes);
 app.use("/api/candidates", CandidateRoutes); 
+app.use("/api/employees", EmployeeRoutes);
 
 // Tạo bảng và chạy server
 (async () => {

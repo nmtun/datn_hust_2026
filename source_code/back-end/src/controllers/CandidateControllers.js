@@ -7,6 +7,7 @@ export const createCandidate = async (req, res) => {
         console.log("DEBUG - req.body:", req.body);
         const {
             personal_email,
+            company_email,
             password,
             full_name,
             phone_number,
@@ -24,6 +25,12 @@ export const createCandidate = async (req, res) => {
         if (!personal_email) return res.status(400).json({ error: true, message: "Email is required" });
         if (!password) return res.status(400).json({ error: true, message: "Password is required" });
         if (!full_name) return res.status(400).json({ error: true, message: "Full name is required" });
+        
+        // Kiểm tra xem email đã tồn tại chưa
+        const checkUserExists = await userService.findUserByEmail(personal_email);
+        if (checkUserExists) {
+            return res.status(400).json({ error: true, message: "Email already exists" });
+        }
 
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);

@@ -38,7 +38,7 @@ const User = sequelize.define("Users", {
         allowNull: false,
     },
     status: {
-        type: DataTypes.ENUM("Đang hoạt động", "Đã nghỉ việc"),
+        type: DataTypes.ENUM("Đang hoạt động", "Khóa"),
         defaultValue: "Đang hoạt động",
         allowNull: false,
     },
