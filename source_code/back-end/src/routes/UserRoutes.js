@@ -12,7 +12,7 @@ router.get("/test-auth", authenticate, (req, res) => {
 });
 
 // test route for authorization
-router.get("/test-authorize", authenticate, authorize("admin"), (req, res) => {
+router.get("/test-authorize", authenticate, authorize("admin", "Ứng viên"), (req, res) => {
     res.status(200).json({ message: "Authorization successful", user: req.user });
 });
 
