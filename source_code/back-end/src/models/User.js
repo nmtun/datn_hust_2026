@@ -33,13 +33,13 @@ const User = sequelize.define("Users", {
         allowNull: true,
     },
     role: {
-        type: DataTypes.ENUM("guest", "candidate", "emoloyee", "hr", "manager"),
-        defaultValue: "guest",
+        type: DataTypes.ENUM("Ứng viên", "Nhân viên", "Nhân sự", "Quản lý", "admin"),
+        defaultValue: "Ứng viên",
         allowNull: false,
     },
     status: {
-        type: DataTypes.ENUM("active", "on_leave", "terminated"),
-        defaultValue: "active",
+        type: DataTypes.ENUM("Đang hoạt động", "Khóa"),
+        defaultValue: "Đang hoạt động",
         allowNull: false,
     },
     created_at: {
