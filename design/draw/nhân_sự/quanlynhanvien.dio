@@ -1,0 +1,61 @@
+<mxfile host="65bd71144e">
+    <diagram id="aJeiInCDNExzFhHhDrXe" name="Page-1">
+        <mxGraphModel dx="921" dy="432" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="10" value="usecase phân rã" style="shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;recursiveResize=0;container=1;collapsible=0;width=160;" parent="1" vertex="1">
+                    <mxGeometry x="185" y="170" width="435" height="350" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="Quản lý nhân viên" style="ellipse;whiteSpace=wrap;html=1;" parent="10" vertex="1">
+                    <mxGeometry x="45" y="130" width="120" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="CRUD thông tin&amp;nbsp;&lt;div&gt;ứng viên&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;" parent="10" vertex="1">
+                    <mxGeometry x="215" y="50" width="120" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" value="Tìm kiếm ứng viên" style="ellipse;whiteSpace=wrap;html=1;" parent="10" vertex="1">
+                    <mxGeometry x="265" y="150" width="120" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="14" value="" style="endArrow=none;startArrow=none;endFill=0;startFill=0;endSize=8;html=1;verticalAlign=bottom;labelBackgroundColor=none;strokeWidth=1;entryX=0;entryY=1;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" parent="10" source="11" target="12" edge="1">
+                    <mxGeometry width="160" relative="1" as="geometry">
+                        <mxPoint x="-65" y="120" as="sourcePoint"/>
+                        <mxPoint x="65" y="120" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="15" value="" style="endArrow=none;startArrow=none;endFill=0;startFill=0;endSize=8;html=1;verticalAlign=bottom;labelBackgroundColor=none;strokeWidth=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" parent="10" source="11" target="13" edge="1">
+                    <mxGeometry width="160" relative="1" as="geometry">
+                        <mxPoint x="-55" y="130" as="sourcePoint"/>
+                        <mxPoint x="75" y="130" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="16" value="Chat" style="ellipse;whiteSpace=wrap;html=1;" parent="10" vertex="1">
+                    <mxGeometry x="205" y="220" width="120" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="17" value="" style="endArrow=none;startArrow=none;endFill=0;startFill=0;endSize=8;html=1;verticalAlign=bottom;labelBackgroundColor=none;strokeWidth=1;entryX=0;entryY=0;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" parent="10" source="11" target="16" edge="1">
+                    <mxGeometry width="160" relative="1" as="geometry">
+                        <mxPoint x="175" y="160" as="sourcePoint"/>
+                        <mxPoint x="275" y="180" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="20" value="Tạo tiêu chí đánh giá nhân viên" style="ellipse;whiteSpace=wrap;html=1;" parent="10" vertex="1">
+                    <mxGeometry x="105" y="270" width="120" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="21" value="" style="endArrow=none;startArrow=none;endFill=0;startFill=0;endSize=8;html=1;verticalAlign=bottom;labelBackgroundColor=none;strokeWidth=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="10" source="11" target="20">
+                    <mxGeometry width="160" relative="1" as="geometry">
+                        <mxPoint x="175" y="160" as="sourcePoint"/>
+                        <mxPoint x="233" y="236" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="18" value="Nhân sự" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="90" y="290" width="30" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="19" value="" style="endArrow=none;startArrow=none;endFill=0;startFill=0;endSize=8;html=1;verticalAlign=bottom;labelBackgroundColor=none;strokeWidth=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" target="11" edge="1">
+                    <mxGeometry width="160" relative="1" as="geometry">
+                        <mxPoint x="130" y="320" as="sourcePoint"/>
+                        <mxPoint x="240" y="280" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

@@ -1,69 +1,75 @@
 import * as candidateService from '../services/CandidateServices.js';
-import * as userService from '../services/UserServices.js';
-import bcrypt from 'bcrypt';
+import fs from 'fs/promises';
+import path from 'path';
+import Candidate from '../models/Candidate.js';
+import { sendEmail } from '../utils/sendEmail.js';
 
 export const createCandidate = async (req, res) => {
     try {
-        console.log("DEBUG - req.body:", req.body);
-        const {
-            personal_email,
-            company_email,
-            password,
-            full_name,
-            phone_number,
-            address,
-            role = "Ứng viên",
-            cv_file_path,
-            candidate_status,
-            source_of_application,
-            apply_date,
-            evalution,
-            notes
-        } = req.body;
+        const candidateData = {
+            ...req.body,
+            cv_file_path: undefined
+        };
 
-        // Kiểm tra thông tin bắt buộc
-        if (!personal_email) return res.status(400).json({ error: true, message: "Email is required" });
-        if (!password) return res.status(400).json({ error: true, message: "Password is required" });
-        if (!full_name) return res.status(400).json({ error: true, message: "Full name is required" });
-        
-        // Kiểm tra xem email đã tồn tại chưa
-        const checkUserExists = await userService.findUserByEmail(personal_email);
-        if (checkUserExists) {
-            return res.status(400).json({ error: true, message: "Email already exists" });
+        const result = await candidateService.createCandidate(candidateData);
+
+        if (result.status !== 201) {
+            return res.status(result.status).json(result.data);
         }
 
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
+        // Lưu CV    
+        if (req.file && req.file.buffer) {
+            const uploadsDir = path.join(process.cwd(), 'uploads');
+            try {
+                await fs.mkdir(uploadsDir, { recursive: true });
 
-        // Tạo user
-        const newUser = await userService.createUser({
-            personal_email,
-            password: hashedPassword,
-            full_name,
-            phone_number,
-            address,
-            role
+                // Lấy họ tên và ngày nộp
+                const fullName = (req.body.full_name || 'unknown').replace(/[^a-zA-Z0-9_.-]/g, '_');
+                const applyDate = (req.body.apply_date || new Date().toISOString().slice(0, 10)).replace(/[^0-9\-]/g, '');
+                const ext = path.extname(req.file.originalname) || '.pdf';
+
+                // Tạo tên file: Họ và tên - ngày nộp.pdf
+                const fileName = `${fullName}-${applyDate}${ext}`;
+                const filePath = path.join(uploadsDir, fileName);
+
+                await fs.writeFile(filePath, req.file.buffer);
+
+                await result.data.candidate.update({ cv_file_path: filePath });
+                result.data.candidate.cv_file_path = filePath;
+            } catch (error) {
+                console.error('Lỗi lưu CV:', error);
+            }
+        }
+
+        // Gửi email thông báo
+        const userEmail = req.body.personal_email;
+        
+        if (userEmail) {
+            const subject = 'Xác nhận nộp CV thành công - Cảm ơn bạn đã ứng tuyển';
+            const htmlContent = `
+                <h2>Xin chào ${req.body.full_name || 'Ứng viên'},</h2>
+                <p>Cảm ơn bạn đã nộp CV ứng tuyển qua hệ thống của chúng tôi.</p>
+                <p>Bộ phận nhân sự sẽ xem xét hồ sơ và liên hệ lại với bạn trong thời gian sớm nhất.</p>
+                <br/>
+                <p>Trân trọng,<br/>Phòng Nhân Sự</p>
+            `;
+            try {
+                await sendEmail(userEmail, subject, htmlContent);
+            } catch (error) {
+                console.error('Failed to send email:', error);
+                // Không trả về lỗi cho client, chỉ log lỗi
+            }
+        } else {
+            console.log('No email address provided, skipping email notification');
+        }
+
+        return res.status(result.status).json({
+            ...result.data,
+            message: "Nộp CV thành công! Vui lòng kiểm tra email để nhận xác nhận."
         });
 
-        // Tạo candidate
-        const newCandidate = await candidateService.createCandidate({
-            user_id: newUser.user_id,
-            cv_file_path,
-            candidate_status,
-            source_of_application,
-            apply_date,
-            evalution,
-            notes
-        });
-
-        res.status(201).json({
-            error: false,
-            message: "Candidate created successfully",
-            candidate: newCandidate,
-            user: newUser
-        });
-    } catch (error) {
-        console.error("Error creating candidate:", error);
-        res.status(500).json({ error: true, message: "Internal server error" });
-    }
-};
+        } catch (error) {
+            console.error("Lỗi tạo candidate:", error);
+            return res.status(500).json({ error: true, message: "Internal server error" });
+        }
+    };

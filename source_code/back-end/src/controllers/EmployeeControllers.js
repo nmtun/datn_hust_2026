@@ -13,9 +13,9 @@ export const createEmployee = async (req, res) => {
             address,
             role,
             hire_date = new Date(),
-            position = "Nhân viên",
+            position,
             termination_date = null,
-            employee_id_number = "NV001"
+            employee_id_number,
         } = req.body;
 
         // Kiểm tra thông tin bắt buộc

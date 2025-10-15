@@ -19,11 +19,22 @@ import EmployeeRoutes from "./src/routes/EmployeeRoutes.js";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.SERVER_PORT;
 
 app.use(express.json());    // Parse JSON request body
-app.use(cors());            // Enable CORS
-app.use(helmet());          // Set security HTTP headers
+
+app.use(cors({
+    origin: '*', // Cho phép mọi origin truy cập API
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], 
+    allowedHeaders: ['Content-Type', 'Authorization'], 
+    credentials: true, 
+    optionsSuccessStatus: 200 
+}));
+
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
 app.use(morgan("dev"));     // Log HTTP requests
 
 // Test route
@@ -39,12 +50,13 @@ app.use("/api/employees", EmployeeRoutes);
 // Tạo bảng và chạy server
 (async () => {
     try {
-        //await sequelize.sync();                // tạo bảng nếu chưa có
-        //await sequelize.sync({ alter: true }); // tạo bảng nếu chưa có và cập nhật bảng nếu có thay đổi trong model
-        //await sequelize.sync({ force: true }); // xóa bảng và tạo lại - dùng khi cần làm mới cơ sở dữ liệu, sẽ bị mất dữ liệu
+        // await sequelize.sync();                // tạo bảng nếu chưa có
+        // await sequelize.sync({ alter: true }); // tạo bảng nếu chưa có và cập nhật bảng nếu có thay đổi trong model
+        // await sequelize.sync({ force: true }); // xóa bảng và tạo lại - dùng khi cần làm mới cơ sở dữ liệu, sẽ bị mất dữ liệu
 
+        // Lắng nghe trên tất cả các interfaces (0.0.0.0) thay vì chỉ localhost
         app.listen(PORT, () => {
-            console.log(`Server chạy trên: http://localhost:${PORT}`);
+            console.log(`Truy cập local: http://localhost:${PORT}`);
         });
         
     } catch (error) {

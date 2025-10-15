@@ -1,8 +1,8 @@
 import sequelize from "../config/dbsetup.js";
 import { DataTypes } from "sequelize";
 
-const Employee = sequelize.define("Employee", {
-    employee_id: {
+const Employee = sequelize.define("Employee_Info", {
+    employee_info_id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true
@@ -57,7 +57,7 @@ const Employee = sequelize.define("Employee", {
         allowNull: true,
     },
 }, {
-    tableName: "Employee",
+    tableName: "Employee_Info",
     timestamps: false,
     underscored: true,
 });

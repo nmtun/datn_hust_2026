@@ -1,0 +1,42 @@
+Khi khách tạo tk -> ứng viên với status là "Mới"
+
+role -> tiếng anh hoặc số 
+
+sửa lại usecase và phân ra cụ thể 
+admin có chức năng tạo tk cho nhân viên 
+luồng cho guest nộp cv -> be
+
+hạn nộp báo cáo 22/6
+
+sau khi nộp cv thành công -> gửi email cf là đã nhận được cv của ứng viên
+
+/front-end
+├── app/                      # Next.js App Router structure
+│   ├── (auth)/               # Group for authentication routes
+│   │   ├── login/            # Login page
+│   │   ├── register/         # Registration page
+│   │   └── forgot-password/  # Password reset
+│   ├── (dashboard)/          # Protected dashboard routes
+│   │   ├── dashboard/        # Main dashboard
+│   │   ├── candidates/       # Candidate management
+│   │   ├── employees/        # Employee management
+│   │   └── settings/         # User settings
+│   ├── layout.tsx            # Root layout
+│   └── page.tsx              # Home page
+├── components/               # Reusable UI components
+│   ├── common/               # General components (buttons, inputs, etc)
+│   ├── forms/                # Form components
+│   ├── layouts/              # Layout components
+│   ├── tables/               # Table components
+│   └── ui/                   # UI library components
+├── hooks/                    # Custom React hooks
+├── lib/                      # Utility libraries and functions
+│   ├── api/                  # API client setup
+│   ├── auth/                 # Authentication utilities
+│   └── utils/                # General utilities
+├── public/                   # Static assets
+│   ├── fonts/                # Custom fonts
+│   └── images/               # Images and icons
+├── styles/                   # Global styles and theme configuration
+├── types/                    # TypeScript type definitions
+└── context/                  # React Context API providers
