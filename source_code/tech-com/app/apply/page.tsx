@@ -81,8 +81,8 @@ export default function Apply() {
     data.append('cv', cvFile);
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    
+      // Use a default API URL if the environment variable is not set
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
       const res = await fetch(`${baseUrl}/api/candidates/create`, {
         method: 'POST',
         body: data,
