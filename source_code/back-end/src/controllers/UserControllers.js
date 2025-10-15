@@ -5,14 +5,14 @@ import jwt from 'jsonwebtoken';
 
 export const login = async (req, res) => {
     try{
-        const { personal_email, password } = req.body;
+        const { company_email, password } = req.body;
 
         // Kiểm tra thông tin bắt buộc
-        if (!personal_email) return res.status(400).json({ error: true, message: "Email is required" });
+        if (!company_email) return res.status(400).json({ error: true, message: "Email is required" });
         if (!password) return res.status(400).json({ error: true, message: "Password is required" });
 
         // Check email 
-        const user = await userService.findUserByEmail(personal_email);
+        const user = await userService.findUserByEmail(company_email);
         if (!user) return res.status(404).json({ error: true, message: "User not found" });
 
         // So sánh mật khẩu

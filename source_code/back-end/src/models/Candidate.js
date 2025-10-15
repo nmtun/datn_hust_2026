@@ -1,8 +1,8 @@
 import sequelize from "../config/dbsetup.js";
 import { DataTypes } from "sequelize";
 
-const Candidate = sequelize.define("Candidate", {
-    candidate_id: {
+const Candidate = sequelize.define("Candidate_Info", {
+    candidate_info_id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true
@@ -20,11 +20,11 @@ const Candidate = sequelize.define("Candidate", {
         allowNull: true,
     },
     candidate_status: {
-        type: DataTypes.ENUM("Mới", "Sàng lọc", "Phỏng vấn", "Đề nghị", "Đã nhận", "Loại"),
-        defaultValue: "Mới",
+        type: DataTypes.ENUM('new', 'screening', 'interview', 'offered', 'rejected', 'hired'),
+        defaultValue: "new",
         allowNull: false,
     },
-    source_of_application: {
+    source: {
         type: DataTypes.STRING(100),
         allowNull: true,
     },
@@ -33,24 +33,24 @@ const Candidate = sequelize.define("Candidate", {
         defaultValue: DataTypes.NOW,
         allowNull: false,
     },
-    evalution: {
+    evaluation: {
         type: DataTypes.INTEGER,
         allowNull: true,
     },
-    // job_id: {
-    //     type: DataTypes.INTEGER,
-    //     allowNull: true,
-    //     references: {
-    //         model: "Job_Descriptions", 
-    //         key: "job_id"
-    //     }
-    // },
+    job_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        // references: {
+        //     model: "Job_Descriptions", 
+        //     key: "job_id"
+        // }
+    },
     notes: {
         type: DataTypes.TEXT,
         allowNull: true,
     },
 }, {
-    tableName: "Candidate",
+    tableName: "Candidate_Info",
     timestamps: false,
     underscored: true,
 });

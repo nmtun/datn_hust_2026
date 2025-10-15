@@ -1,6 +1,0 @@
-Khi khách tạo tk -> ứng viên với status là "Mới"
-
-role -> tiếng anh hoặc số 
-
-hạn nộp báo cáo 22/6
-
