@@ -72,3 +72,14 @@ export const createCandidate = async (candidateData) => {
         }
     };
 };
+
+export const getAllCandidates = async () => {
+    const candidates = await Candidate.findAll();
+    return {
+        status: 200,
+        data: {
+            error: false,
+            candidates
+        }
+    };
+};

@@ -73,3 +73,13 @@ export const createCandidate = async (req, res) => {
             return res.status(500).json({ error: true, message: "Internal server error" });
         }
     };
+
+export const getAllCandidates = async (req, res) => {
+    try {
+        const result = await candidateService.getAllCandidates();
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Lỗi lấy danh sách candidate:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
