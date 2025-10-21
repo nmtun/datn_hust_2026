@@ -1,0 +1,26 @@
+1. Khách 
+    - Xem JD -> Xong 
+    - Nộp CV -> Xong 
+2. Ứng viên
+    - Xem tài liệu đào tạo ->
+    - Làm quiz -> 
+    - Đăng nhập ->
+3. Nhân viên 
+    - Kế thừa từ Ứng viên ->
+    - Quản lý task ->
+4. Nhân sự 
+    - Kế thừa từ nhân viên -> 
+    - Quản lý ứng viên -> 
+    - Quản lý nhân viên ->
+    - Đăng video, tài liệu đào tạo ->
+    - Tạo quiz -> 
+    - Quản lý JD -> 
+5. Quản lý 
+    - Kế thừa từ nhân viên ->
+    - Quản lý dự án ->
+    - Dự báo nhu cầu nhân sự -> 
+    - Đánh giá hiệu suất ->
+    - Đề xuất lương thưởng ->
+6. admin 
+    - Đăng nhập
+    - Tạo tài khoản
