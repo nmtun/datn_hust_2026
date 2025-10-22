@@ -17,6 +17,7 @@ export const createCandidate = async (candidateData) => {
         source,
         apply_date,
         evaluation,
+        job_id,
         notes,
         status = "active"
     } = candidateData;
@@ -58,6 +59,7 @@ export const createCandidate = async (candidateData) => {
         source,
         apply_date,
         evaluation,
+        job_id,
         notes
     });
 

@@ -33,3 +33,26 @@ export const getJobDescriptionById = async (req, res) => {
         return res.status(500).json({ error: true, message: "Internal server error" });
     }
 };
+
+export const updateJobDescription = async (req, res) => {
+    try {
+        const jobId = req.params.id;
+        const jobData = req.body;
+        const result = await jobDescriptionService.updateJobDescription(jobId, jobData);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error updating job description:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
+
+export const deleteJobDescription = async (req, res) => {
+    try {
+        const jobId = req.params.id;
+        const result = await jobDescriptionService.deleteJobDescription(jobId);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error deleting job description:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};

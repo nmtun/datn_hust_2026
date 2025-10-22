@@ -82,3 +82,40 @@ export const getJobDescriptionById = async (jobId) => {
         }
     };
 };
+
+export const updateJobDescription = async (jobId, jobData) => {
+    const job = await JobDescription.findByPk(jobId);
+    if (!job) {
+        return { status: 404, data: { error: true, message: "Job description not found" } };
+    }
+    
+    const updated_at = new Date();
+    jobData.updated_at = updated_at;
+
+    // Update job description
+    await job.update(jobData);
+    return {
+        status: 200,
+        data: {
+            error: false,
+            message: "Job description updated successfully",
+            job
+        }
+    };
+};
+
+export const deleteJobDescription = async (jobId) => {
+    const job = await JobDescription.findByPk(jobId);
+    if (!job) {
+        return { status: 404, data: { error: true, message: "Job description not found" } };
+    }
+
+    await job.destroy();
+    return {
+        status: 200,
+        data: {
+            error: false,
+            message: "Job description deleted successfully"
+        }
+    };
+};
