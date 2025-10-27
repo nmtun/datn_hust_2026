@@ -1,4 +1,5 @@
 import JobDescription from "../models/JobDescription.js";
+import { Op } from "sequelize";
 
 export const createJobDescription = async (jobData, user) => {
     const {
@@ -119,3 +120,64 @@ export const deleteJobDescription = async (jobId) => {
         }
     };
 };
+
+
+export const searchJobDescriptions = async (filters = {}) => {
+    const {
+        title,
+        location,
+        type_of_work,
+        experience_level,
+        employment_type,
+        status,
+        salary_range_min,
+        salary_range_max,
+        page = 1,
+        pageSize = 10
+    } = filters;
+
+    const where = {};
+
+    if (title) {
+        where.title = { [Op.substring]: `%${title}%` };
+    }
+    if (location) {
+        where.location = { [Op.substring]: `%${location}%` };
+    }
+    if (type_of_work) {
+        where.type_of_work = { [Op.substring]: `%${type_of_work}%` };
+    }
+    if (experience_level) {
+        where.experience_level = { [Op.substring]: `%${experience_level}%` };
+    }
+    if (employment_type) {
+        where.employment_type = { [Op.substring]: `%${employment_type}%` };
+    }
+    if (status) {
+        where.status = { [Op.substring]: `%${status}%` };
+    }
+    if (salary_range_min) {
+        where.salary_range_min = { [Op.gte]: salary_range_min };
+    }
+    if (salary_range_max) {
+        where.salary_range_max = { [Op.lte]: salary_range_max };
+    }
+
+    const offset = (page - 1) * pageSize;
+
+    const {rows, count} = await JobDescription.findAndCountAll({
+        where,
+        limit: pageSize,
+        offset,
+        order: [['posting_date', 'DESC']]
+    });
+
+    const jobs = rows;
+    return {
+        status: 200,
+        data: {
+            error: false,
+            jobs
+        }
+    };
+}

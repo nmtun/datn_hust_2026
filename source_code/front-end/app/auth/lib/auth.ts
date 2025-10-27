@@ -23,7 +23,7 @@ const isBrowser = typeof window !== 'undefined';
 
 export const login = async (credentials: LoginCredentials): Promise<User> => {
   try {
-    const response = await apiClient.post<AuthResponse>('/api/users/login', credentials);
+    const response = await apiClient.post<AuthResponse>('/api/user/login', credentials);
     const { token, user } = response.data;
     
     if (isBrowser) {
