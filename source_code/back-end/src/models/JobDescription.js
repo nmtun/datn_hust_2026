@@ -52,7 +52,7 @@ const JobDescription = sequelize.define("Job_Descriptions", {
         allowNull: false,
     },
     status: {
-        type: DataTypes.ENUM('draft', 'review', 'active', 'paused', 'closed', 'filled'),
+        type: DataTypes.ENUM('draft', 'active', 'paused', 'closed'),
         allowNull: false,
     },
     posting_date: {

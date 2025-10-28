@@ -132,8 +132,6 @@ export const searchJobDescriptions = async (filters = {}) => {
         status,
         salary_range_min,
         salary_range_max,
-        page = 1,
-        pageSize = 10
     } = filters;
 
     const where = {};
@@ -163,12 +161,10 @@ export const searchJobDescriptions = async (filters = {}) => {
         where.salary_range_max = { [Op.lte]: salary_range_max };
     }
 
-    const offset = (page - 1) * pageSize;
 
     const {rows, count} = await JobDescription.findAndCountAll({
         where,
         limit: pageSize,
-        offset,
         order: [['posting_date', 'DESC']]
     });
 
