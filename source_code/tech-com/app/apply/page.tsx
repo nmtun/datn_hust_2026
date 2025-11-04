@@ -194,10 +194,15 @@ export default function Apply() {
     data.append('cv', cvFile);
 
     try {
-      const result = await CandidateApi.submitApplication(data);
-      
-      if (result.error) {
-        throw new Error(result.message || 'Gửi đơn thất bại');
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      const res = await fetch(`${baseUrl}/api/candidates/create`, {
+        method: 'POST',
+        body: data,
+        credentials: 'omit', 
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) {
+        throw new Error(json.message || 'Gửi đơn thất bại');
       }
       
       setSuccess(true);
