@@ -28,7 +28,7 @@ export const createEmployee = async (req, res) => {
         if (!role) return res.status(400).json({ error: true, message: "Role is required" });
 
         // Kiểm tra email đã tồn tại
-        const existingUser = await userService.findUserByEmail(personal_email);
+        const existingUser = await userService.findUserByEmailService(personal_email);
         if (existingUser) return res.status(409).json({ error: true, message: "Personal email already exists" });
 
         // Mã hóa mật khẩu
@@ -46,7 +46,7 @@ export const createEmployee = async (req, res) => {
         });
 
         // Tạo nhân viên
-        const employee = await employeeService.createEmployee({
+        const employee = await employeeService.createEmployeeService({
             user_id: user.user_id,
             hire_date,
             position,

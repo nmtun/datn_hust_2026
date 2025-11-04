@@ -10,11 +10,13 @@ import "./src/models/associations.js";
 import "./src/models/User.js";
 import "./src/models/Candidate.js";
 import "./src/models/Employee.js";
+import "./src/models/JobDescription.js";
 
 // Import routes here
 import UserRoutes from "./src/routes/UserRoutes.js";
 import CandidateRoutes from "./src/routes/CandidateRoutes.js";
 import EmployeeRoutes from "./src/routes/EmployeeRoutes.js";
+import JobDescriptionRoutes from "./src/routes/JobDescriptionRoutes.js";
 
 dotenv.config();
 
@@ -43,9 +45,10 @@ app.get("/", (req, res) => {
 });
 
 // Routes using
-app.use("/api/users", UserRoutes);
-app.use("/api/candidates", CandidateRoutes); 
-app.use("/api/employees", EmployeeRoutes);
+app.use("/api/user", UserRoutes);
+app.use("/api/candidate", CandidateRoutes); 
+app.use("/api/employee", EmployeeRoutes);
+app.use("/api/job-description", JobDescriptionRoutes);
 
 // Tạo bảng và chạy server
 (async () => {
@@ -54,7 +57,6 @@ app.use("/api/employees", EmployeeRoutes);
         // await sequelize.sync({ alter: true }); // tạo bảng nếu chưa có và cập nhật bảng nếu có thay đổi trong model
         // await sequelize.sync({ force: true }); // xóa bảng và tạo lại - dùng khi cần làm mới cơ sở dữ liệu, sẽ bị mất dữ liệu
 
-        // Lắng nghe trên tất cả các interfaces (0.0.0.0) thay vì chỉ localhost
         app.listen(PORT, () => {
             console.log(`Truy cập local: http://localhost:${PORT}`);
         });

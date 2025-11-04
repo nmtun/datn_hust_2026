@@ -12,7 +12,7 @@ export const login = async (req, res) => {
         if (!password) return res.status(400).json({ error: true, message: "Password is required" });
 
         // Check email 
-        const user = await userService.findUserByEmail(company_email);
+        const user = await userService.findUserByEmailService(company_email);
         if (!user) return res.status(404).json({ error: true, message: "User not found" });
 
         // So sánh mật khẩu
