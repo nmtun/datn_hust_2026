@@ -40,10 +40,10 @@ const Candidate = sequelize.define("Candidate_Info", {
     job_id: {
         type: DataTypes.INTEGER,
         allowNull: true,
-        // references: {
-        //     model: "Job_Descriptions", 
-        //     key: "job_id"
-        // }
+        references: {
+            model: "Job_Descriptions", 
+            key: "job_id"
+        }
     },
     notes: {
         type: DataTypes.TEXT,

@@ -3,7 +3,7 @@ import * as userService from './UserServices.js';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 
-export const createCandidate = async (candidateData) => {
+export const createCandidateService = async (candidateData) => {
     const {
         personal_email,
         company_email,
@@ -17,6 +17,7 @@ export const createCandidate = async (candidateData) => {
         source,
         apply_date,
         evaluation,
+        job_id,
         notes,
         status = "active"
     } = candidateData;
@@ -58,6 +59,7 @@ export const createCandidate = async (candidateData) => {
         source,
         apply_date,
         evaluation,
+        job_id,
         notes
     });
 
@@ -69,6 +71,17 @@ export const createCandidate = async (candidateData) => {
             candidate: newCandidate,
             user: newUser,
             temp_password_generated: !password ? true : false
+        }
+    };
+};
+
+export const getAllCandidatesService = async () => {
+    const candidates = await Candidate.findAll();
+    return {
+        status: 200,
+        data: {
+            error: false,
+            candidates
         }
     };
 };
