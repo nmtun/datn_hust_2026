@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, useEffect, useRef } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -6,11 +7,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { JobDescriptionApi } from '../api/jobDescriptionApi';
 import { CandidateApi } from '../api/candidateApi';
 import { validateEmail, validateVietnamPhoneNumber, validateName, validateAge } from '../../utils/validate';
-
-interface JobInfo {
-  job_id: number;
-  title: string;
-}
 
 export default function Apply() {
   const router = useRouter();
@@ -194,15 +190,9 @@ export default function Apply() {
     data.append('cv', cvFile);
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-      const res = await fetch(`${baseUrl}/api/candidates/create`, {
-        method: 'POST',
-        body: data,
-        credentials: 'omit', 
-      });
-      const json = await res.json();
-      if (!res.ok || json.error) {
-        throw new Error(json.message || 'Gửi đơn thất bại');
+      const response = await CandidateApi.submitApplication(data);
+      if (response.error) {
+        throw new Error(response.message || 'Gửi đơn thất bại');
       }
       
       setSuccess(true);

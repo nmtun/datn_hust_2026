@@ -40,7 +40,7 @@ export const createCandidateService = async (candidateData) => {
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
     // Tạo user
-    const newUser = await userService.createUser({
+    const newUser = await userService.createUserService({
         personal_email,
         company_email,
         password: hashedPassword,
