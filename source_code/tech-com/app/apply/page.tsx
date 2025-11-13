@@ -192,7 +192,9 @@ export default function Apply() {
     try {
       const response = await CandidateApi.submitApplication(data);
       if (response.error) {
-        throw new Error(response.message || 'Gửi đơn thất bại');
+        // Hiển thị thông báo lỗi cụ thể từ backend
+        setError(response.message || 'Gửi đơn thất bại');
+        return;
       }
       
       setSuccess(true);

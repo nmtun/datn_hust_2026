@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { Search, Plus, Edit2, Eye, Trash2, MapPin, Briefcase } from "lucide-react";
 import { useRouter } from "next/navigation";

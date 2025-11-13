@@ -189,4 +189,38 @@ export const searchJobDescriptionsService = async (query = {}) => {
             jobs
         }
     };
-}
+};
+
+export const searchDeletedJobDescriptionsService = async (query = {}) => {
+    const {
+        title,
+        location,
+        experience_level
+    } = query;
+
+    const where = {};
+
+    if (title) {
+        where.title = { [Op.like]: `%${title}%` };
+    }
+    if (location) {
+        where.location = { [Op.like]: `%${location}%` };
+    }
+    if (experience_level) {
+        where.experience_level = { [Op.like]: `%${experience_level}%` };
+    }
+
+    where.is_deleted = true;
+
+    const jobs = await JobDescription.findAll({
+        where,
+        order: [['updated_at', 'DESC'], ['created_at', 'DESC']]
+    });
+    return {
+        status: 200,
+        data: {
+            error: false,
+            jobs
+        }
+    };
+};

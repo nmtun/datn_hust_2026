@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -38,7 +39,6 @@ function DeletedJobDescriptionsPage() {
   const [searchLocation, setSearchLocation] = useState("");
   const [searchLevel, setSearchLevel] = useState("");
   const [jobDescriptions, setJobDescriptions] = useState<JobDescription[]>([]);
-  const [originalJobs, setOriginalJobs] = useState<JobDescription[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState<JobDescription | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -72,23 +72,46 @@ function DeletedJobDescriptionsPage() {
 
   // Effect for handling search with debounced values
   useEffect(() => {
-    if (!debouncedSearchTitle && !debouncedSearchLocation && !debouncedSearchLevel) {
-      setJobDescriptions(originalJobs);
-      return;
-    }
+    const performSearch = async () => {
+      if (!debouncedSearchTitle && !debouncedSearchLocation && !debouncedSearchLevel) {
+        fetchDeletedJobDescriptions();
+        return;
+      }
 
-    const filtered = originalJobs.filter(job => {
-      const matchTitle = !debouncedSearchTitle || 
-        job.title.toLowerCase().includes(debouncedSearchTitle.toLowerCase());
-      const matchLocation = !debouncedSearchLocation || 
-        job.location.toLowerCase().includes(debouncedSearchLocation.toLowerCase());
-      const matchLevel = !debouncedSearchLevel || 
-        job.experience_level.toLowerCase().includes(debouncedSearchLevel.toLowerCase());
-      
-      return matchTitle && matchLocation && matchLevel;
-    });
-    setJobDescriptions(filtered);
-  }, [debouncedSearchTitle, debouncedSearchLocation, debouncedSearchLevel, originalJobs]);
+      try {
+        setLoading(true);
+        const query = {
+          title: debouncedSearchTitle.trim() || undefined,
+          location: debouncedSearchLocation.trim() || undefined,
+          experience_level: debouncedSearchLevel.trim() || undefined,
+        };
+
+        const result = await jobDescriptionApi.searchDeleted(query);
+
+        if (!result || result.error) {
+          console.error("API Error:", result?.message || "Unknown error");
+          setJobDescriptions([]);
+          return;
+        }
+
+        const jobs = result.jobs;
+        if (Array.isArray(jobs)) {
+          setJobDescriptions(jobs);
+        } else {
+          console.error("Invalid jobs data format:", jobs);
+          setJobDescriptions([]);
+        }
+      } catch (error) {
+        console.error("Error searching deleted job descriptions:", error);
+        setJobDescriptions([]);
+        showToast.error('Error searching deleted job descriptions');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    performSearch();
+  }, [debouncedSearchTitle, debouncedSearchLocation, debouncedSearchLevel]);
 
   const fetchDeletedJobDescriptions = async () => {
     try {
@@ -103,11 +126,9 @@ function DeletedJobDescriptionsPage() {
 
       const jobs = result.jobs;
       if (Array.isArray(jobs)) {
-        setOriginalJobs(jobs);
         setJobDescriptions(jobs);
       } else {
         console.error("Invalid jobs data format:", jobs);
-        setOriginalJobs([]);
         setJobDescriptions([]);
       }
     } catch (error) {
