@@ -1,4 +1,6 @@
 import Candidate from '../models/Candidate.js';
+import User from '../models/User.js';
+import JobDescription from '../models/JobDescription.js';
 import * as userService from './UserServices.js';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
@@ -115,12 +117,44 @@ export const createCandidateService = async (candidateData) => {
 };
 
 export const getAllCandidatesService = async () => {
-    const candidates = await Candidate.findAll();
-    return {
-        status: 200,
-        data: {
-            error: false,
-            candidates
-        }
-    };
+    // join bảng User, Candidate và JobDescription để lấy thông tin ứng viên cùng với thông tin công việc đã ứng tuyển
+    try {
+        const candidates = await User.findAll({
+            where: {
+                role: 'candidate' // Chỉ lấy user có role là candidate
+            },
+            include: [
+                {
+                    model: Candidate,
+                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'notes', 'job_id'],
+                    include: [
+                        {
+                            model: JobDescription,
+                            attributes: ['job_id', 'title', 'experience_level', 'employment_type']
+                        }
+                    ]
+                }
+            ],
+            attributes: ['user_id', 'personal_email', 'full_name', 'phone_number', 'address', 'status', 'password'],
+            order: [['created_at', 'DESC']]
+        });
+        return {
+            status: 200,
+            data: {
+                error: false,
+                message: "Get all candidates successfully",
+                candidates
+            }
+        };
+    } catch (error) {
+        console.error('Error in getAllCandidatesService:', error);
+        return {
+            status: 500,
+            data: {
+                error: true,
+                message: "Internal server error",
+                details: error.message
+            }
+        };
+    }
 };

@@ -79,7 +79,7 @@ export const getAllCandidates = async (req, res) => {
         const result = await candidateService.getAllCandidatesService();
         return res.status(result.status).json(result.data);
     } catch (error) {
-        console.error("Lỗi lấy danh sách candidate:", error);
+        console.error("Error fetching candidates:", error);
         return res.status(500).json({ error: true, message: "Internal server error" });
     }
 };
