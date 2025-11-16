@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { Search, Plus, Edit2, Eye, Trash2, User, Mail, FileText } from "lucide-react";
+import { Search, Eye, User, Mail, ArrowLeft, Undo2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { candidateApi, Candidate, CandidateInfo } from "@/app/api/candidateApi";
@@ -8,7 +8,7 @@ import { showToast } from "@/app/utils/toast";
 import Modal from "@/app/components/Modal";
 import { withAuth } from "@/app/middleware/withAuth";
 
-function CandidatePage() {
+function DeletedCandidatesPage() {
   const router = useRouter();
   const [searchName, setSearchName] = useState("");
   const [searchEmail, setSearchEmail] = useState("");
@@ -41,14 +41,14 @@ function CandidatePage() {
   const debouncedSearchStatus = useDebounce(searchStatus, 500);
 
   useEffect(() => {
-    fetchCandidates();
+    fetchDeletedCandidates();
   }, []);
 
   // Effect for handling search with debounced values
   useEffect(() => {
     const performSearch = async () => {
       if (!debouncedSearchName && !debouncedSearchEmail && !debouncedSearchStatus) {
-        fetchCandidates();
+        fetchDeletedCandidates();
         return;
       }
 
@@ -60,7 +60,7 @@ function CandidatePage() {
           candidate_status: debouncedSearchStatus.trim() || undefined,
         };
 
-        const result = await candidateApi.search(query);
+        const result = await candidateApi.searchDeleted(query);
 
         if (!result || result.error) {
           console.error("API Error:", result?.message || "Unknown error");
@@ -76,9 +76,9 @@ function CandidatePage() {
           setCandidates([]);
         }
       } catch (error) {
-        console.error("Error searching candidates:", error);
+        console.error("Error searching deleted candidates:", error);
         setCandidates([]);
-        showToast.error('Error searching candidates');
+        showToast.error('Error searching deleted candidates');
       } finally {
         setLoading(false);
       }
@@ -87,10 +87,10 @@ function CandidatePage() {
     performSearch();
   }, [debouncedSearchName, debouncedSearchEmail, debouncedSearchStatus]);
 
-  const fetchCandidates = async () => {
+  const fetchDeletedCandidates = async () => {
     try {
       setLoading(true);
-      const result = await candidateApi.getAll();
+      const result = await candidateApi.getDeleted();
       
       if (!result || result.error) {
         console.error("API Error:", result?.message || "Unknown error");
@@ -106,51 +106,47 @@ function CandidatePage() {
         setCandidates([]);
       }
     } catch (error) {
-      console.error("Error fetching candidates:", error);
+      console.error("Error fetching deleted candidates:", error);
       setCandidates([]);
-      showToast.error('Error fetching candidates');
+      showToast.error('Error fetching deleted candidates');
     } finally {
       setLoading(false);
     }
   };
 
-  const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [candidateToDelete, setCandidateToDelete] = useState<Candidate | null>(null);
+  const [restoreLoading, setRestoreLoading] = useState<number | null>(null);
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
+  const [candidateToRestore, setCandidateToRestore] = useState<Candidate | null>(null);
 
-  const handleDeleteClick = (candidate: Candidate) => {
-    setCandidateToDelete(candidate);
-    setShowDeleteConfirm(true);
+  const handleRestoreClick = (candidate: Candidate) => {
+    setCandidateToRestore(candidate);
+    setShowRestoreConfirm(true);
   };
 
-  const handleConfirmDelete = async () => {
-    if (!candidateToDelete) return;
+  const handleConfirmRestore = async () => {
+    if (!candidateToRestore) return;
 
     try {
-      setDeleteLoading(candidateToDelete.user_id);
-      const result = await candidateApi.delete(candidateToDelete.user_id);
+      setRestoreLoading(candidateToRestore.user_id);
+      const result = await candidateApi.restore(candidateToRestore.user_id);
       
       if (result.error) {
-        throw new Error(result.message || 'Error deleting candidate');
+        throw new Error(result.message || 'Error restoring candidate');
       }
 
       // Refresh the list
-      await fetchCandidates();
+      await fetchDeletedCandidates();
       
       // Show success message
-      showToast.success('Candidate deleted successfully');
+      showToast.success('Candidate restored successfully');
     } catch (error: any) {
-      console.error("Error deleting candidate:", error);
-      showToast.error(error.message || 'Error deleting candidate');
+      console.error("Error restoring candidate:", error);
+      showToast.error(error.message || 'Error restoring candidate');
     } finally {
-      setDeleteLoading(null);
-      setShowDeleteConfirm(false);
-      setCandidateToDelete(null);
+      setRestoreLoading(null);
+      setShowRestoreConfirm(false);
+      setCandidateToRestore(null);
     }
-  };
-
-  const handleEdit = (userId: number) => {
-    router.push(`/dashboard/hr/candidate/edit/${userId}`);
   };
 
   const handleView = (userId: number, candidateInfo?: CandidateInfo) => {
@@ -162,18 +158,8 @@ function CandidatePage() {
     }
   };
 
-  const handleCreateNew = () => {
-    router.push("/dashboard/hr/candidate/create");
-  };
-
-  const handleViewCV = (cvPath: string) => {
-    if (cvPath) {
-      // Lấy tên file từ đường dẫn (xử lý cả đường dẫn Windows và Linux)
-      const fileName = cvPath.split(/[/\\]/).pop();
-      // Tạo URL để xem CV trực tiếp
-      const viewUrl = `${process.env.NEXT_PUBLIC_API_URL}/uploads/${fileName}`;
-      window.open(viewUrl, '_blank');
-    }
+  const handleBack = () => {
+    router.push("/dashboard/hr/candidate");
   };
 
   const getStatusColor = (status: CandidateInfo["candidate_status"]) => {
@@ -210,22 +196,14 @@ function CandidatePage() {
     <div>
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Candidates Management</h1>
-        <div className="flex space-x-4">
+        <div className="flex items-center">
           <button
-            onClick={() => router.push("/dashboard/hr/candidate/deleted")}
-            className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            onClick={handleBack}
+            className="mr-4 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full"
           >
-            <Trash2 className="w-5 h-5 mr-2" />
-            Deleted Candidates
+            <ArrowLeft className="w-5 h-5" />
           </button>
-          <button
-            onClick={handleCreateNew}
-            className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Add New Candidate
-          </button>
+          <h1 className="text-2xl font-bold text-gray-900">Deleted Candidates</h1>
         </div>
       </div>
 
@@ -271,7 +249,7 @@ function CandidatePage() {
         </div>
       </div>
 
-      {/* Candidates Table */}
+      {/* Deleted Candidates Table */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
         {loading ? (
           <div className="flex justify-center items-center p-8">
@@ -326,23 +304,13 @@ function CandidatePage() {
                         {candidate.candidateInfos.map((candidateInfo, infoIndex) => (
                           <div key={candidateInfo.candidate_info_id} className="border-l-2 border-gray-200 pl-3 py-1 min-h-[28px] flex flex-col justify-center">
                             {candidateInfo.Job_Description ? (
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <div className="text-sm font-medium text-gray-900 leading-tight">
-                                    {candidateInfo.Job_Description.title}
-                                  </div>
-                                  <div className="text-sm text-gray-500 leading-tight">
-                                    {candidateInfo.Job_Description.experience_level} · {candidateInfo.Job_Description.employment_type}
-                                  </div>
+                              <div>
+                                <div className="text-sm font-medium text-gray-900 leading-tight">
+                                  {candidateInfo.Job_Description.title}
                                 </div>
-                                {candidateInfo.cv_file_path && (
-                                  <button
-                                    onClick={() => handleViewCV(candidateInfo.cv_file_path!)}
-                                    className="ml-2 text-green-400 hover:text-green-500 flex-shrink-0"
-                                    title="View CV for this job">
-                                    <FileText className="w-6 h-6" />
-                                  </button>
-                                )}
+                                <div className="text-sm text-gray-500 leading-tight">
+                                  {candidateInfo.Job_Description.experience_level} · {candidateInfo.Job_Description.employment_type}
+                                </div>
                               </div>
                             ) : (
                               <span className="text-sm text-gray-400">No job title</span>
@@ -394,22 +362,16 @@ function CandidatePage() {
                         <Eye className="w-5 h-5" />
                       </button>
                       <button 
-                        onClick={() => handleEdit(candidate.user_id)}
-                        className="text-blue-400 hover:text-blue-500"
-                        title="Edit candidate">
-                        <Edit2 className="w-5 h-5" />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteClick(candidate)}
-                        className={`text-red-400 hover:text-red-500 ${
-                          deleteLoading === candidate.user_id ? 'opacity-50 cursor-not-allowed' : ''
+                        onClick={() => handleRestoreClick(candidate)}
+                        className={`text-green-400 hover:text-green-500 ${
+                          restoreLoading === candidate.user_id ? 'opacity-50 cursor-not-allowed' : ''
                         }`}
-                        disabled={deleteLoading === candidate.user_id}
-                        title="Delete candidate">
-                        {deleteLoading === candidate.user_id ? (
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-400" />
+                        disabled={restoreLoading === candidate.user_id}
+                        title="Restore candidate">
+                        {restoreLoading === candidate.user_id ? (
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-400" />
                         ) : (
-                          <Trash2 className="w-5 h-5" />
+                          <Undo2 className="w-5 h-5" />
                         )}
                       </button>
                     </div>
@@ -423,51 +385,42 @@ function CandidatePage() {
         {!loading && groupedCandidates.length === 0 && (
           <div className="text-center py-8">
             <User className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No candidates found</h3>
-            <p className="mt-1 text-sm text-gray-500">Get started by adding a new candidate.</p>
-            <div className="mt-6">
-              <button
-                onClick={handleCreateNew}
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Add New Candidate
-              </button>
-            </div>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No deleted candidates found</h3>
+            <p className="mt-1 text-sm text-gray-500">All candidates are currently active.</p>
           </div>
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* Restore Confirmation Modal */}
       <Modal
-        isOpen={showDeleteConfirm}
+        isOpen={showRestoreConfirm}
         onClose={() => {
-          setShowDeleteConfirm(false);
-          setCandidateToDelete(null);
+          setShowRestoreConfirm(false);
+          setCandidateToRestore(null);
         }}
-        title="Confirm Delete"
+        title="Confirm Restore"
       >
         <div className="p-6">
-          <p className="mb-4">Are you sure you want to delete this candidate?</p>
-          <p className="mb-6 font-medium text-gray-700">{candidateToDelete?.full_name}</p>
+          <p className="mb-4">Are you sure you want to restore this candidate?</p>
+          <p className="mb-6 font-medium text-gray-700">{candidateToRestore?.full_name}</p>
           <div className="flex justify-end space-x-4">
             <button
               onClick={() => {
-                setShowDeleteConfirm(false);
-                setCandidateToDelete(null);
+                setShowRestoreConfirm(false);
+                setCandidateToRestore(null);
               }}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
             >
               Cancel
             </button>
             <button
-              onClick={handleConfirmDelete}
-              disabled={deleteLoading !== null}
-              className={`px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 ${
-                deleteLoading !== null ? 'opacity-50 cursor-not-allowed' : ''
+              onClick={handleConfirmRestore}
+              disabled={restoreLoading !== null}
+              className={`px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${
+                restoreLoading !== null ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
-              {deleteLoading !== null ? 'Deleting...' : 'Delete'}
+              {restoreLoading !== null ? 'Restoring...' : 'Restore'}
             </button>
           </div>
         </div>
@@ -477,12 +430,7 @@ function CandidatePage() {
       <Modal
         isOpen={isViewModalOpen}
         onClose={() => setIsViewModalOpen(false)}
-        title={`${selectedCandidate?.full_name || "Candidate Details"}`}
-        showEditButton={true}
-        onEdit={() => {
-          setIsViewModalOpen(false);
-          handleEdit(selectedCandidate!.user_id);
-        }}
+        title={`${selectedCandidate?.full_name || "Candidate Details"} (Deleted)`}
       >
         {selectedCandidate && (
           <div className="space-y-6">
@@ -505,10 +453,8 @@ function CandidatePage() {
                 <div>
                   <p className="text-sm font-medium text-gray-500">Status</p>
                   <p className="mt-1">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      selectedCandidate.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {selectedCandidate.status.charAt(0).toUpperCase() + selectedCandidate.status.slice(1)}
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                      Deleted
                     </span>
                   </p>
                 </div>
@@ -568,22 +514,6 @@ function CandidatePage() {
                         </div>
                       )}
 
-                      {/* CV */}
-                      {candidateInfo.cv_file_path && (
-                        <div className="mb-4">
-                          <p className="text-sm font-medium text-gray-500">CV/Resume</p>
-                          <div className="mt-1">
-                            <button
-                              onClick={() => handleViewCV(candidateInfo.cv_file_path!)}
-                              className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                            >
-                              <Eye className="w-4 h-4 mr-2" />
-                              View CV
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
                       {/* Cover Letter */}
                       {candidateInfo.cover_letter && (
                         <div>
@@ -605,4 +535,4 @@ function CandidatePage() {
   );
 }
 
-export default withAuth(CandidatePage);
+export default withAuth(DeletedCandidatesPage);

@@ -25,7 +25,7 @@ const Candidate = sequelize.define("Candidate_Info", {
         allowNull: false,
     },
     source: {
-        type: DataTypes.STRING(100),
+        type: DataTypes.ENUM('website', 'topcv', 'linkedin', 'referral', 'other'),
         allowNull: true,
     },
     apply_date: {
@@ -45,7 +45,7 @@ const Candidate = sequelize.define("Candidate_Info", {
             key: "job_id"
         }
     },
-    notes: {
+    cover_letter: {
         type: DataTypes.TEXT,
         allowNull: true,
     },

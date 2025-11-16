@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Search, Undo2, Eye, MapPin, Briefcase } from "lucide-react";
+import { ArrowLeft, Search, Undo2, Eye, MapPin, Briefcase, FileText } from "lucide-react";
 import { withAuth } from "@/app/middleware/withAuth";
 import { jobDescriptionApi } from "@/app/api/jobDescriptionApi";
 import { useRouter } from "next/navigation";
@@ -43,6 +43,8 @@ function DeletedJobDescriptionsPage() {
   const [selectedJob, setSelectedJob] = useState<JobDescription | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [restoreLoading, setRestoreLoading] = useState<number | null>(null);
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
+  const [jobToRestore, setJobToRestore] = useState<JobDescription | null>(null);
 
   // Add debounce function
   const useDebounce = (value: string, delay: number) => {
@@ -117,7 +119,7 @@ function DeletedJobDescriptionsPage() {
     try {
       setLoading(true);
       const result = await jobDescriptionApi.getDeleted();
-      
+
       if (!result || result.error) {
         console.error("API Error:", result?.message || "Unknown error");
         setJobDescriptions([]);
@@ -139,18 +141,25 @@ function DeletedJobDescriptionsPage() {
     }
   };
 
-  const handleRestore = async (jobId: number) => {
+  const handleRestoreClick = (job: JobDescription) => {
+    setJobToRestore(job);
+    setShowRestoreConfirm(true);
+  };
+
+  const handleConfirmRestore = async () => {
+    if (!jobToRestore) return;
+
     try {
-      setRestoreLoading(jobId);
-      const result = await jobDescriptionApi.restore(jobId);
-      
+      setRestoreLoading(jobToRestore.job_id);
+      const result = await jobDescriptionApi.restore(jobToRestore.job_id);
+
       if (result.error) {
         throw new Error(result.message || 'Error restoring job description');
       }
 
       // Refresh the list
       await fetchDeletedJobDescriptions();
-      
+
       // Show success message
       showToast.success('Job description restored successfully');
     } catch (error: any) {
@@ -158,6 +167,8 @@ function DeletedJobDescriptionsPage() {
       showToast.error(error.message || 'Error restoring job description');
     } finally {
       setRestoreLoading(null);
+      setShowRestoreConfirm(false);
+      setJobToRestore(null);
     }
   };
 
@@ -288,17 +299,16 @@ function DeletedJobDescriptionsPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end space-x-3">
-                      <button 
+                      <button
                         onClick={() => handleView(jd.job_id)}
                         className="text-gray-400 hover:text-gray-500"
                         title="View details">
                         <Eye className="w-5 h-5" />
                       </button>
-                      <button 
-                        onClick={() => handleRestore(jd.job_id)}
-                        className={`text-green-400 hover:text-green-500 ${
-                          restoreLoading === jd.job_id ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
+                      <button
+                        onClick={() => handleRestoreClick(jd)}
+                        className={`text-green-400 hover:text-green-500 ${restoreLoading === jd.job_id ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
                         disabled={restoreLoading === jd.job_id}
                         title="Restore job description">
                         {restoreLoading === jd.job_id ? (
@@ -314,7 +324,49 @@ function DeletedJobDescriptionsPage() {
             </tbody>
           </table>
         )}
+        {!loading && jobDescriptions.length === 0 && (
+          <div className="text-center py-8">
+            <FileText className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No deleted job descriptions found</h3>
+            <p className="mt-1 text-sm text-gray-500">All job descriptions are currently active.</p>
+          </div>  
+        )}
       </div>
+
+      {/* Restore Confirmation Modal */}
+      <Modal
+        isOpen={showRestoreConfirm}
+        onClose={() => {
+          setShowRestoreConfirm(false);
+          setJobToRestore(null);
+        }}
+        title="Confirm Restore"
+      >
+        <div className="p-6">
+          <p className="mb-4">Are you sure you want to restore this job description?</p>
+          <p className="mb-6 font-medium text-gray-700">{jobToRestore?.title}</p>
+          <div className="flex justify-end space-x-4">
+            <button
+              onClick={() => {
+                setShowRestoreConfirm(false);
+                setJobToRestore(null);
+              }}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmRestore}
+              disabled={restoreLoading !== null}
+              className={`px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${
+                restoreLoading !== null ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              {restoreLoading !== null ? 'Restoring...' : 'Restore'}
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {/* View Job Description Modal */}
       <Modal

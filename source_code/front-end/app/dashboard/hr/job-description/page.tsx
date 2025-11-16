@@ -210,7 +210,7 @@ function JobDescriptionPage() {
     <div>
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Job Descriptions</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Job Descriptions Management</h1>
         <div className="flex space-x-4">
           <button
             onClick={() => router.push("/dashboard/hr/job-description/deleted")}

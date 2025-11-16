@@ -47,11 +47,16 @@ const User = sequelize.define("Users", {
         defaultValue: DataTypes.NOW,
         allowNull: false,
     },
-    update_at: {
+    updated_at: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
         allowNull: false,
-    }
+    },
+    is_deleted: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+    },
 }, {
     tableName: "Users",
     timestamps: false,
