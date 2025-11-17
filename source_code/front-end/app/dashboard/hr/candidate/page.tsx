@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { Search, Plus, Edit2, Eye, Trash2, User, Mail, FileText } from "lucide-react";
+import { Search, Plus, Edit2, Eye, Trash2, User, Mail, FileText, Building2, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { candidateApi, Candidate, CandidateInfo } from "@/app/api/candidateApi";
@@ -18,7 +18,7 @@ function CandidatePage() {
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [selectedCandidateInfo, setSelectedCandidateInfo] = useState<CandidateInfo | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  
+
   const useDebounce = (value: string, delay: number) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
 
@@ -91,7 +91,7 @@ function CandidatePage() {
     try {
       setLoading(true);
       const result = await candidateApi.getAll();
-      
+
       if (!result || result.error) {
         console.error("API Error:", result?.message || "Unknown error");
         setCandidates([]);
@@ -129,14 +129,14 @@ function CandidatePage() {
     try {
       setDeleteLoading(candidateToDelete.user_id);
       const result = await candidateApi.delete(candidateToDelete.user_id);
-      
+
       if (result.error) {
         throw new Error(result.message || 'Error deleting candidate');
       }
 
       // Refresh the list
       await fetchCandidates();
-      
+
       // Show success message
       showToast.success('Candidate deleted successfully');
     } catch (error: any) {
@@ -220,6 +220,13 @@ function CandidatePage() {
             Deleted Candidates
           </button>
           <button
+            onClick={() => router.push("/dashboard/hr/candidate/hired")}
+            className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+          >
+            <Building2 className="w-5 h-5 mr-2" />
+            Hired Candidates
+          </button>
+          <button
             onClick={handleCreateNew}
             className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
@@ -254,10 +261,11 @@ function CandidatePage() {
           </div>
           <div className="flex-1 relative">
             <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
             <select
               value={searchStatus}
               onChange={(e) => setSearchStatus(e.target.value)}
-              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none"
+              className="pl-10 pr-10 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none"
             >
               <option value="">All Status</option>
               <option value="new">New</option>
@@ -374,7 +382,7 @@ function CandidatePage() {
                       <div className="space-y-2">
                         {candidate.candidateInfos.map((candidateInfo, infoIndex) => (
                           <div key={candidateInfo.candidate_info_id} className="py-1 flex items-center min-h-[28px]">
-                            {candidateInfo.apply_date 
+                            {candidateInfo.apply_date
                               ? new Date(candidateInfo.apply_date).toLocaleDateString()
                               : '-'
                             }
@@ -387,23 +395,22 @@ function CandidatePage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end space-x-3">
-                      <button 
+                      <button
                         onClick={() => handleView(candidate.user_id, candidate.candidateInfos[0])}
                         className="text-gray-400 hover:text-gray-500"
                         title="View details">
                         <Eye className="w-5 h-5" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleEdit(candidate.user_id)}
                         className="text-blue-400 hover:text-blue-500"
                         title="Edit candidate">
                         <Edit2 className="w-5 h-5" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDeleteClick(candidate)}
-                        className={`text-red-400 hover:text-red-500 ${
-                          deleteLoading === candidate.user_id ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
+                        className={`text-red-400 hover:text-red-500 ${deleteLoading === candidate.user_id ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
                         disabled={deleteLoading === candidate.user_id}
                         title="Delete candidate">
                         {deleteLoading === candidate.user_id ? (
@@ -419,7 +426,7 @@ function CandidatePage() {
             </tbody>
           </table>
         )}
-        
+
         {!loading && groupedCandidates.length === 0 && (
           <div className="text-center py-8">
             <User className="mx-auto h-12 w-12 text-gray-400" />
@@ -463,9 +470,8 @@ function CandidatePage() {
             <button
               onClick={handleConfirmDelete}
               disabled={deleteLoading !== null}
-              className={`px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 ${
-                deleteLoading !== null ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              className={`px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 ${deleteLoading !== null ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
             >
               {deleteLoading !== null ? 'Deleting...' : 'Delete'}
             </button>
@@ -505,9 +511,8 @@ function CandidatePage() {
                 <div>
                   <p className="text-sm font-medium text-gray-500">Status</p>
                   <p className="mt-1">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      selectedCandidate.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${selectedCandidate.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
                       {selectedCandidate.status.charAt(0).toUpperCase() + selectedCandidate.status.slice(1)}
                     </span>
                   </p>
