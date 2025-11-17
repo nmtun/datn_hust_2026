@@ -35,7 +35,7 @@ export const createEmployee = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Tạo người dùng
-        const user = await userService.createUser({
+        const user = await userService.createUserService({
             personal_email,
             company_email,
             password: hashedPassword,

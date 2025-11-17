@@ -182,7 +182,7 @@ export default function Apply() {
     data.append('birthdate', formData.birthdate);
     if (formData.phone_number) data.append('phone_number', formData.phone_number);
     if (formData.address) data.append('address', formData.address);
-    if (formData.coverLetter) data.append('notes', formData.coverLetter);
+    if (formData.coverLetter) data.append('cover_letter', formData.coverLetter);
     data.append('job_id', jobPosition);
     data.append('apply_date', new Date().toISOString().split('T')[0]);
     data.append('candidate_status', 'new');
@@ -192,7 +192,9 @@ export default function Apply() {
     try {
       const response = await CandidateApi.submitApplication(data);
       if (response.error) {
-        throw new Error(response.message || 'Gửi đơn thất bại');
+        // Hiển thị thông báo lỗi cụ thể từ backend
+        setError(response.message || 'Gửi đơn thất bại');
+        return;
       }
       
       setSuccess(true);
