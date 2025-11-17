@@ -25,11 +25,15 @@ export const createCandidate = async (req, res) => {
 
                 // Lấy họ tên và ngày nộp
                 const fullName = (req.body.full_name || 'unknown').replace(/[^a-zA-Z0-9_.-]/g, '_');
-                const applyDate = (req.body.apply_date || new Date().toISOString().slice(0, 10)).replace(/[^0-9\-]/g, '');
+                const now = new Date();
+                const applyDate = (req.body.apply_date || now.toISOString().slice(0, 10)).replace(/[^0-9\-]/g, '');
+                
+                // Tạo timestamp để phân biệt CV theo thời gian nộp (giờ:phút:giây)
+                const timestamp = now.toTimeString().slice(0, 8).replace(/:/g, '-'); // HH-MM-SS
                 const ext = path.extname(req.file.originalname) || '.pdf';
 
-                // Tạo tên file: Họ và tên - ngày nộp.pdf
-                const fileName = `${fullName}-${applyDate}${ext}`;
+                // Tạo tên file: Họ_và_tên-ngày_nộp-giờ_phút_giây.pdf
+                const fileName = `${fullName}-${applyDate}-${timestamp}${ext}`;
                 const filePath = path.join(uploadsDir, fileName);
 
                 await fs.writeFile(filePath, req.file.buffer);
@@ -79,7 +83,96 @@ export const getAllCandidates = async (req, res) => {
         const result = await candidateService.getAllCandidatesService();
         return res.status(result.status).json(result.data);
     } catch (error) {
-        console.error("Lỗi lấy danh sách candidate:", error);
+        console.error("Error fetching candidates:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
+
+export const getCandidateById = async (req, res) => {
+    try {
+        const candidateId = req.params.id;
+        const result = await candidateService.getCandidateByIdService(candidateId);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error fetching candidate by ID:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
+
+export const updateCandidate = async (req, res) => {
+    try {
+        const candidateId = req.params.id;
+        const updateData = req.body;
+        const result = await candidateService.updateCandidateService(candidateId, updateData);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error updating candidate:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
+
+export const deleteCandidate = async (req, res) => {
+    try {
+        const candidateId = req.params.id;
+        const result = await candidateService.deleteCandidateService(candidateId);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error deleting candidate:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
+
+export const restoreCandidate = async (req, res) => {
+    try {
+        const candidateId = req.params.id;  
+        const result = await candidateService.restoreCandidateService(candidateId);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error restoring candidate:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
+
+export const getDeletedCandidates = async (req, res) => {
+    try {
+        const result = await candidateService.getDeletedCandidatesService();
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error fetching deleted candidates:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
+
+export const searchCandidates = async (req, res) => {
+    try {
+        const query = req.query;
+        const result = await candidateService.searchCandidatesService(query);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error searching candidates:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
+
+export const searchDeletedCandidates = async (req, res) => {
+    try {
+        const query = req.query;
+        const result = await candidateService.searchDeletedCandidatesService(query);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error searching deleted candidates:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
+
+export const updateCandidateApplication = async (req, res) => {
+    try {
+        const candidateInfoId = req.params.id;
+        const updateData = req.body;
+        const result = await candidateService.updateCandidateApplicationService(candidateInfoId, updateData);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error updating candidate application:", error);
         return res.status(500).json({ error: true, message: "Internal server error" });
     }
 };

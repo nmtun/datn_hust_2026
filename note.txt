@@ -8,4 +8,5 @@ luồng cho guest nộp cv -> be
 
 hạn nộp báo cáo 22/6
 
-sau khi nộp cv thành công -> gửi email cf là đã nhận được cv của ứng viên
+tạo user -> check email -> 1-nhiều
+thuật toán lập lịch: hopcroft_karp hoặc ghép cặp hungary

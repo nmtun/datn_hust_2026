@@ -67,4 +67,13 @@ export const jobDescriptionApi = {
     const response = await apiClient.get("/api/job-description/search", { params: query });
     return response.data;
   },
+
+  searchDeleted: async (query: {
+    title?: string;
+    location?: string;
+    experience_level?: string;
+  }) => {
+    const response = await apiClient.get("/api/job-description/search-deleted", { params: query });
+    return response.data;
+  },
 };

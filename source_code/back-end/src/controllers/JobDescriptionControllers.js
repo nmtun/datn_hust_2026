@@ -88,3 +88,14 @@ export const searchJobDescriptions = async (req, res) => {
         return res.status(500).json({ error: true, message: "Internal server error" });
     }
 };
+
+export const searchDeletedJobDescriptions = async (req, res) => {
+    try {
+        const query = req.query;
+        const result = await jobDescriptionService.searchDeletedJobDescriptionsService(query);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error searching deleted job descriptions:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};

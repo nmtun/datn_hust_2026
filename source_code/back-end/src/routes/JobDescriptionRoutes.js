@@ -11,6 +11,7 @@ router.put('/update/:id', authenticate, authorize("hr"), jobdescriptionControlle
 router.delete('/delete/:id', authenticate, authorize("hr"), jobdescriptionController.deleteJobDescription);
 router.get('/get-deleted', authenticate, authorize("hr"), jobdescriptionController.getDeletedJobDescriptions);
 router.post('/restore/:id', authenticate, authorize("hr"), jobdescriptionController.restoreJobDescription);
-router.get('/search', jobdescriptionController.searchJobDescriptions);
+router.get('/search', authenticate, authorize("hr"), jobdescriptionController.searchJobDescriptions);
+router.get('/search-deleted', authenticate, authorize("hr"), jobdescriptionController.searchDeletedJobDescriptions);
 
 export default router;

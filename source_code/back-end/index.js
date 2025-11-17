@@ -3,6 +3,7 @@ import express from "express";
 import morgan from "morgan";
 import cors from "cors";
 import helmet from "helmet";
+import path from "path";
 import sequelize from "./src/config/dbsetup.js"; 
 
 // Import models here
@@ -38,6 +39,9 @@ app.use(helmet({
 }));
 
 app.use(morgan("dev"));     // Log HTTP requests
+
+// Serve static files từ thư mục uploads
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Test route
 app.get("/", (req, res) => {

@@ -24,6 +24,7 @@ const menuItems = {
   hr: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Job Descriptions", href: "/dashboard/hr/job-description", icon: FileText },
+    { name: "Candidates", href: "/dashboard/hr/candidate", icon: Users },
   ],
   manager: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
