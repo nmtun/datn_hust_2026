@@ -176,3 +176,68 @@ export const updateCandidateApplication = async (req, res) => {
         return res.status(500).json({ error: true, message: "Internal server error" });
     }
 };
+
+export const createCompanyEmail = async (req, res) => {
+    try {
+        const candidateId = req.params.id;
+        const { company_email, password } = req.body;
+
+        // Validation
+        if (!company_email || !password) {
+            return res.status(400).json({
+                error: true,
+                message: "Company email and password are required"
+            });
+        }
+
+        const result = await candidateService.createCompanyEmailService(candidateId, company_email, password);
+        
+        if (result.status !== 200) {
+            return res.status(result.status).json(result.data);
+        }
+
+        // Gửi email thông báo company_email và password
+        const candidate = result.data.candidate;
+        const personalEmail = candidate.personal_email;
+        
+        if (personalEmail) {
+            const subject = 'Chào mừng bạn đến với công ty - Đây là thông tin đăng nhập của bạn';
+            const htmlContent = `
+                <h2>Chúc mừng ${candidate.full_name}!</h2>
+                <p>Tài khoản email công ty của bạn đã được tạo thành công. Bạn có thể truy cập hệ thống công ty với thông tin đăng nhập sau:</p>
+                
+                <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 1rem; margin: 1rem 0;">
+                    <p><strong>Company Email:</strong> ${company_email}</p>
+                    <p><strong>Password:</strong> ${password}</p>
+                </div>
+                
+                <p><strong>Lưu ý bảo mật quan trọng:</strong></p>
+                <ul>
+                    <li>Vui lòng đổi mật khẩu sau lần đăng nhập đầu tiên</li>
+                    <li>Không chia sẻ thông tin đăng nhập với bất kỳ ai</li>
+                    <li>Sử dụng email này cho tất cả các liên lạc liên quan đến công việc</li>
+                </ul>
+                
+                <p>Bạn có thể truy cập hệ thống công ty tại: <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/login">Hệ thống của công ty</a></p>
+                
+                <br/>
+                <p>Chúc mừng bạn đã trở thành một thành viên của công ty!<br/>Phòng Nhân sự</p>
+            `;
+
+            try {
+                await sendEmail(personalEmail, subject, htmlContent);
+                result.data.message = "Company email created and credentials sent successfully";
+            } catch (emailError) {
+                console.error('Failed to send company email notification:', emailError);
+                result.data.message = "Company email created but failed to send notification email";
+            }
+        } else {
+            result.data.message = "Company email created but no personal email found to send notification";
+        }
+
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error creating company email:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
