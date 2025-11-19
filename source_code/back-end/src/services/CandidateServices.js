@@ -43,12 +43,27 @@ export const createCandidateService = async (candidateData) => {
                 job_id: job_id
             }
         });
+        // Kiểm tra xem user này đã có bản ghi candidate có status = hired thì không cho ứng tuyển lại
+        const hiredApplication = await Candidate.findOne({
+            where: {
+                user_id: existingUser.user_id,
+                candidate_status: "hired"
+            }
+        });
         if (existingJobApplication) {
             return {
                 status: 400,
                 data: {
                     error: true,
                     message: "Bạn đã ứng tuyển vào vị trí này trước đó. Vui lòng chọn vị trí khác hoặc liên hệ bộ phận tuyển dụng để biết thêm thông tin."
+                }
+            };
+        } else if (hiredApplication) {
+            return {
+                status: 400,
+                data: {
+                    error: true,
+                    message: "Email đã được sử dụng bởi thành viên của công ty, không thể ứng tuyển lại."
                 }
             };
         } else {
@@ -630,6 +645,117 @@ export const updateCandidateApplicationService = async (candidateInfoId, updateD
         };
     } catch (error) {
         console.error('Error in updateCandidateApplicationService:', error);
+        return {
+            status: 500,
+            data: {
+                error: true,
+                message: "Internal server error",
+                details: error.message
+            }
+        };
+    }
+};
+
+export const createCompanyEmailService = async (candidateId, companyEmail, password) => {
+    try {
+        // Kiểm tra candidate exists
+        const candidate = await User.findOne({
+            where: { 
+                user_id: candidateId,
+                is_deleted: false 
+            },
+            include: [
+                {
+                    model: Candidate,
+                    where: { candidate_status: 'hired' },
+                    include: [
+                        {
+                            model: JobDescription,
+                            attributes: ['job_id', 'title', 'experience_level', 'employment_type']
+                        }
+                    ]
+                }
+            ]
+        });
+
+        if (!candidate) {
+            return {
+                status: 404,
+                data: {
+                    error: true,
+                    message: "Hired candidate not found"
+                }
+            };
+        }
+
+        // Kiểm tra company_email đã tồn tại chưa
+        const existingEmailUser = await User.findOne({
+            where: { 
+                company_email: companyEmail,
+                is_deleted: false 
+            }
+        });
+
+        if (existingEmailUser) {
+            return {
+                status: 400,
+                data: {
+                    error: true,
+                    message: "Company email already exists"
+                }
+            };
+        }
+
+        // Kiểm tra candidate đã có company_email chưa
+        if (candidate.company_email) {
+            return {
+                status: 400,
+                data: {
+                    error: true,
+                    message: "Candidate already has a company email"
+                }
+            };
+        }
+
+        // Hash password
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        // Cập nhật candidate với company_email và role thành employee
+        await candidate.update({
+            company_email: companyEmail,
+            password: hashedPassword, // Cập nhật password mới cho company email
+            role: 'employee' // Chuyển role từ candidate thành employee
+        });
+
+        // Lấy dữ liệu đã cập nhật
+        const updatedCandidate = await User.findOne({
+            where: { user_id: candidateId },
+            attributes: { exclude: ['password'] }, // Không trả về password
+            include: [
+                {
+                    model: Candidate,
+                    where: { candidate_status: 'hired' },
+                    include: [
+                        {
+                            model: JobDescription,
+                            attributes: ['job_id', 'title', 'experience_level', 'employment_type']
+                        }
+                    ]
+                }
+            ]
+        });
+
+        return {
+            status: 200,
+            data: {
+                error: false,
+                message: "Company email created successfully",
+                candidate: updatedCandidate
+            }
+        };
+    } catch (error) {
+        console.error('Error in createCompanyEmailService:', error);
         return {
             status: 500,
             data: {

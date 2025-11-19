@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import apiClient from './axios';
 
 export interface CandidateInfo {
@@ -17,23 +18,15 @@ export interface CandidateInfo {
   };
 }
 
-export interface CandidateUser {
-  user_id: number;
-  personal_email: string;
-  full_name: string;
-  phone_number?: string;
-  address?: string;
-  status: 'active' | 'on_leave' | 'terminated';
-  Candidate_Infos?: CandidateInfo[];
-}
-
 export interface Candidate {
   user_id: number;
   personal_email: string;
+  company_email?: string;
   full_name: string;
   phone_number?: string;
   address?: string;
   status: 'active' | 'on_leave' | 'terminated';
+  role?: 'candidate' | 'employee' | 'hr' | 'manager';
   Candidate_Infos?: CandidateInfo[];
 }
 
@@ -82,12 +75,7 @@ export const candidateApi = {
     personal_email?: string;
     candidate_status?: string;
   }) => {
-    const params = new URLSearchParams();
-    if (query.full_name) params.append('full_name', query.full_name);
-    if (query.personal_email) params.append('personal_email', query.personal_email);
-    if (query.candidate_status) params.append('candidate_status', query.candidate_status);
-    
-    const response = await apiClient.get(`/api/candidate/search?${params.toString()}`);
+    const response = await apiClient.get("/api/candidate/search", {params: query});
     return response.data;
   },
 
@@ -95,18 +83,26 @@ export const candidateApi = {
     full_name?: string;
     personal_email?: string;
     candidate_status?: string;
-  }) => {
-    const params = new URLSearchParams();
-    if (query.full_name) params.append('full_name', query.full_name);
-    if (query.personal_email) params.append('personal_email', query.personal_email);
-    if (query.candidate_status) params.append('candidate_status', query.candidate_status);
-    
-    const response = await apiClient.get(`/api/candidate/search-deleted?${params.toString()}`);
+  }) => {    
+    const response = await apiClient.get("/api/candidate/search-deleted", {params: query});
     return response.data;
   },
 
   updateApplication: async (candidateInfoId: number, data: Partial<CandidateInfo>) => {
     const response = await apiClient.put(`/api/candidate/application/${candidateInfoId}`, data);
+    return response.data;
+  },
+
+  createCompanyEmail: async (candidateId: number, companyEmailData: {
+    company_email: string;
+    password: string;
+  }) => {
+    const response = await apiClient.post(`/api/candidate/create-company-email/${candidateId}`, companyEmailData);
+    return response.data;
+  },
+
+  getHiredCandidates: async () => {
+    const response = await apiClient.get("/api/candidate/get-hired");
     return response.data;
   },
 };

@@ -18,5 +18,6 @@ router.post('/restore/:id', authenticate, authorize("hr"), candidateController.r
 router.get('/search', authenticate, authorize("hr"), candidateController.searchCandidates);
 router.get('/search-deleted', authenticate, authorize("hr"), candidateController.searchDeletedCandidates);
 router.put('/application/:id', authenticate, authorize("hr"), candidateController.updateCandidateApplication);
+router.post('/create-company-email/:id', authenticate, authorize("hr"), candidateController.createCompanyEmail);
 
 export default router;
