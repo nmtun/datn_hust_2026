@@ -19,7 +19,7 @@ export const createCandidate = async (req, res) => {
 
         // Lưu CV    
         if (req.file && req.file.buffer) {
-            const uploadsDir = path.join(process.cwd(), 'uploads');
+            const uploadsDir = path.join(process.cwd(), 'uploads/cvs');
             try {
                 await fs.mkdir(uploadsDir, { recursive: true });
 

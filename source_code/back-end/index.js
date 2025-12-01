@@ -4,7 +4,7 @@ import morgan from "morgan";
 import cors from "cors";
 import helmet from "helmet";
 import path from "path";
-import sequelize from "./src/config/dbsetup.js"; 
+import sequelize from "./src/config/dbsetup.js";
 
 // Import models here
 import "./src/models/associations.js"; 
@@ -12,12 +12,23 @@ import "./src/models/User.js";
 import "./src/models/Candidate.js";
 import "./src/models/Employee.js";
 import "./src/models/JobDescription.js";
+import "./src/models/TrainingMaterial.js";
+import "./src/models/Quizzes.js";
+import "./src/models/MaterialQuizzes.js";
+import "./src/models/QuizQuestion.js";
+import "./src/models/TrainingRecord.js";
+import "./src/models/QuizResult.js";
+import "./src/models/QuizAnswer.js";
+import "./src/models/Tag.js";
+import "./src/models/MaterialTag.js";
+import "./src/models/QuestionTag.js";
 
 // Import routes here
 import UserRoutes from "./src/routes/UserRoutes.js";
 import CandidateRoutes from "./src/routes/CandidateRoutes.js";
 import EmployeeRoutes from "./src/routes/EmployeeRoutes.js";
 import JobDescriptionRoutes from "./src/routes/JobDescriptionRoutes.js";
+import TrainingMaterialRoutes from "./src/routes/TrainingMaterialRoutes.js";
 
 dotenv.config();
 
@@ -53,6 +64,7 @@ app.use("/api/user", UserRoutes);
 app.use("/api/candidate", CandidateRoutes); 
 app.use("/api/employee", EmployeeRoutes);
 app.use("/api/job-description", JobDescriptionRoutes);
+app.use("/api/training-material", TrainingMaterialRoutes);
 
 // Tạo bảng và chạy server
 (async () => {
