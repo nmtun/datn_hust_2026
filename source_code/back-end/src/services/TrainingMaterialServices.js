@@ -1,6 +1,7 @@
 import '../models/associations.js';
 import TrainingMaterial from "../models/TrainingMaterial.js";
 import User from "../models/User.js";
+import Tag from "../models/Tag.js";
 import { Op } from 'sequelize';
 
 export const createTrainingMaterialService = async (materialData, user) => {
@@ -55,6 +56,12 @@ export const getAllTrainingMaterialsService = async () => {
                     model: User,
                     attributes: ['user_id', 'full_name', 'personal_email'],
                     as: 'creator'
+                },
+                {
+                    model: Tag,
+                    as: 'tags',
+                    attributes: ['tag_id', 'name'],
+                    through: { attributes: [] }
                 }
             ],
             attributes: ['material_id', 'title', 'type', 'content_path', 'description', 'status', 'created_at', 'updated_at'],
@@ -91,6 +98,12 @@ export const getTrainingMaterialByIdService = async (materialId) => {
                     model: User,
                     attributes: ['user_id', 'full_name', 'personal_email'],
                     as: 'creator'
+                },
+                {
+                    model: Tag,
+                    as: 'tags',
+                    attributes: ['tag_id', 'name'],
+                    through: { attributes: [] }
                 }
             ]
         });
@@ -244,6 +257,12 @@ export const getArchivedTrainingMaterialsService = async () => {
                     model: User,
                     attributes: ['user_id', 'full_name', 'personal_email'],
                     as: 'creator'
+                },
+                {
+                    model: Tag,
+                    as: 'tags',
+                    attributes: ['tag_id', 'name'],
+                    through: { attributes: [] }
                 }
             ],
             attributes: ['material_id', 'title', 'type', 'content_path', 'description', 'status', 'created_at', 'updated_at'],
@@ -299,6 +318,12 @@ export const searchTrainingMaterialsService = async (query) => {
                     attributes: ['user_id', 'full_name', 'personal_email'],
                     as: 'creator',
                     where: Object.keys(userWhere).length > 0 ? userWhere : undefined
+                },
+                {
+                    model: Tag,
+                    as: 'tags',
+                    attributes: ['tag_id', 'name'],
+                    through: { attributes: [] }
                 }
             ],
             attributes: ['material_id', 'title', 'type', 'content_path', 'description', 'status', 'created_at', 'updated_at'],

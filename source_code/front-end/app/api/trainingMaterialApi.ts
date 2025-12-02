@@ -15,6 +15,10 @@ export interface TrainingMaterial {
     full_name: string;
     personal_email: string;
   };
+  tags?: {
+    tag_id: number;
+    name: string;
+  }[];
 }
 
 export const trainingMaterialApi = {

@@ -14,8 +14,7 @@ const Modal = ({ isOpen, onClose, title, children, showEditButton, onEdit }: Mod
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-black opacity-50"></div>
+      {/* Backdrop - Transparent */}
 
       {/* Modal */}
       <div className="flex items-center justify-center min-h-screen p-4">

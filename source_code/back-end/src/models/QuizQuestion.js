@@ -20,7 +20,7 @@ const QuizQuestion = sequelize.define("Quiz_Questions", {
         allowNull: false,
     },
     question_type: {
-        type: DataTypes.ENUM('multiple_choice', 'true_false'),
+        type: DataTypes.ENUM('multiple_choice', 'multiple_response', 'true_false'),
         allowNull: false,
     },
     options: {

@@ -29,6 +29,7 @@ import CandidateRoutes from "./src/routes/CandidateRoutes.js";
 import EmployeeRoutes from "./src/routes/EmployeeRoutes.js";
 import JobDescriptionRoutes from "./src/routes/JobDescriptionRoutes.js";
 import TrainingMaterialRoutes from "./src/routes/TrainingMaterialRoutes.js";
+import TagRoutes from "./src/routes/TagRoutes.js";
 
 dotenv.config();
 
@@ -65,6 +66,7 @@ app.use("/api/candidate", CandidateRoutes);
 app.use("/api/employee", EmployeeRoutes);
 app.use("/api/job-description", JobDescriptionRoutes);
 app.use("/api/training-material", TrainingMaterialRoutes);
+app.use("/api/tag", TagRoutes);
 
 // Tạo bảng và chạy server
 (async () => {

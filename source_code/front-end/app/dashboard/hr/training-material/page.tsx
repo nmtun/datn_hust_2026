@@ -1,12 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { Search, Plus, Edit2, Eye, Trash2, FileText, Download, BookOpen, Archive } from "lucide-react";
+import { Search, Plus, Edit2, Eye, Trash2, FileText, Download, BookOpen, Archive, Tags, Settings, TagIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { trainingMaterialApi, TrainingMaterial } from "@/app/api/trainingMaterialApi";
 import { showToast } from "@/app/utils/toast";
 import Modal from "@/app/components/Modal";
 import { withAuth } from "@/app/middleware/withAuth";
+import TagManagementModal from "@/app/components/TagManagementModal";
+import MaterialTagModal from "@/app/components/MaterialTagModal";
 
 function TrainingMaterialPage() {
   const router = useRouter();
@@ -19,6 +21,9 @@ function TrainingMaterialPage() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [isTagManagementOpen, setIsTagManagementOpen] = useState(false);
+  const [isMaterialTagModalOpen, setIsMaterialTagModalOpen] = useState(false);
+  const [materialForTagging, setMaterialForTagging] = useState<TrainingMaterial | null>(null);
 
   const useDebounce = (value: string, delay: number) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
@@ -49,7 +54,7 @@ function TrainingMaterialPage() {
   useEffect(() => {
     const performSearch = async () => {
       if (!debouncedSearchTitle && !debouncedSearchCreator && !debouncedSearchStatus) {
-        fetchTrainingMaterials();   
+        fetchTrainingMaterials();
         return;
       }
 
@@ -94,7 +99,7 @@ function TrainingMaterialPage() {
     try {
       setLoading(true);
       const result = await trainingMaterialApi.getAll();
-      
+
       if (!result || result.error) {
         console.error("API Error:", result?.message || "Unknown error");
         setTrainingMaterials([]);
@@ -133,14 +138,14 @@ function TrainingMaterialPage() {
     try {
       setDeleteLoading(materialToDelete.material_id);
       const result = await trainingMaterialApi.delete(materialToDelete.material_id);
-      
+
       if (result.error) {
         throw new Error(result.message || 'Error deleting training material');
       }
 
       // Refresh the list
       await fetchTrainingMaterials();
-      
+
       // Show success message
       showToast.success('Training material deleted successfully');
     } catch (error: any) {
@@ -172,7 +177,7 @@ function TrainingMaterialPage() {
   const handleDownloadFile = async (filename: string) => {
     try {
       const response = await trainingMaterialApi.downloadFile(filename);
-      
+
       // Create blob URL and trigger download
       const blob = new Blob([response.data]);
       const url = window.URL.createObjectURL(blob);
@@ -183,7 +188,7 @@ function TrainingMaterialPage() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      
+
       showToast.success('File downloaded successfully');
     } catch (error: any) {
       console.error('Error downloading file:', error);
@@ -196,14 +201,14 @@ function TrainingMaterialPage() {
       // Lấy tên file từ đường dẫn (xử lý cả đường dẫn Windows và Linux)
       const fileName = filePath.split(/[/\\]/).pop();
       if (!fileName) return;
-      
+
       // Kiểm tra extension của file
       const fileExtension = fileName.split('.').pop()?.toLowerCase();
       const videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'webm'];
-      
+
       // Tạo URL để xem file trực tiếp
       const viewUrl = `${process.env.NEXT_PUBLIC_API_URL}/uploads/training/${fileName}`;
-      
+
       if (videoExtensions.includes(fileExtension || '')) {
         // Nếu là video, mở trong modal hoặc tab mới với video player
         setSelectedVideoUrl(viewUrl);
@@ -257,6 +262,13 @@ function TrainingMaterialPage() {
           >
             <Archive className="w-5 h-5 mr-2" />
             Archived Materials
+          </button>
+          <button
+            onClick={() => setIsTagManagementOpen(true)}
+            className="inline-flex items-center px-4 py-2 bg-purple-100 text-purple-700 text-sm font-medium rounded-md hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+          >
+            <TagIcon className="w-5 h-5 mr-2" />
+            Manage Tags
           </button>
           <button
             onClick={handleCreateNew}
@@ -324,6 +336,9 @@ function TrainingMaterialPage() {
                   Type
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tags
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -354,6 +369,25 @@ function TrainingMaterialPage() {
                     {getTypeDisplayName(material.type)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex flex-wrap gap-1">
+                      {material.tags && material.tags.length > 0 ? (
+                        material.tags.slice(0, 3).map((tag) => (
+                          <span
+                            key={tag.tag_id}
+                            className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full"
+                          >
+                            {tag.name}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-xs text-gray-400">No tags</span>
+                      )}
+                      {material.tags && material.tags.length > 3 && (
+                        <span className="text-xs text-gray-500">+{material.tags.length - 3} more</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(material.status)}`}>
                       {material.status.charAt(0).toUpperCase() + material.status.slice(1)}
                     </span>
@@ -366,23 +400,31 @@ function TrainingMaterialPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end space-x-3">
-                      <button 
+                      <button
                         onClick={() => handleView(material.material_id)}
                         className="text-gray-400 hover:text-gray-500"
                         title="View details">
                         <Eye className="w-5 h-5" />
                       </button>
-                      <button 
+                      <button
+                        onClick={() => {
+                          setMaterialForTagging(material);
+                          setIsMaterialTagModalOpen(true);
+                        }}
+                        className="text-purple-400 hover:text-purple-500"
+                        title="Manage tags">
+                        <Tags className="w-5 h-5" />
+                      </button>
+                      <button
                         onClick={() => handleEdit(material.material_id)}
                         className="text-blue-400 hover:text-blue-500"
                         title="Edit material">
                         <Edit2 className="w-5 h-5" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDeleteClick(material)}
-                        className={`text-red-400 hover:text-red-500 ${
-                          deleteLoading === material.material_id ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
+                        className={`text-red-400 hover:text-red-500 ${deleteLoading === material.material_id ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
                         disabled={deleteLoading === material.material_id}
                         title="Delete material">
                         {deleteLoading === material.material_id ? (
@@ -425,9 +467,8 @@ function TrainingMaterialPage() {
             <button
               onClick={handleConfirmDelete}
               disabled={deleteLoading !== null}
-              className={`px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 ${
-                deleteLoading !== null ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              className={`px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 ${deleteLoading !== null ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
             >
               {deleteLoading !== null ? 'Deleting...' : 'Delete'}
             </button>
@@ -483,12 +524,31 @@ function TrainingMaterialPage() {
                 <div>
                   <p className="text-sm font-medium text-gray-500">Last Updated</p>
                   <p className="mt-1">
-                    {selectedMaterial.updated_at 
+                    {selectedMaterial.updated_at
                       ? new Date(selectedMaterial.updated_at).toLocaleString()
                       : 'Never updated'
                     }
                   </p>
                 </div>
+              </div>
+            </div>
+
+            {/* Tags */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Tags</h3>
+              <div className="flex flex-wrap gap-2">
+                {selectedMaterial.tags && selectedMaterial.tags.length > 0 ? (
+                  selectedMaterial.tags.map((tag) => (
+                    <span
+                      key={tag.tag_id}
+                      className="px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 rounded-full"
+                    >
+                      {tag.name}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-sm text-gray-500">No tags assigned</span>
+                )}
               </div>
             </div>
 
@@ -527,7 +587,7 @@ function TrainingMaterialPage() {
                               const fileExtension = fileName?.split('.').pop()?.toLowerCase();
                               const videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'webm'];
                               return videoExtensions.includes(fileExtension || '') ? 'Play' : 'View';
-                            })()} 
+                            })()}
                           </button>
                           <button
                             onClick={() => handleDownloadFile(filename || '')}
@@ -583,6 +643,29 @@ function TrainingMaterialPage() {
           </div>
         )}
       </Modal>
+
+      {/* Tag Management Modal */}
+      <TagManagementModal
+        isOpen={isTagManagementOpen}
+        onClose={() => setIsTagManagementOpen(false)}
+      />
+
+      {/* Material Tag Modal */}
+      {materialForTagging && (
+        <MaterialTagModal
+          isOpen={isMaterialTagModalOpen}
+          onClose={() => {
+            setIsMaterialTagModalOpen(false);
+            setMaterialForTagging(null);
+          }}
+          materialId={materialForTagging.material_id}
+          materialTitle={materialForTagging.title}
+          currentTags={materialForTagging.tags || []}
+          onTagsUpdated={() => {
+            fetchTrainingMaterials();
+          }}
+        />
+      )}
     </div>
   );
 }
