@@ -22,6 +22,7 @@ import "./src/models/QuizAnswer.js";
 import "./src/models/Tag.js";
 import "./src/models/MaterialTag.js";
 import "./src/models/QuestionTag.js";
+import "./src/models/QuesionToQuiz.js";
 
 // Import routes here
 import UserRoutes from "./src/routes/UserRoutes.js";
@@ -30,6 +31,9 @@ import EmployeeRoutes from "./src/routes/EmployeeRoutes.js";
 import JobDescriptionRoutes from "./src/routes/JobDescriptionRoutes.js";
 import TrainingMaterialRoutes from "./src/routes/TrainingMaterialRoutes.js";
 import TagRoutes from "./src/routes/TagRoutes.js";
+import QuizzesRoutes from "./src/routes/QuizzesRoutes.js";
+import QuizQuestionRoutes from "./src/routes/QuizQuestionRoutes.js";
+import QuestionToQuizRoutes from "./src/routes/QuestionToQuizRoutes.js";
 
 dotenv.config();
 
@@ -67,6 +71,9 @@ app.use("/api/employee", EmployeeRoutes);
 app.use("/api/job-description", JobDescriptionRoutes);
 app.use("/api/training-material", TrainingMaterialRoutes);
 app.use("/api/tag", TagRoutes);
+app.use("/api/quizzes", QuizzesRoutes);
+app.use("/api/quiz-questions", QuizQuestionRoutes);
+app.use("/api/question-to-quiz", QuestionToQuizRoutes);
 
 // Tạo bảng và chạy server
 (async () => {

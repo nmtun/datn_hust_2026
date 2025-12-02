@@ -7,14 +7,6 @@ const QuizQuestion = sequelize.define("Quiz_Questions", {
         primaryKey: true,
         autoIncrement: true
     },
-    quiz_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: "Quizzes",
-            key: "quiz_id",
-        },
-    },
     question_text: {
         type: DataTypes.TEXT,
         allowNull: false,
@@ -35,6 +27,30 @@ const QuizQuestion = sequelize.define("Quiz_Questions", {
         type: DataTypes.FLOAT,
         allowNull: false,
         defaultValue: 1.0,
+    },
+    created_by: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+            model: "Users",
+            key: "user_id",
+        },
+        comment: "Người tạo câu hỏi"
+    },
+    created_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        defaultValue: DataTypes.NOW,
+    },
+    updated_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
+    is_active: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+        comment: "Trạng thái kích hoạt câu hỏi"
     },
 }, {
     tableName: "Quiz_Questions",

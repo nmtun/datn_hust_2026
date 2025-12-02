@@ -5,13 +5,14 @@ import JobDescription from "./JobDescription.js";
 import TrainingMaterial from "./TrainingMaterial.js";
 import Quizzes from "./Quizzes.js";
 import MaterialQuizzes from "./MaterialQuizzes.js";
-import QuizQuestions from "./QuizQuestion.js";
+import QuizQuestion from "./QuizQuestion.js";
 import TrainingRecords from "./TrainingRecord.js";
 import QuizResults from "./QuizResult.js";
 import QuizAnswers from "./QuizAnswer.js";
 import Tags from "./Tag.js";
 import MaterialTags from "./MaterialTag.js";
 import QuestionTags from "./QuestionTag.js";
+import QuestionToQuiz from "./QuesionToQuiz.js";
 
 // Define one-to-many associations between User and Candidate_Info
 User.hasMany(Candidate, { foreignKey: "user_id" });
@@ -53,9 +54,19 @@ MaterialQuizzes.belongsTo(Quizzes, { foreignKey: "quiz_id" });
 TrainingMaterial.hasMany(MaterialQuizzes, { foreignKey: "material_id" });
 Quizzes.hasMany(MaterialQuizzes, { foreignKey: "quiz_id" });
 
-// Quiz and QuizQuestions associations
-Quizzes.hasMany(QuizQuestions, { foreignKey: "quiz_id", as: "questions" });
-QuizQuestions.belongsTo(Quizzes, { foreignKey: "quiz_id", as: "quiz" });
+// Quiz and QuizQuestion associations (allow NULL for question bank)
+Quizzes.hasMany(QuizQuestion, { 
+    foreignKey: { name: "quiz_id", allowNull: true }, 
+    as: "questions",
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
+});
+QuizQuestion.belongsTo(Quizzes, { 
+    foreignKey: { name: "quiz_id", allowNull: true }, 
+    as: "quiz",
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
+});
 
 // User and TrainingRecords associations
 User.hasMany(TrainingRecords, { foreignKey: "user_id", as: "trainingRecords" });
@@ -77,9 +88,9 @@ QuizResults.belongsTo(Quizzes, { foreignKey: "quiz_id", as: "quiz" });
 QuizResults.hasMany(QuizAnswers, { foreignKey: "result_id", as: "answers" });
 QuizAnswers.belongsTo(QuizResults, { foreignKey: "result_id", as: "result" });
 
-// QuizQuestions and QuizAnswers associations
-QuizQuestions.hasMany(QuizAnswers, { foreignKey: "question_id", as: "answers" });
-QuizAnswers.belongsTo(QuizQuestions, { foreignKey: "question_id", as: "question" });
+// QuizQuestion and QuizAnswer associations
+QuizQuestion.hasMany(QuizAnswers, { foreignKey: "question_id", as: "answers" });
+QuizAnswers.belongsTo(QuizQuestion, { foreignKey: "question_id", as: "question" });
 
 // TrainingMaterial and Tags many-to-many through MaterialTags
 TrainingMaterial.belongsToMany(Tags, { 
@@ -101,14 +112,14 @@ MaterialTags.belongsTo(Tags, { foreignKey: "tag_id" });
 TrainingMaterial.hasMany(MaterialTags, { foreignKey: "material_id" });
 Tags.hasMany(MaterialTags, { foreignKey: "tag_id" });
 
-// QuizQuestions and Tags many-to-many through QuestionTags
-QuizQuestions.belongsToMany(Tags, { 
+// QuizQuestion and Tags many-to-many through QuestionTags
+QuizQuestion.belongsToMany(Tags, { 
     through: QuestionTags, 
     foreignKey: "question_id", 
     otherKey: "tag_id",
     as: "tags"
 });
-Tags.belongsToMany(QuizQuestions, { 
+Tags.belongsToMany(QuizQuestion, { 
     through: QuestionTags, 
     foreignKey: "tag_id", 
     otherKey: "question_id",
@@ -116,7 +127,32 @@ Tags.belongsToMany(QuizQuestions, {
 });
 
 // Direct associations for QuestionTags
-QuestionTags.belongsTo(QuizQuestions, { foreignKey: "question_id" });
+QuestionTags.belongsTo(QuizQuestion, { foreignKey: "question_id" });
 QuestionTags.belongsTo(Tags, { foreignKey: "tag_id" });
-QuizQuestions.hasMany(QuestionTags, { foreignKey: "question_id" });
+QuizQuestion.hasMany(QuestionTags, { foreignKey: "question_id" });
 Tags.hasMany(QuestionTags, { foreignKey: "tag_id" });
+
+// QuestionToQuiz associations - Many-to-many through tags
+QuestionToQuiz.belongsTo(QuizQuestion, { foreignKey: "question_id", as: "question" });
+QuestionToQuiz.belongsTo(Quizzes, { foreignKey: "quiz_id", as: "quiz" });
+QuestionToQuiz.belongsTo(Tags, { foreignKey: "tag_id", as: "tag" });
+QuestionToQuiz.belongsTo(User, { foreignKey: "added_by", as: "addedBy" });
+
+QuizQuestion.hasMany(QuestionToQuiz, { foreignKey: "question_id", as: "quizAssignments" });
+Quizzes.hasMany(QuestionToQuiz, { foreignKey: "quiz_id", as: "questionAssignments" });
+Tags.hasMany(QuestionToQuiz, { foreignKey: "tag_id", as: "questionQuizLinks" });
+User.hasMany(QuestionToQuiz, { foreignKey: "added_by", as: "addedQuestionAssignments" });
+
+// Quiz and Questions many-to-many through QuestionToQuiz with Tag constraint
+Quizzes.belongsToMany(QuizQuestion, { 
+    through: QuestionToQuiz, 
+    foreignKey: "quiz_id", 
+    otherKey: "question_id",
+    as: "questionsViaTag"
+});
+QuizQuestion.belongsToMany(Quizzes, { 
+    through: QuestionToQuiz, 
+    foreignKey: "question_id", 
+    otherKey: "quiz_id",
+    as: "quizzesViaTag"
+});

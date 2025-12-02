@@ -65,5 +65,25 @@ export const tagApi = {
   getMaterialsByTag: async (tagId: number): Promise<any> => {
     const response = await axios.get(`api/tag/materials/${tagId}`);
     return response.data;
+  },
+
+  // Assign tags to question
+  assignToQuestion: async (questionId: number, tagIds: number[]): Promise<TagResponse> => {
+    const response = await axios.post(`api/tag/assign-to-question/${questionId}`, { tagIds });
+    return response.data;
+  },
+
+  // Remove tags from question
+  removeFromQuestion: async (questionId: number, tagIds: number[]): Promise<TagResponse> => {
+    const response = await axios.delete(`api/tag/remove-from-question/${questionId}`, { 
+      data: { tagIds } 
+    });
+    return response.data;
+  },
+
+  // Get questions by tag
+  getQuestionsByTag: async (tagId: number): Promise<any> => {
+    const response = await axios.get(`api/tag/questions/${tagId}`);
+    return response.data;
   }
 };

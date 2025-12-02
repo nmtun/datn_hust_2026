@@ -360,3 +360,125 @@ export const getMaterialsByTagService = async (tagId) => {
         };
     }
 };
+
+// Assign tags to question
+export const assignTagsToQuestionService = async (questionId, tagIds) => {
+    try {
+        // Import QuestionTag and QuizQuestion models
+        const { default: QuestionTag } = await import('../models/QuestionTag.js');
+        const { default: QuizQuestion } = await import('../models/QuizQuestion.js');
+
+        // Check if question exists
+        const question = await QuizQuestion.findByPk(questionId);
+        if (!question) {
+            return { status: 404, data: { error: true, message: "Question not found" } };
+        }
+
+        // Check if tags exist
+        const tags = await Tag.findAll({ where: { tag_id: { [Op.in]: tagIds } } });
+        if (tags.length !== tagIds.length) {
+            return { status: 404, data: { error: true, message: "One or more tags not found" } };
+        }
+
+        // Remove existing tag associations for this question
+        await QuestionTag.destroy({ where: { question_id: questionId } });
+
+        // Create new associations
+        const associations = tagIds.map(tagId => ({
+            question_id: questionId,
+            tag_id: tagId
+        }));
+
+        await QuestionTag.bulkCreate(associations, { ignoreDuplicates: true });
+
+        return {
+            status: 200,
+            data: {
+                error: false,
+                message: "Tags assigned to question successfully",
+                assignedTags: tags.length
+            }
+        };
+    } catch (error) {
+        return {
+            status: 500,
+            data: {
+                error: true,
+                message: "An error occurred while assigning tags to question",
+                details: error.message
+            }
+        };
+    }
+};
+
+// Remove tags from question
+export const removeTagsFromQuestionService = async (questionId, tagIds) => {
+    try {
+        // Import QuestionTag model
+        const { default: QuestionTag } = await import('../models/QuestionTag.js');
+
+        const result = await QuestionTag.destroy({
+            where: {
+                question_id: questionId,
+                tag_id: { [Op.in]: tagIds }
+            }
+        });
+
+        return {
+            status: 200,
+            data: {
+                error: false,
+                message: "Tags removed from question successfully",
+                removedCount: result
+            }
+        };
+    } catch (error) {
+        return {
+            status: 500,
+            data: {
+                error: true,
+                message: "An error occurred while removing tags from question",
+                details: error.message
+            }
+        };
+    }
+};
+
+// Get questions by tag
+export const getQuestionsByTagService = async (tagId) => {
+    try {
+        // Import QuizQuestion model
+        const { default: QuizQuestion } = await import('../models/QuizQuestion.js');
+        
+        const tag = await Tag.findByPk(tagId, {
+            include: [{
+                model: QuizQuestion,
+                as: 'questions',
+                through: { attributes: [] }
+            }]
+        });
+
+        if (!tag) {
+            return { status: 404, data: { error: true, message: "Tag not found" } };
+        }
+
+        return {
+            status: 200,
+            data: {
+                error: false,
+                message: "Questions retrieved successfully",
+                tag: tag.name,
+                questions: tag.questions
+            }
+        };
+    } catch (error) {
+        return {
+            status: 500,
+            data: {
+                error: true,
+                message: "An error occurred while retrieving questions by tag",
+                details: error.message
+            }
+        };
+    }
+};

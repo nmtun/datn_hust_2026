@@ -157,3 +157,66 @@ export const getMaterialsByTag = async (req, res) => {
         });
     }
 };
+
+// Assign tags to question
+export const assignTagsToQuestion = async (req, res) => {
+    try {
+        const { questionId } = req.params;
+        const { tagIds } = req.body;
+
+        if (!tagIds || !Array.isArray(tagIds) || tagIds.length === 0) {
+            return res.status(400).json({
+                error: true,
+                message: "tagIds array is required"
+            });
+        }
+
+        const result = await tagService.assignTagsToQuestionService(questionId, tagIds);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        return res.status(500).json({
+            error: true,
+            message: "Internal server error",
+            details: error.message
+        });
+    }
+};
+
+// Remove tags from question
+export const removeTagsFromQuestion = async (req, res) => {
+    try {
+        const { questionId } = req.params;
+        const { tagIds } = req.body;
+
+        if (!tagIds || !Array.isArray(tagIds) || tagIds.length === 0) {
+            return res.status(400).json({
+                error: true,
+                message: "tagIds array is required"
+            });
+        }
+
+        const result = await tagService.removeTagsFromQuestionService(questionId, tagIds);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        return res.status(500).json({
+            error: true,
+            message: "Internal server error",
+            details: error.message
+        });
+    }
+};
+
+// Get questions by tag
+export const getQuestionsByTag = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await tagService.getQuestionsByTagService(id);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        return res.status(500).json({
+            error: true,
+            message: "Internal server error",
+            details: error.message
+        });
+    }
+};

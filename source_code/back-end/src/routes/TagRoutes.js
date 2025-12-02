@@ -19,4 +19,9 @@ router.post('/assign-to-material/:materialId', authenticate, authorize("hr"), ta
 router.delete('/remove-from-material/:materialId', authenticate, authorize("hr"), tagController.removeTagsFromMaterial);
 router.get('/materials/:id', authenticate, tagController.getMaterialsByTag);
 
+// Question-Tag relationship routes
+router.post('/assign-to-question/:questionId', authenticate, authorize("hr"), tagController.assignTagsToQuestion);
+router.delete('/remove-from-question/:questionId', authenticate, authorize("hr"), tagController.removeTagsFromQuestion);
+router.get('/questions/:id', authenticate, tagController.getQuestionsByTag);
+
 export default router;
