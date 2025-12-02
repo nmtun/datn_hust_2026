@@ -14,8 +14,7 @@ const Modal = ({ isOpen, onClose, title, children, showEditButton, onEdit }: Mod
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-black opacity-50"></div>
+      {/* Backdrop - Transparent */}
 
       {/* Modal */}
       <div className="flex items-center justify-center min-h-screen p-4">
@@ -33,9 +32,11 @@ const Modal = ({ isOpen, onClose, title, children, showEditButton, onEdit }: Mod
 
           {/* Content - Scrollable */}
           <div className="flex-1 overflow-y-auto p-6 min-h-0 relative">
-            {children}
+            <div className={showEditButton && onEdit ? "pb-16" : ""}>
+              {children}
+            </div>
             {showEditButton && onEdit && (
-              <div className="sticky bottom-6 right-6 flex justify-end">
+              <div className="absolute bottom-4 right-4 z-20">
                 <button
                   onClick={onEdit}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-lg"

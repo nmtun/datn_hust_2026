@@ -171,7 +171,7 @@ function CandidatePage() {
       // Lấy tên file từ đường dẫn (xử lý cả đường dẫn Windows và Linux)
       const fileName = cvPath.split(/[/\\]/).pop();
       // Tạo URL để xem CV trực tiếp
-      const viewUrl = `${process.env.NEXT_PUBLIC_API_URL}/uploads/${fileName}`;
+      const viewUrl = `${process.env.NEXT_PUBLIC_API_URL}/uploads/cvs/${fileName}`;
       window.open(viewUrl, '_blank');
     }
   };

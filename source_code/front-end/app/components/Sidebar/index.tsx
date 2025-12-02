@@ -13,8 +13,10 @@ import {
   Settings,
   Building2,
   LayoutDashboard,
+  CircleQuestionMark,
   ChevronLeft,
   ChevronRight,
+  BrainCog
 } from "lucide-react";
 
 const menuItems = {
@@ -25,6 +27,8 @@ const menuItems = {
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Job Descriptions", href: "/dashboard/hr/job-description", icon: FileText },
     { name: "Candidates", href: "/dashboard/hr/candidate", icon: Users },
+    { name: "Training Materials", href: "/dashboard/hr/training-material", icon: BrainCog },
+    { name: "Quizzes", href: "/dashboard/hr/quizzes", icon: CircleQuestionMark },
   ],
   manager: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },

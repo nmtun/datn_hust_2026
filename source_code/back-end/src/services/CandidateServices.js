@@ -1,4 +1,4 @@
-import '../models/associations.js'; // Import associations trước
+import '../models/associations.js';
 import Candidate from '../models/Candidate.js';
 import User from '../models/User.js';
 import JobDescription from '../models/JobDescription.js';
