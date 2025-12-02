@@ -26,3 +26,6 @@ dist-ssr
 
 # pdf
 *.pdf
+
+# mp4
+*.mp4
