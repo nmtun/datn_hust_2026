@@ -284,7 +284,7 @@ function CreateQuizPage() {
                 Quiz Creation Mode *
               </label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div
+                {/* <div
                   onClick={() => setCreationMode('simple')}
                   className={`relative p-4 border rounded-lg cursor-pointer transition-colors ${
                     creationMode === 'simple'
@@ -307,7 +307,7 @@ function CreateQuizPage() {
                       </p>
                     </div>
                   </div>
-                </div>
+                </div> */}
                 <div
                   onClick={() => setCreationMode('random')}
                   className={`relative p-4 border rounded-lg cursor-pointer transition-colors ${
@@ -702,7 +702,7 @@ function CreateQuizPage() {
           <div className="mt-4 pt-4 border-t border-gray-200">
             <p className="text-sm text-gray-600">
               This is a preview of {previewQuestions.length} randomly selected questions. 
-              The actual quiz will select different random questions each time it's taken.
+              The actual quiz will select different random questions each time it taken.
             </p>
           </div>
         </Modal>

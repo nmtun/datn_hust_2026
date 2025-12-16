@@ -1,6 +1,8 @@
 import '../models/associations.js';
 import QuizQuestion from "../models/QuizQuestion.js";
 import Quizzes from "../models/Quizzes.js";
+import QuestionToQuiz from "../models/QuesionToQuiz.js";
+import Tags from "../models/Tag.js";
 import { Op } from 'sequelize';
 
 export const createQuestionService = async (questionData, user = null) => {
@@ -75,17 +77,39 @@ export const getQuestionsByQuizIdService = async (quizId) => {
             return { status: 404, data: { error: true, message: "Quiz not found" } };
         }
 
-        const questions = await QuizQuestion.findAll({
-            where: { quiz_id: quizId },
+        // Get questions through QuestionToQuiz relationships
+        console.log('Fetching questions for quiz ID:', quizId);
+        const questionAssignments = await QuestionToQuiz.findAll({
+            where: { 
+                quiz_id: quizId,
+                is_active: true 
+            },
             include: [
                 {
-                    model: Quizzes,
-                    as: 'quiz',
-                    attributes: ['quiz_id', 'title']
+                    model: QuizQuestion,
+                    as: 'question',
+                    where: { is_active: true }
+                },
+                {
+                    model: Tags,
+                    as: 'tag',
+                    attributes: ['tag_id', 'name']
                 }
             ],
-            order: [['question_id', 'ASC']]
+            order: [['question_order', 'ASC']]
         });
+
+        console.log('Found question assignments:', questionAssignments.length);
+
+        // Extract questions from assignments and add order info
+        const questions = questionAssignments.map(assignment => ({
+            ...assignment.question.dataValues,
+            question_order: assignment.question_order,
+            assignment_id: assignment.id,
+            tag: assignment.tag
+        }));
+
+        console.log('Processed questions:', questions.length);
 
         return {
             status: 200,

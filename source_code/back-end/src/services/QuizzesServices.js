@@ -1,4 +1,5 @@
 import '../models/associations.js';
+import sequelize from '../config/dbsetup.js';
 import Quizzes from "../models/Quizzes.js";
 import QuizQuestion from "../models/QuizQuestion.js";
 import User from "../models/User.js";
@@ -50,7 +51,19 @@ export const createQuizService = async (quizData, user) => {
 
         // Add tags to quiz if provided
         if (tag_ids.length > 0) {
-            await newQuiz.addTags(tag_ids);
+            console.log('Adding tags to quiz:', tag_ids);
+            try {
+                // Create QuizTags records manually
+                const quizTagData = tag_ids.map(tagId => ({
+                    quiz_id: newQuiz.quiz_id,
+                    tag_id: tagId
+                }));
+                await QuizTags.bulkCreate(quizTagData);
+                console.log('Tags added successfully via QuizTags.bulkCreate');
+            } catch (tagError) {
+                console.error('Error adding tags:', tagError);
+                throw tagError;
+            }
         }
 
         // Fetch the created quiz with tags
@@ -108,9 +121,22 @@ export const getAllQuizzesService = async (search = '', status = '') => {
                     attributes: ['user_id', 'full_name']
                 },
                 {
-                    model: QuizQuestion,
-                    as: 'questions',
-                    attributes: ['question_id', 'question_text', 'question_type', 'points']
+                    model: QuestionToQuiz,
+                    as: 'questionAssignments',
+                    where: { is_active: true },
+                    required: false,
+                    include: [
+                        {
+                            model: QuizQuestion,
+                            as: 'question',
+                            attributes: ['question_id', 'question_text', 'question_type', 'points']
+                        },
+                        {
+                            model: Tags,
+                            as: 'tag',
+                            attributes: ['tag_id', 'name']
+                        }
+                    ]
                 },
                 {
                     model: Tags,
@@ -151,9 +177,23 @@ export const getQuizByIdService = async (quizId) => {
                     attributes: ['user_id', 'full_name']
                 },
                 {
-                    model: QuizQuestion,
-                    as: 'questions',
-                    attributes: ['question_id', 'question_text', 'question_type', 'options', 'correct_answer', 'points']
+                    model: QuestionToQuiz,
+                    as: 'questionAssignments',
+                    where: { is_active: true },
+                    required: false,
+                    include: [
+                        {
+                            model: QuizQuestion,
+                            as: 'question',
+                            attributes: ['question_id', 'question_text', 'question_type', 'options', 'correct_answer', 'points']
+                        },
+                        {
+                            model: Tags,
+                            as: 'tag',
+                            attributes: ['tag_id', 'name']
+                        }
+                    ],
+                    order: [['question_order', 'ASC']]
                 },
                 {
                     model: TrainingMaterial,
@@ -251,9 +291,23 @@ export const updateQuizService = async (quizId, updateData) => {
                     attributes: ['user_id', 'full_name']
                 },
                 {
-                    model: QuizQuestion,
-                    as: 'questions',
-                    attributes: ['question_id', 'question_text', 'question_type', 'points']
+                    model: QuestionToQuiz,
+                    as: 'questionAssignments',
+                    where: { is_active: true },
+                    required: false,
+                    include: [
+                        {
+                            model: QuizQuestion,
+                            as: 'question',
+                            attributes: ['question_id', 'question_text', 'question_type', 'points']
+                        },
+                        {
+                            model: Tags,
+                            as: 'tag',
+                            attributes: ['tag_id', 'name']
+                        }
+                    ],
+                    order: [['question_order', 'ASC']]
                 },
                 {
                     model: Tags,
@@ -554,23 +608,37 @@ export const createQuizWithRandomQuestionsService = async (quizData, tagIds, que
             created_by
         });
 
-        // Get available questions by tags (all active questions with these tags)
-        const availableQuestions = await QuizQuestion.findAll({
-            where: {
-                is_active: true
-            },
-            include: [{
-                model: QuestionTag,
-                where: {
-                    tag_id: {
-                        [Op.in]: tagIds
-                    }
-                },
-                attributes: ['tag_id'],
-                required: true
-            }],
-            order: [['question_id', 'DESC']]
+        // Add tags to quiz
+        if (tagIds.length > 0) {
+            console.log('Adding tags to quiz:', tagIds);
+            try {
+                const quizTagData = tagIds.map(tagId => ({
+                    quiz_id: newQuiz.quiz_id,
+                    tag_id: tagId
+                }));
+                await QuizTags.bulkCreate(quizTagData);
+                console.log('Tags added successfully to quiz via QuizTags.bulkCreate');
+            } catch (tagError) {
+                console.error('Error adding tags to quiz:', tagError);
+                throw tagError;
+            }
+        }
+
+        // Get available questions by tags using raw query for reliability
+        const availableQuestions = await sequelize.query(`
+            SELECT DISTINCT q.*, qt.tag_id
+            FROM Quiz_Questions q
+            INNER JOIN Question_Tags qt ON q.question_id = qt.question_id
+            WHERE q.is_active = 1 AND qt.tag_id IN (${tagIds.join(',')})
+            ORDER BY q.question_id DESC
+        `, {
+            type: sequelize.QueryTypes.SELECT
         });
+
+        console.log('Available questions found:', availableQuestions.length);
+        if (availableQuestions.length > 0) {
+            console.log('First question:', availableQuestions[0]);
+        }
 
         if (availableQuestions.length === 0) {
             // Delete the created quiz if no questions available
@@ -604,40 +672,58 @@ export const createQuizWithRandomQuestionsService = async (quizData, tagIds, que
         const questionToQuizData = [];
         for (let i = 0; i < selectedQuestions.length; i++) {
             const question = selectedQuestions[i];
-            // Get the first matching tag for this question and quiz
-            const matchingTag = question.Question_Tags.find(qt => tagIds.includes(qt.tag_id));
+            console.log('Processing question:', question.question_id, 'with tag_id:', question.tag_id);
             
+            // Use the tag_id from the query result
             questionToQuizData.push({
                 question_id: question.question_id,
                 quiz_id: newQuiz.quiz_id,
-                tag_id: matchingTag.tag_id,
+                tag_id: question.tag_id, // Use tag_id from raw query
                 question_order: i + 1,
                 added_by: user.user_id
             });
         }
 
-        // Bulk create QuestionToQuiz relationships
-        await QuestionToQuiz.bulkCreate(questionToQuizData);
+        console.log('QuestionToQuiz data to create:', questionToQuizData);
 
-        // Get the quiz with questions through QuestionToQuiz
+        // Bulk create QuestionToQuiz relationships
+        if (questionToQuizData.length > 0) {
+            console.log('Creating QuestionToQuiz records...');
+            const createdRecords = await QuestionToQuiz.bulkCreate(questionToQuizData);
+            console.log('Created QuestionToQuiz records:', createdRecords.length);
+        } else {
+            console.log('No QuestionToQuiz data to create!');
+        }
+
+        // Get the quiz with questions and tags
         const quizWithQuestions = await Quizzes.findByPk(newQuiz.quiz_id, {
-            include: [{
-                model: QuestionToQuiz,
-                as: 'questionAssignments',
-                where: { is_active: true },
-                include: [
-                    {
-                        model: QuizQuestion,
-                        as: 'question'
-                    },
-                    {
-                        model: Tags,
-                        as: 'tag'
-                    }
-                ],
-                order: [['question_order', 'ASC']]
-            }]
+            include: [
+                {
+                    model: QuestionToQuiz,
+                    as: 'questionAssignments',
+                    where: { is_active: true },
+                    required: false,
+                    include: [
+                        {
+                            model: QuizQuestion,
+                            as: 'question'
+                        },
+                        {
+                            model: Tags,
+                            as: 'tag'
+                        }
+                    ],
+                    order: [['question_order', 'ASC']]
+                },
+                {
+                    model: Tags,
+                    as: 'tags',
+                    attributes: ['tag_id', 'name']
+                }
+            ]
         });
+
+        console.log('Quiz with questions found:', quizWithQuestions?.questionAssignments?.length || 0, 'assignments');
 
         return { 
             status: 201, 

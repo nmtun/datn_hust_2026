@@ -291,7 +291,7 @@ function QuizPage() {
                 <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
                   <div className="flex items-center">
                     <Users className="w-4 h-4 mr-1" />
-                    <span>{quiz.questions?.length || 0} questions</span>
+                    <span>{quiz.questionAssignments?.length || quiz.questions?.length || 0} questions</span>
                   </div>
                   <span className="text-xs">
                     {new Date(quiz.creation_date).toLocaleDateString('vi-VN')}
@@ -396,7 +396,7 @@ function QuizPage() {
 
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Questions</h3>
-              <p className="text-gray-700">{selectedQuiz.questions?.length || 0} questions</p>
+              <p className="text-gray-700">{selectedQuiz.questionAssignments?.length || selectedQuiz.questions?.length || 0} questions</p>
             </div>
 
             {selectedQuiz.tags && selectedQuiz.tags.length > 0 && (
@@ -439,7 +439,7 @@ function QuizPage() {
         >
           <div className="space-y-4">
             <p className="text-gray-700">
-              Are you sure you want to archive the quiz "{quizToDelete.title}"? 
+              Are you sure you want to archive the quiz &ldquo;{quizToDelete.title}&rdquo;? 
               This action will move it to the archived section.
             </p>
             <div className="flex space-x-3 justify-end">

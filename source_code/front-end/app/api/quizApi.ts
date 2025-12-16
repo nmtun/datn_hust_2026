@@ -16,6 +16,22 @@ export interface Quiz {
     company_email: string;
   };
   questions?: QuizQuestion[];
+  questionAssignments?: {
+    id: number;
+    quiz_id: number;
+    question_id: number;
+    tag_id: number;
+    question_order: number;
+    points_override?: number;
+    is_active: boolean;
+    added_at: string;
+    added_by: number;
+    question: QuizQuestion;
+    tag: {
+      tag_id: number;
+      name: string;
+    };
+  }[];
   trainingMaterials?: {
     material_id: number;
     title: string;
