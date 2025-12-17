@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { ArrowLeft, Search, Eye, RotateCcw, Clock, Trophy, Users } from "lucide-react";
+import { ArrowLeft, Search, Eye, RotateCcw, Clock, Trophy, Users, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { quizApi, Quiz } from "@/app/api/quizApi";
@@ -95,6 +95,9 @@ function ArchivedQuizzesPage() {
   const [restoreLoading, setRestoreLoading] = useState<number | null>(null);
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
   const [quizToRestore, setQuizToRestore] = useState<Quiz | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [quizToDelete, setQuizToDelete] = useState<Quiz | null>(null);
 
   const handleRestoreClick = (quiz: Quiz) => {
     setQuizToRestore(quiz);
@@ -124,6 +127,37 @@ function ArchivedQuizzesPage() {
       setRestoreLoading(null);
       setShowRestoreConfirm(false);
       setQuizToRestore(null);
+    }
+  };
+
+  const handleDeleteClick = (quiz: Quiz) => {
+    setQuizToDelete(quiz);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!quizToDelete) return;
+
+    try {
+      setDeleteLoading(quizToDelete.quiz_id);
+      const result = await quizApi.hardDelete(quizToDelete.quiz_id);
+
+      if (result.error) {
+        throw new Error(result.message || 'Error deleting quiz permanently');
+      }
+
+      // Refresh the list
+      await fetchArchivedQuizzes();
+
+      // Show success message
+      showToast.success('Quiz deleted permanently');
+    } catch (error: any) {
+      console.error("Error deleting quiz:", error);
+      showToast.error(error.message || 'Error deleting quiz permanently');
+    } finally {
+      setDeleteLoading(null);
+      setShowDeleteConfirm(false);
+      setQuizToDelete(null);
     }
   };
 
@@ -261,6 +295,14 @@ function ArchivedQuizzesPage() {
                     <RotateCcw className="w-4 h-4 mr-1" />
                     {restoreLoading === quiz.quiz_id ? 'Restoring...' : 'Restore'}
                   </button>
+                  <button
+                    onClick={() => handleDeleteClick(quiz)}
+                    disabled={deleteLoading === quiz.quiz_id}
+                    className="flex items-center justify-center px-3 py-2 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
+                    title="Delete permanently"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -351,6 +393,40 @@ function ArchivedQuizzesPage() {
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
               >
                 {restoreLoading !== null ? 'Restoring...' : 'Restore Quiz'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Hard Delete Confirmation Modal */}
+      {showDeleteConfirm && quizToDelete && (
+        <Modal
+          isOpen={showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(false)}
+          title="Confirm Permanent Deletion"
+        >
+          <div className="space-y-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-800 font-semibold mb-2">⚠️ Warning: This action cannot be undone!</p>
+              <p className="text-red-700 text-sm">
+                You are about to permanently delete the quiz "{quizToDelete.title}". 
+                All associated data will be lost forever.
+              </p>
+            </div>
+            <div className="flex space-x-3 justify-end">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                disabled={deleteLoading !== null}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleteLoading !== null ? 'Deleting...' : 'Delete Permanently'}
               </button>
             </div>
           </div>

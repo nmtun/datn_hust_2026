@@ -20,4 +20,7 @@ router.post('/restore/:id', authenticate, authorize("hr"), quizzesController.res
 router.post('/attach-to-material', authenticate, authorize("hr"), quizzesController.attachQuizToMaterial);
 router.delete('/detach-from-material/:materialId/:quizId', authenticate, authorize("hr"), quizzesController.detachQuizFromMaterial);
 
+// Hard delete route
+router.delete('/hard-delete/:id', authenticate, authorize("hr"), quizzesController.hardDeleteQuiz);
+
 export default router;

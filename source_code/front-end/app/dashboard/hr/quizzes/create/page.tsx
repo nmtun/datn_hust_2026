@@ -13,10 +13,8 @@ function CreateQuizPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  const [creationMode, setCreationMode] = useState<'simple' | 'random'>('simple');
   const [tags, setTags] = useState<Tag[]>([]);
-  const [selectedTags, setSelectedTags] = useState<number[]>([]);
-  const [questionCount, setQuestionCount] = useState<number>(10);
+  const [tagConfigs, setTagConfigs] = useState<{tagId: number, questionCount: number}[]>([]);
   const [availableQuestions, setAvailableQuestions] = useState<QuizQuestion[]>([]);
   const [previewQuestions, setPreviewQuestions] = useState<QuizQuestion[]>([]);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
@@ -34,12 +32,12 @@ function CreateQuizPage() {
   }, []);
 
   useEffect(() => {
-    if (selectedTags.length > 0 && creationMode === 'random') {
+    if (tagConfigs.length > 0) {
       fetchAvailableQuestions();
     } else {
       setAvailableQuestions([]);
     }
-  }, [selectedTags, creationMode]);
+  }, [tagConfigs]);
 
   const fetchTags = async () => {
     try {
@@ -55,9 +53,10 @@ function CreateQuizPage() {
 
   const fetchAvailableQuestions = async () => {
     try {
+      const tagIds = tagConfigs.map(config => config.tagId);
       const result = await questionApi.getByTags({
-        tagIds: selectedTags,
-        limit: 100 // Lấy tối đa 100 câu để preview
+        tagIds: tagIds,
+        limit: 200 // Lấy tối đa 200 câu để preview
       });
       if (result && !result.error && Array.isArray(result.questions)) {
         setAvailableQuestions(result.questions);
@@ -100,22 +99,37 @@ function CreateQuizPage() {
   };
 
   const toggleTagSelection = (tagId: number) => {
-    setSelectedTags(prev => 
-      prev.includes(tagId) 
-        ? prev.filter(id => id !== tagId)
-        : [...prev, tagId]
+    setTagConfigs(prev => {
+      const exists = prev.find(config => config.tagId === tagId);
+      if (exists) {
+        return prev.filter(config => config.tagId !== tagId);
+      } else {
+        return [...prev, { tagId, questionCount: 5 }]; // Default 5 questions per tag
+      }
+    });
+  };
+
+  const updateTagQuestionCount = (tagId: number, count: number) => {
+    setTagConfigs(prev => 
+      prev.map(config => 
+        config.tagId === tagId 
+          ? { ...config, questionCount: Math.max(1, count) }
+          : config
+      )
     );
   };
 
   const handlePreviewQuestions = () => {
+    const totalQuestions = tagConfigs.reduce((sum, config) => sum + config.questionCount, 0);
     const shuffled = [...availableQuestions].sort(() => Math.random() - 0.5);
-    setPreviewQuestions(shuffled.slice(0, Math.min(questionCount, availableQuestions.length)));
+    setPreviewQuestions(shuffled.slice(0, Math.min(totalQuestions, availableQuestions.length)));
     setIsPreviewModalOpen(true);
   };
 
   const handleShufflePreview = () => {
+    const totalQuestions = tagConfigs.reduce((sum, config) => sum + config.questionCount, 0);
     const shuffled = [...availableQuestions].sort(() => Math.random() - 0.5);
-    setPreviewQuestions(shuffled.slice(0, Math.min(questionCount, availableQuestions.length)));
+    setPreviewQuestions(shuffled.slice(0, Math.min(totalQuestions, availableQuestions.length)));
   };
 
   const handleSubmit = async () => {
@@ -135,66 +149,49 @@ function CreateQuizPage() {
       return;
     }
 
-    if (creationMode === 'random') {
-      if (selectedTags.length === 0) {
-        showToast.error('Please select at least one tag for random question creation');
-        return;
-      }
+    if (tagConfigs.length === 0) {
+      showToast.error('Please select at least one tag for random question creation');
+      return;
+    }
 
-      if (!questionCount || questionCount <= 0) {
-        showToast.error('Question count must be greater than 0');
-        return;
-      }
+    const totalQuestions = tagConfigs.reduce((sum, config) => sum + config.questionCount, 0);
+    if (!totalQuestions || totalQuestions <= 0) {
+      showToast.error('Total question count must be greater than 0');
+      return;
+    }
 
-      if (availableQuestions.length < questionCount) {
-        showToast.error(`Not enough questions available. Found ${availableQuestions.length}, need ${questionCount}`);
-        return;
-      }
+    if (availableQuestions.length < totalQuestions) {
+      showToast.error(`Not enough questions available. Found ${availableQuestions.length}, need ${totalQuestions}`);
+      return;
     }
 
     try {
       setLoading(true);
       
-      if (creationMode === 'simple') {
-        // Create simple quiz
-        const result = await quizApi.create({
+      // Create quiz with random questions
+      const totalQuestions = tagConfigs.reduce((sum, config) => sum + config.questionCount, 0);
+      const payload = {
+        quizData: {
           title: formData.title.trim(),
           description: formData.description.trim() || undefined,
           duration: Number(formData.duration),
           passing_score: Number(formData.passing_score),
-          status: formData.status,
-          tag_ids: selectedTags
-        });
+          status: formData.status
+        },
+        tagConfigs: tagConfigs.map(config => ({
+          tagId: config.tagId,
+          questionCount: config.questionCount
+        }))
+      };
+      
+      const result = await quizApi.createWithRandomQuestions(payload);
 
-        if (result.error) {
-          throw new Error(result.message || 'Error creating quiz');
-        }
-
-        showToast.success('Quiz created successfully');
-        router.push('/dashboard/hr/quizzes');
-      } else {
-        // Create quiz with random questions
-        const payload = {
-          quizData: {
-            title: formData.title.trim(),
-            description: formData.description.trim() || undefined,
-            duration: Number(formData.duration),
-            passing_score: Number(formData.passing_score),
-            status: formData.status
-          },
-          tagIds: selectedTags,
-          questionCount: Number(questionCount)
-        };
-        
-        const result = await quizApi.createWithRandomQuestions(payload);
-
-        if (result.error) {
-          throw new Error(result.message || 'Error creating quiz');
-        }
-
-        showToast.success(`Quiz created successfully with ${questionCount} random questions`);
-        router.push('/dashboard/hr/quizzes');
+      if (result.error) {
+        throw new Error(result.message || 'Error creating quiz');
       }
+
+      showToast.success(`Quiz created successfully with ${totalQuestions} random questions`);
+      router.push('/dashboard/hr/quizzes');
     } catch (error: any) {
       console.error("Error creating quiz:", error);
       showToast.error(error.message || 'Error creating quiz');
@@ -238,6 +235,18 @@ function CreateQuizPage() {
     }
   };
 
+  const isCorrectAnswer = (option: string, correctAnswer: string, questionType: string) => {
+    if (questionType === 'multiple_response') {
+      try {
+        const correctAnswers = JSON.parse(correctAnswer);
+        return Array.isArray(correctAnswers) && correctAnswers.includes(option);
+      } catch {
+        return correctAnswer.split(',').map(ans => ans.trim()).includes(option);
+      }
+    }
+    return option === correctAnswer;
+  };
+
   return (
     <div className="max-w-6xl mx-auto">
       {/* Header */}
@@ -256,8 +265,7 @@ function CreateQuizPage() {
       </div>
 
       {/* Step Indicator */}
-      {creationMode === 'random' && (
-        <div className="mb-8">
+      <div className="mb-8">
           <div className="flex items-center">
             <div className={`flex items-center justify-center w-8 h-8 rounded-full ${currentStep >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-500'}`}>
               {currentStep > 1 ? <CheckCircle className="w-5 h-5" /> : '1'}
@@ -272,69 +280,11 @@ function CreateQuizPage() {
             <span className="text-sm font-medium text-gray-900">Select Questions</span>
           </div>
         </div>
-      )}
 
       {/* Form */}
       <div className="bg-white shadow rounded-lg p-6">
         {currentStep === 1 ? (
           <div className="space-y-6">
-            {/* Creation Mode Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Quiz Creation Mode *
-              </label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* <div
-                  onClick={() => setCreationMode('simple')}
-                  className={`relative p-4 border rounded-lg cursor-pointer transition-colors ${
-                    creationMode === 'simple'
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <div className="flex items-start">
-                    <input
-                      type="radio"
-                      value="simple"
-                      checked={creationMode === 'simple'}
-                      onChange={() => setCreationMode('simple')}
-                      className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                    />
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-gray-900">Simple Quiz</h3>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Create a basic quiz structure. Questions can be added later manually.
-                      </p>
-                    </div>
-                  </div>
-                </div> */}
-                <div
-                  onClick={() => setCreationMode('random')}
-                  className={`relative p-4 border rounded-lg cursor-pointer transition-colors ${
-                    creationMode === 'random'
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <div className="flex items-start">
-                    <input
-                      type="radio"
-                      value="random"
-                      checked={creationMode === 'random'}
-                      onChange={() => setCreationMode('random')}
-                      className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                    />
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-gray-900">Random Questions</h3>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Create quiz with random questions selected from tag pools.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
                 Quiz Title *
@@ -402,55 +352,6 @@ function CreateQuizPage() {
               </div>
             </div>
 
-            {/* Tags Selection (for simple mode) */}
-            {creationMode === 'simple' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Tags (Optional)
-                </label>
-                <div className="border border-gray-300 rounded-lg p-4 max-h-40 overflow-y-auto">
-                  {tags.length === 0 ? (
-                    <p className="text-gray-500 text-sm">No tags available</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {tags.map((tag) => (
-                        <label
-                          key={tag.tag_id}
-                          className="flex items-center p-2 hover:bg-gray-50 rounded-md cursor-pointer transition-colors"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedTags.includes(tag.tag_id)}
-                            onChange={() => toggleTagSelection(tag.tag_id)}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-3"
-                          />
-                          <span className="text-sm text-gray-700">{tag.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {selectedTags.length > 0 && (
-                  <div className="mt-2">
-                    <p className="text-xs text-gray-500 mb-2">Selected tags:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedTags.map(tagId => {
-                        const tag = tags.find(t => t.tag_id === tagId);
-                        return tag ? (
-                          <span
-                            key={tagId}
-                            className="inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full"
-                          >
-                            {tag.name}
-                          </span>
-                        ) : null;
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
             <div>
               <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
                 Status
@@ -475,34 +376,13 @@ function CreateQuizPage() {
               >
                 Cancel
               </button>
-              {creationMode === 'simple' ? (
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={loading}
-                  className="flex items-center px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors disabled:opacity-50"
-                >
-                  {loading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4 mr-2" />
-                      Create Quiz
-                    </>
-                  )}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleNextStep}
-                  className="flex items-center px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
-                >
-                  Next: Select Questions
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={handleNextStep}
+                className="flex items-center px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+              >
+                Next: Select Questions
+              </button>
             </div>
           </div>
         ) : (
@@ -514,7 +394,7 @@ function CreateQuizPage() {
             {/* Tag Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Tags *
+                Select Tags & Configure Questions *
               </label>
               <div className="border border-gray-200 rounded-lg p-4">
                 {tags.length === 0 ? (
@@ -529,12 +409,12 @@ function CreateQuizPage() {
                         type="button"
                         onClick={() => toggleTagSelection(tag.tag_id)}
                         className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition-colors ${
-                          selectedTags.includes(tag.tag_id)
+                          tagConfigs.find(c => c.tagId === tag.tag_id)
                             ? 'bg-blue-100 text-blue-800 border-blue-200'
                             : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200'
                         } border`}
                       >
-                        {selectedTags.includes(tag.tag_id) && (
+                        {tagConfigs.find(c => c.tagId === tag.tag_id) && (
                           <CheckCircle className="w-4 h-4 mr-1" />
                         )}
                         {tag.name}
@@ -544,29 +424,55 @@ function CreateQuizPage() {
                 )}
               </div>
               <p className="text-sm text-gray-500 mt-2">
-                Selected {selectedTags.length} tag{selectedTags.length !== 1 ? 's' : ''}
+                Selected {tagConfigs.length} tag{tagConfigs.length !== 1 ? 's' : ''}
               </p>
             </div>
 
-            {/* Question Count */}
-            <div>
-              <label htmlFor="questionCount" className="block text-sm font-medium text-gray-700 mb-2">
-                Number of Questions *
-              </label>
-              <input
-                type="number"
-                id="questionCount"
-                value={questionCount}
-                onChange={(e) => setQuestionCount(Number(e.target.value))}
-                min="1"
-                max="100"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Enter number of questions..."
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                Available questions with selected tags: {availableQuestions.length}
-              </p>
-            </div>
+            {/* Question Count per Tag */}
+            {tagConfigs.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Number of Questions per Tag *
+                </label>
+                <div className="space-y-3">
+                  {tagConfigs.map(config => {
+                    const tag = tags.find(t => t.tag_id === config.tagId);
+                    if (!tag) return null;
+                    return (
+                      <div key={config.tagId} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                            {tag.name}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <label htmlFor={`count-${config.tagId}`} className="text-sm text-gray-600">
+                            Questions:
+                          </label>
+                          <input
+                            type="number"
+                            id={`count-${config.tagId}`}
+                            value={config.questionCount}
+                            onChange={(e) => updateTagQuestionCount(config.tagId, Number(e.target.value))}
+                            min="1"
+                            max="50"
+                            className="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <span className="font-semibold">Total questions:</span> {tagConfigs.reduce((sum, config) => sum + config.questionCount, 0)}
+                  </p>
+                  <p className="text-sm text-blue-600 mt-1">
+                    Available questions: {availableQuestions.length}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Preview Section */}
             {availableQuestions.length > 0 && (
@@ -576,7 +482,7 @@ function CreateQuizPage() {
                     Available Questions ({availableQuestions.length})
                   </h4>
                   <div className="flex space-x-2">
-                    <button
+                    {/* <button
                       type="button"
                       onClick={() => {
                         const shuffled = [...availableQuestions].sort(() => Math.random() - 0.5);
@@ -586,7 +492,7 @@ function CreateQuizPage() {
                     >
                       <Shuffle className="w-4 h-4 mr-1" />
                       Shuffle
-                    </button>
+                    </button> */}
                     <button
                       type="button"
                       onClick={handlePreviewQuestions}
@@ -634,7 +540,7 @@ function CreateQuizPage() {
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  disabled={loading || selectedTags.length === 0 || questionCount <= 0 || availableQuestions.length < questionCount}
+                  disabled={loading || tagConfigs.length === 0 || tagConfigs.reduce((sum, config) => sum + config.questionCount, 0) <= 0 || availableQuestions.length < tagConfigs.reduce((sum, config) => sum + config.questionCount, 0)}
                   className="flex items-center px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors"
                 >
                   <Save className="w-4 h-4 mr-2" />
@@ -651,7 +557,7 @@ function CreateQuizPage() {
         <Modal
           isOpen={isPreviewModalOpen}
           onClose={() => setIsPreviewModalOpen(false)}
-          title={`Preview: ${questionCount} Random Questions`}
+          title={`Preview: ${tagConfigs.reduce((sum, config) => sum + config.questionCount, 0)} Random Questions`}
         >
           <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
             <p className="text-sm text-gray-600">
@@ -662,7 +568,7 @@ function CreateQuizPage() {
               className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Shuffle className="w-4 h-4 mr-1" />
-              Shuffle Again
+              Shuffle
             </button>
           </div>
           <div className="space-y-4 max-h-96 overflow-y-auto">
@@ -681,18 +587,21 @@ function CreateQuizPage() {
                 
                 {question.options && (
                   <div className="space-y-1">
-                    {parseOptions(question.options).map((option: string, optionIndex: number) => (
-                      <div key={optionIndex} className="flex items-center space-x-2">
-                        {option === question.correct_answer ? (
-                          <CheckCircle className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <Circle className="w-4 h-4 text-gray-400" />
-                        )}
-                        <span className={option === question.correct_answer ? 'text-green-700 font-medium' : 'text-gray-600'}>
-                          {option}
-                        </span>
-                      </div>
-                    ))}
+                    {parseOptions(question.options).map((option: string, optionIndex: number) => {
+                      const isCorrect = isCorrectAnswer(option, question.correct_answer, question.question_type);
+                      return (
+                        <div key={optionIndex} className="flex items-center space-x-2">
+                          {isCorrect ? (
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <Circle className="w-4 h-4 text-gray-400" />
+                          )}
+                          <span className={isCorrect ? 'text-green-700 font-medium' : 'text-gray-600'}>
+                            {option}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

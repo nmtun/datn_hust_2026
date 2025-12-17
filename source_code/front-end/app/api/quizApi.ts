@@ -111,8 +111,10 @@ export const quizApi = {
       passing_score: number;
       status?: string;
     };
-    tagIds: number[];
-    questionCount: number;
+    tagConfigs: {
+      tagId: number;
+      questionCount: number;
+    }[];
   }) => {
     const response = await apiClient.post("api/quizzes/create-with-random-questions", data);
     return response.data;
@@ -138,6 +140,11 @@ export const quizApi = {
 
   restore: async (id: number) => {
     const response = await apiClient.post(`api/quizzes/restore/${id}`);
+    return response.data;
+  },
+
+  hardDelete: async (id: number) => {
+    const response = await apiClient.delete(`api/quizzes/hard-delete/${id}`);
     return response.data;
   },
 

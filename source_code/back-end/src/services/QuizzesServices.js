@@ -580,7 +580,7 @@ export const detachQuizFromMaterialService = async (materialId, quizId) => {
     }
 };
 
-export const createQuizWithRandomQuestionsService = async (quizData, tagIds, questionCount, user) => {
+export const createQuizWithRandomQuestionsService = async (quizData, tagConfigs, user) => {
     try {
         const {
             title,
@@ -597,8 +597,18 @@ export const createQuizWithRandomQuestionsService = async (quizData, tagIds, que
         if (!passing_score || passing_score < 0 || passing_score > 100) {
             return { status: 400, data: { error: true, message: "Passing score must be between 0 and 100" } };
         }
+        if (!tagConfigs || tagConfigs.length === 0) {
+            return { status: 400, data: { error: true, message: "At least one tag configuration is required" } };
+        }
 
-        // Create the quiz first
+        // Validate tagConfigs structure
+        for (const config of tagConfigs) {
+            if (!config.tagId || !config.questionCount || config.questionCount <= 0) {
+                return { status: 400, data: { error: true, message: "Invalid tag configuration" } };
+            }
+        }
+
+        // Create
         const newQuiz = await Quizzes.create({
             title,
             description,
@@ -608,10 +618,12 @@ export const createQuizWithRandomQuestionsService = async (quizData, tagIds, que
             created_by
         });
 
-        // Add tags to quiz
+        // lấy ds tag
+        const tagIds = tagConfigs.map(config => config.tagId);
         if (tagIds.length > 0) {
             console.log('Adding tags to quiz:', tagIds);
             try {
+                // quiz-tags records
                 const quizTagData = tagIds.map(tagId => ({
                     quiz_id: newQuiz.quiz_id,
                     tag_id: tagId
@@ -624,69 +636,89 @@ export const createQuizWithRandomQuestionsService = async (quizData, tagIds, que
             }
         }
 
-        // Get available questions by tags using raw query for reliability
-        const availableQuestions = await sequelize.query(`
-            SELECT DISTINCT q.*, qt.tag_id
-            FROM Quiz_Questions q
-            INNER JOIN Question_Tags qt ON q.question_id = qt.question_id
-            WHERE q.is_active = 1 AND qt.tag_id IN (${tagIds.join(',')})
-            ORDER BY q.question_id DESC
-        `, {
-            type: sequelize.QueryTypes.SELECT
-        });
+        // Lấy câu hỏi không trùng từ các tag
+        const selectedQuestionIds = new Set();  // để tránh trùng lặp
+        const selectedQuestions = [];           // lưu câu hỏi đã chọn
+        const questionsByTag = {};              // obj lưu câu hỏi theo tag
 
-        console.log('Available questions found:', availableQuestions.length);
-        if (availableQuestions.length > 0) {
-            console.log('First question:', availableQuestions[0]);
+        // Lấy hết câu hỏi cho mỗi tag
+        for (const config of tagConfigs) {
+            const tagId = config.tagId;
+            const questionsForTag = await sequelize.query(`
+                SELECT DISTINCT q.*, qt.tag_id
+                FROM Quiz_Questions q
+                INNER JOIN Question_Tags qt ON q.question_id = qt.question_id
+                WHERE q.is_active = 1 AND qt.tag_id = ${tagId}
+                ORDER BY q.question_id DESC
+            `, {
+                type: sequelize.QueryTypes.SELECT
+            });
+
+            // save
+            questionsByTag[tagId] = questionsForTag;
+            console.log(`Tag ${tagId}: Found ${questionsForTag.length} available questions, need ${config.questionCount}`);
         }
 
-        if (availableQuestions.length === 0) {
-            // Delete the created quiz if no questions available
-            await Quizzes.destroy({ where: { quiz_id: newQuiz.quiz_id } });
-            return { 
-                status: 400, 
-                data: { 
-                    error: true, 
-                    message: "No available questions found with the specified tags" 
-                } 
-            };
+        // chọn câu hỏi cho mỗi tag
+        for (const config of tagConfigs) {
+            const tagId = config.tagId;
+            const questionCount = config.questionCount;
+            const availableQuestions = questionsByTag[tagId];
+
+            // lọc ra những câu hỏi chưa được chọn
+            const unselectedQuestions = availableQuestions.filter(
+                q => !selectedQuestionIds.has(q.question_id)
+            );
+
+            console.log(`Tag ${tagId}: ${unselectedQuestions.length} unselected questions available`);
+
+            if (unselectedQuestions.length < questionCount) {
+                // lỗi nếu k đủ số lượng
+                await Quizzes.destroy({ where: { quiz_id: newQuiz.quiz_id } });
+                return { 
+                    status: 400, 
+                    data: { 
+                        error: true, 
+                        message: `Not enough unique questions for tag ${tagId}. Found ${unselectedQuestions.length}, need ${questionCount}` 
+                    } 
+                };
+            }
+
+            // random câu hỏi
+            const shuffled = unselectedQuestions.sort(() => Math.random() - 0.5);
+            const selected = shuffled.slice(0, questionCount);
+
+            // add vào ds đã chọn
+            selected.forEach(question => {
+                selectedQuestionIds.add(question.question_id);
+                selectedQuestions.push({
+                    ...question,
+                    assigned_tag_id: tagId // gán tag đã chọn cho câu hỏi
+                });
+            });
         }
 
-        if (availableQuestions.length < questionCount) {
-            // Delete the created quiz if not enough questions
-            await Quizzes.destroy({ where: { quiz_id: newQuiz.quiz_id } });
-            return { 
-                status: 400, 
-                data: { 
-                    error: true, 
-                    message: `Not enough questions available. Found ${availableQuestions.length}, need ${questionCount}` 
-                } 
-            };
-        }
+        console.log(`Total selected questions: ${selectedQuestions.length} (unique: ${selectedQuestionIds.size})`);
 
-        // Randomly select questions
-        const shuffledQuestions = availableQuestions.sort(() => Math.random() - 0.5);
-        const selectedQuestions = shuffledQuestions.slice(0, questionCount);
-
-        // Create QuestionToQuiz relationships for selected questions
+        // tạo quan hệ
         const questionToQuizData = [];
         for (let i = 0; i < selectedQuestions.length; i++) {
             const question = selectedQuestions[i];
-            console.log('Processing question:', question.question_id, 'with tag_id:', question.tag_id);
+            console.log('Processing question:', question.question_id, 'assigned to tag:', question.assigned_tag_id);
             
-            // Use the tag_id from the query result
+            // liên kết quiz và câu hỏi
             questionToQuizData.push({
                 question_id: question.question_id,
                 quiz_id: newQuiz.quiz_id,
-                tag_id: question.tag_id, // Use tag_id from raw query
+                tag_id: question.assigned_tag_id, // gán tag đã chọn cho câu hỏi
                 question_order: i + 1,
                 added_by: user.user_id
             });
         }
 
-        console.log('QuestionToQuiz data to create:', questionToQuizData);
+        console.log('QuestionToQuiz data to create:', questionToQuizData.length, 'records');
 
-        // Bulk create QuestionToQuiz relationships
+        // bulk create
         if (questionToQuizData.length > 0) {
             console.log('Creating QuestionToQuiz records...');
             const createdRecords = await QuestionToQuiz.bulkCreate(questionToQuizData);
@@ -729,9 +761,14 @@ export const createQuizWithRandomQuestionsService = async (quizData, tagIds, que
             status: 201, 
             data: {
                 error: false,
-                message: `Quiz created successfully with ${questionCount} random questions`,
+                message: `Quiz created successfully with ${selectedQuestions.length} random questions`,
                 quiz: quizWithQuestions,
-                selectedQuestions: selectedQuestions.map(q => q.question_id)
+                selectedQuestions: selectedQuestions.map(q => q.question_id),
+                tagBreakdown: tagConfigs.map(config => ({
+                    tagId: config.tagId,
+                    requested: config.questionCount,
+                    selected: selectedQuestions.filter(q => q.assigned_tag_id === config.tagId).length
+                }))
             }
         };
     } catch (error) {
@@ -745,4 +782,37 @@ export const createQuizWithRandomQuestionsService = async (quizData, tagIds, que
             }
         };
     }
+};
+
+// xóa cứng 
+export const hardDeleteQuizService = async (quizId) => {
+    try {
+        const quiz = await Quizzes.findByPk(quizId);
+        if (!quiz) {
+            return {
+                status: 404,
+                data: {
+                    error: true,
+                    message: "Quiz not found"
+                }
+            };
+        }
+        await quiz.destroy();
+        return {
+            status: 200,
+            data: {
+                error: false,
+                message: "Quiz deleted permanently"
+            }
+        };
+    } catch (error) {
+        return {
+            status: 500,
+            data: { 
+                error: true,
+                message: "An error occurred while deleting quiz permanently",
+                details: error.message  
+            }
+        };
+    }   
 };

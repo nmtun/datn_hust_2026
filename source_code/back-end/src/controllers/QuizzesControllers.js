@@ -109,33 +109,47 @@ export const detachQuizFromMaterial = async (req, res) => {
 
 export const createQuizWithRandomQuestions = async (req, res) => {
     try {
-        const { quizData, tagIds, questionCount } = req.body;
+        const { quizData, tagConfigs } = req.body;
         
-        if (!quizData || !tagIds || questionCount === undefined || questionCount === null) {
+        if (!quizData || !tagConfigs) {
             return res.status(400).json({
                 error: true,
-                message: "Quiz data, tag IDs and question count are required"
+                message: "Quiz data and tag configurations are required"
             });
         }
 
-        if (!Array.isArray(tagIds) || tagIds.length === 0) {
+        if (!Array.isArray(tagConfigs) || tagConfigs.length === 0) {
             return res.status(400).json({
                 error: true,
-                message: "At least one tag ID is required"
+                message: "At least one tag configuration is required"
             });
         }
 
-        if (questionCount <= 0) {
-            return res.status(400).json({
-                error: true,
-                message: "Question count must be greater than 0"
-            });
+        // Validate each tag configuration
+        for (const config of tagConfigs) {
+            if (!config.tagId || !config.questionCount || config.questionCount <= 0) {
+                return res.status(400).json({
+                    error: true,
+                    message: "Each tag configuration must have a valid tagId and questionCount greater than 0"
+                });
+            }
         }
 
-        const result = await quizzesService.createQuizWithRandomQuestionsService(quizData, tagIds, questionCount, req.user);
+        const result = await quizzesService.createQuizWithRandomQuestionsService(quizData, tagConfigs, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error creating quiz with random questions:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
+
+export const hardDeleteQuiz = async (req, res) => {
+    try {
+        const quizId = req.params.id;
+        const result = await quizzesService.hardDeleteQuizService(quizId);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error hard deleting quiz:", error);
         return res.status(500).json({ error: true, message: "Internal server error" });
     }
 };
