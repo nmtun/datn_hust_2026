@@ -496,7 +496,9 @@ function CreateQuizPage() {
                       const questionTagCount: Record<number, number> = {};
                       availableQuestions.forEach(q => {
                         if (Array.isArray(q.tags)) {
+                          // lọc các tag của câu hỏi đang chọn
                           const matchedTags = q.tags.filter(tagObj => tagConfigs.some(config => config.tagId === tagObj.tag_id));
+                          // lưu lại nếu câu hỏi được chọn có nhiều tag
                           if (matchedTags.length > 1) {
                             questionTagCount[q.question_id] = matchedTags.length;
                           }
@@ -614,13 +616,13 @@ function CreateQuizPage() {
             <p className="text-sm text-gray-600">
               Showing {previewQuestions.length} randomly selected questions
             </p>
-            <button
+            {/* <button
               onClick={handleShufflePreview}
               className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Shuffle className="w-4 h-4 mr-1" />
               Shuffle
-            </button>
+            </button> */}
           </div>
           <div className="space-y-4 max-h-96 overflow-y-auto">
             {previewQuestions.map((question, index) => (
@@ -661,8 +663,8 @@ function CreateQuizPage() {
 
           <div className="mt-4 pt-4 border-t border-gray-200">
             <p className="text-sm text-gray-600">
-              This is a preview of {previewQuestions.length} randomly selected questions.
-              The actual quiz will select different random questions each time it taken.
+              Đây là bản minh họa với {previewQuestions.length} câu hỏi bạn chọn.
+              Quiz thực tế sẽ được tạo ngẫu nhiên từ các câu hỏi phù hợp với cấu hình tag đã chọn.
             </p>
           </div>
         </Modal>
