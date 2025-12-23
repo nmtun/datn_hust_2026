@@ -18,6 +18,8 @@ const TagManagementModal: React.FC<TagManagementModalProps> = ({ isOpen, onClose
   const [tagName, setTagName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
+  const [tagToDelete, setTagToDelete] = useState<Tag | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -94,16 +96,14 @@ const TagManagementModal: React.FC<TagManagementModalProps> = ({ isOpen, onClose
   };
 
   const handleDeleteTag = async (tag: Tag) => {
-    if (!window.confirm(`Are you sure you want to delete the tag "${tag.name}"?`)) {
-      return;
-    }
-
     try {
       setDeleteLoading(tag.tag_id);
+      setDeleteError(null);
       const result = await tagApi.delete(tag.tag_id);
       if (!result.error) {
         showToast.success('Tag deleted successfully');
         fetchTags();
+        setTagToDelete(null);
       } else {
         showToast.error(result.message || 'Failed to delete tag');
       }
@@ -195,12 +195,12 @@ const TagManagementModal: React.FC<TagManagementModalProps> = ({ isOpen, onClose
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteTag(tag)}
+                            onClick={() => setTagToDelete(tag)}
                             className={`text-red-400 hover:text-red-500 ${
-                              deleteLoading === tag.tag_id ? 'opacity-50 cursor-not-allowed' : ''
+                              (deleteLoading === tag.tag_id || (tag.trainingMaterials && tag.trainingMaterials.length > 0)) ? 'opacity-50 cursor-not-allowed' : ''
                             }`}
-                            disabled={deleteLoading === tag.tag_id}
-                            title="Delete tag"
+                            disabled={deleteLoading === tag.tag_id || (tag.trainingMaterials && tag.trainingMaterials.length > 0)}
+                            title={tag.trainingMaterials && tag.trainingMaterials.length > 0 ? "Cannot delete tag linked to training materials" : "Delete tag"}
                           >
                             {deleteLoading === tag.tag_id ? (
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-400" />
@@ -301,6 +301,47 @@ const TagManagementModal: React.FC<TagManagementModalProps> = ({ isOpen, onClose
                   }`}
                 >
                   {submitting ? 'Updating...' : 'Update'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Tag Confirmation Modal */}
+      {tagToDelete && (
+        <div className="fixed inset-0 flex items-center justify-center p-4 z-60">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-sm">
+            <div className="p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Delete Tag</h3>
+              <p className="mb-6 text-sm text-gray-700">
+                Are you sure you want to delete the tag "<b>{tagToDelete.name}</b>"?
+              </p>
+              {deleteError && (
+                <div className="mb-4 text-xs text-red-600 font-semibold">
+                  {deleteError}
+                </div>
+              )}
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setTagToDelete(null);
+                    setDeleteError(null);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    await handleDeleteTag(tagToDelete);
+                  }}
+                  disabled={deleteLoading === tagToDelete.tag_id}
+                  className={`px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 ${
+                    deleteLoading === tagToDelete.tag_id ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {deleteLoading === tagToDelete.tag_id ? 'Deleting...' : 'Delete'}
                 </button>
               </div>
             </div>

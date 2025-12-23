@@ -41,8 +41,8 @@ function CreateQuestionPage() {
   };
 
   const toggleTagSelection = (tagId: number) => {
-    setSelectedTags(prev => 
-      prev.includes(tagId) 
+    setSelectedTags(prev =>
+      prev.includes(tagId)
         ? prev.filter(id => id !== tagId)
         : [...prev, tagId]
     );
@@ -69,7 +69,7 @@ function CreateQuestionPage() {
     setFormData(prev => {
       const newOptions = prev.options.map((option, i) => i === index ? value : option);
       let newCorrectAnswer = prev.correct_answer;
-      
+
       // If the option text is cleared and it was selected as correct answer, remove it
       if (value.trim() === '' && prev.options[index] === prev.correct_answer) {
         newCorrectAnswer = "";
@@ -78,16 +78,8 @@ function CreateQuestionPage() {
         const correctAnswers = prev.correct_answer ? prev.correct_answer.split(',') : [];
         const filteredAnswers = correctAnswers.filter(ans => ans !== prev.options[index]);
         newCorrectAnswer = filteredAnswers.join(',');
-      } else if (prev.options[index] === prev.correct_answer && value !== prev.options[index]) {
-        // If option text changed and it was the correct answer, update correct answer
-        newCorrectAnswer = value;
-      } else if (prev.question_type === 'multiple_response' && prev.correct_answer.includes(prev.options[index])) {
-        // For multiple response, update the correct answer if this option was selected
-        const correctAnswers = prev.correct_answer.split(',');
-        const updatedAnswers = correctAnswers.map(ans => ans === prev.options[index] ? value : ans);
-        newCorrectAnswer = updatedAnswers.join(',');
       }
-      
+
       return {
         ...prev,
         options: newOptions,
@@ -117,7 +109,7 @@ function CreateQuestionPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.question_text.trim()) {
       showToast.error('Please enter question text');
       return;
@@ -134,7 +126,7 @@ function CreateQuestionPage() {
         showToast.error('Please provide at least 2 options');
         return;
       }
-      
+
       // For multiple response, check if all correct answers exist in options
       if (formData.question_type === 'multiple_response') {
         const correctAnswers = formData.correct_answer ? formData.correct_answer.split(',').filter(ans => ans.trim()) : [];
@@ -163,7 +155,7 @@ function CreateQuestionPage() {
 
     try {
       setLoading(true);
-      
+
       let optionsToSend = undefined;
       if (formData.question_type !== 'true_false') {
         const nonEmptyOptions = formData.options.filter(opt => opt.trim());
@@ -239,185 +231,195 @@ function CreateQuestionPage() {
           </div>
 
           <div>
-              <label htmlFor="question_text" className="block text-sm font-medium text-gray-700 mb-2">
-                Question Text *
-              </label>
-              <textarea
-                id="question_text"
-                name="question_text"
-                value={formData.question_text}
-                onChange={handleInputChange}
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Enter your question..."
-                required
-              />
+            <label htmlFor="question_text" className="block text-sm font-medium text-gray-700 mb-2">
+              Question Text *
+            </label>
+            <textarea
+              id="question_text"
+              name="question_text"
+              value={formData.question_text}
+              onChange={handleInputChange}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              placeholder="Enter your question..."
+              required
+            />
           </div>
 
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Question Type *
+            </label>
+            <div className="flex space-x-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="question_type"
+                  value="multiple_choice"
+                  checked={formData.question_type === 'multiple_choice'}
+                  onChange={() => handleQuestionTypeChange('multiple_choice')}
+                  className="mr-2"
+                />
+                Multiple Choice (Single Answer)
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="question_type"
+                  value="multiple_response"
+                  checked={formData.question_type === 'multiple_response'}
+                  onChange={() => handleQuestionTypeChange('multiple_response')}
+                  className="mr-2"
+                />
+                Multiple Response (Multiple Answers)
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="question_type"
+                  value="true_false"
+                  checked={formData.question_type === 'true_false'}
+                  onChange={() => handleQuestionTypeChange('true_false')}
+                  className="mr-2"
+                />
+                True/False
+              </label>
+            </div>
+          </div>
+
+          {formData.question_type !== 'true_false' && (
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Options *
+                </label>
+                {formData.options.length < 6 && (
+                  <button
+                    type="button"
+                    onClick={addOption}
+                    className="flex items-center px-3 py-1 text-sm bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Option
+                  </button>
+                )}
+              </div>
+              <div className="space-y-3">
+                {formData.options.map((option, index) => (
+                  <div key={index} className="flex items-center space-x-3">
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        value={option}
+                        onChange={(e) => handleOptionChange(index, e.target.value)}
+                        placeholder={`Option ${index + 1}...`}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      />
+                    </div>
+                    <label className="flex items-center">
+                      <input
+                        type={formData.question_type === 'multiple_response' ? 'checkbox' : 'radio'}
+                        name="correct_answer"
+                        value={option}
+                        disabled={!option.trim()}
+                        checked={
+                          formData.question_type === 'multiple_response'
+                            ? !!option && formData.correct_answer
+                              .split(',')
+                              .filter(ans => ans.trim() !== '')
+                              .includes(option)
+                            : formData.correct_answer === option && !!option
+                        }
+                        onChange={(e) => {
+                          if (!option.trim()) return;
+                          
+                          if (formData.question_type === 'multiple_response') {
+                            const currentAnswers = formData.correct_answer ? formData.correct_answer.split(',').filter(ans => ans.trim()) : [];
+                            if (e.target.checked) {
+                              setFormData(prev => ({
+                                ...prev,
+                                correct_answer: [...currentAnswers, option].join(',')
+                              }));
+                            } else {
+                              setFormData(prev => ({
+                                ...prev,
+                                correct_answer: currentAnswers.filter(ans => ans !== option).join(',')
+                              }));
+                            }
+                          } else {
+                            setFormData(prev => ({
+                              ...prev,
+                              correct_answer: e.target.checked ? option : ""
+                            }));
+                          }
+                        }}
+                        className="mr-2"
+                      />
+                      <span className="text-sm text-gray-600">Correct</span>
+                    </label>
+                    {formData.options.length > 2 && (
+                      <button
+                        type="button"
+                        onClick={() => removeOption(index)}
+                        className="text-red-600 hover:text-red-800 p-1"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {formData.question_type === 'true_false' && (
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Question Type *
+                Correct Answer *
               </label>
               <div className="flex space-x-4">
                 <label className="flex items-center">
                   <input
                     type="radio"
-                    name="question_type"
-                    value="multiple_choice"
-                    checked={formData.question_type === 'multiple_choice'}
-                    onChange={() => handleQuestionTypeChange('multiple_choice')}
+                    name="correct_answer"
+                    value="True"
+                    checked={formData.correct_answer === 'True'}
+                    onChange={handleInputChange}
                     className="mr-2"
                   />
-                  Multiple Choice (Single Answer)
+                  True
                 </label>
                 <label className="flex items-center">
                   <input
                     type="radio"
-                    name="question_type"
-                    value="multiple_response"
-                    checked={formData.question_type === 'multiple_response'}
-                    onChange={() => handleQuestionTypeChange('multiple_response')}
+                    name="correct_answer"
+                    value="False"
+                    checked={formData.correct_answer === 'False'}
+                    onChange={handleInputChange}
                     className="mr-2"
                   />
-                  Multiple Response (Multiple Answers)
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="question_type"
-                    value="true_false"
-                    checked={formData.question_type === 'true_false'}
-                    onChange={() => handleQuestionTypeChange('true_false')}
-                    className="mr-2"
-                  />
-                  True/False
+                  False
                 </label>
               </div>
-          </div>
-
-          {formData.question_type !== 'true_false' && (
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    Options *
-                  </label>
-                  {formData.options.length < 6 && (
-                    <button
-                      type="button"
-                      onClick={addOption}
-                      className="flex items-center px-3 py-1 text-sm bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200"
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Add Option
-                    </button>
-                  )}
-                </div>
-                <div className="space-y-3">
-                  {formData.options.map((option, index) => (
-                    <div key={index} className="flex items-center space-x-3">
-                      <div className="flex-1">
-                        <input
-                          type="text"
-                          value={option}
-                          onChange={(e) => handleOptionChange(index, e.target.value)}
-                          placeholder={`Option ${index + 1}...`}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                        />
-                      </div>
-                      <label className="flex items-center">
-                        <input
-                          type={formData.question_type === 'multiple_response' ? 'checkbox' : 'radio'}
-                          name="correct_answer"
-                          value={option}
-                          checked={formData.correct_answer === option || (formData.question_type === 'multiple_response' && formData.correct_answer.includes(option))}
-                          onChange={(e) => {
-                            if (formData.question_type === 'multiple_response') {
-                              const currentAnswers = formData.correct_answer ? formData.correct_answer.split(',') : [];
-                              if (e.target.checked) {
-                                setFormData(prev => ({
-                                  ...prev,
-                                  correct_answer: [...currentAnswers, option].join(',')
-                                }));
-                              } else {
-                                setFormData(prev => ({
-                                  ...prev,
-                                  correct_answer: currentAnswers.filter(ans => ans !== option).join(',')
-                                }));
-                              }
-                            } else {
-                              setFormData(prev => ({
-                                ...prev,
-                                correct_answer: e.target.checked ? option : ""
-                              }));
-                            }
-                          }}
-                          className="mr-2"
-                        />
-                        <span className="text-sm text-gray-600">Correct</span>
-                      </label>
-                      {formData.options.length > 2 && (
-                        <button
-                          type="button"
-                          onClick={() => removeOption(index)}
-                          className="text-red-600 hover:text-red-800 p-1"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-          )}
-
-          {formData.question_type === 'true_false' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Correct Answer *
-                </label>
-                <div className="flex space-x-4">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="correct_answer"
-                      value="True"
-                      checked={formData.correct_answer === 'True'}
-                      onChange={handleInputChange}
-                      className="mr-2"
-                    />
-                    True
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="correct_answer"
-                      value="False"
-                      checked={formData.correct_answer === 'False'}
-                      onChange={handleInputChange}
-                      className="mr-2"
-                    />
-                    False
-                  </label>
-                </div>
-              </div>
+            </div>
           )}
 
           <div>
-              <label htmlFor="points" className="block text-sm font-medium text-gray-700 mb-2">
-                Points *
-              </label>
-              <input
-                type="number"
-                id="points"
-                name="points"
-                value={formData.points}
-                onChange={handleInputChange}
-                min="0.1"
-                step="0.1"
-                max="100"
-                className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                required
-              />
+            <label htmlFor="points" className="block text-sm font-medium text-gray-700 mb-2">
+              Points *
+            </label>
+            <input
+              type="number"
+              id="points"
+              name="points"
+              value={formData.points}
+              onChange={handleInputChange}
+              min="0.1"
+              step="0.1"
+              max="100"
+              className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              required
+            />
           </div>
 
           {/* Tag Selection */}
@@ -439,11 +441,10 @@ function CreateQuestionPage() {
                         key={tag.tag_id}
                         type="button"
                         onClick={() => toggleTagSelection(tag.tag_id)}
-                        className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${
-                          selectedTags.includes(tag.tag_id)
-                            ? 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-150'
-                            : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
-                        }`}
+                        className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${selectedTags.includes(tag.tag_id)
+                          ? 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-150'
+                          : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                          }`}
                       >
                         {selectedTags.includes(tag.tag_id) && (
                           <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -455,7 +456,7 @@ function CreateQuestionPage() {
                     ))}
                   </div>
                   <p className="text-sm text-gray-500">
-                    {selectedTags.length > 0 
+                    {selectedTags.length > 0
                       ? `${selectedTags.length} tag${selectedTags.length > 1 ? 's' : ''} selected`
                       : 'Select tags to categorize this question'
                     }

@@ -14,11 +14,11 @@ function CreateQuizPage() {
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [tags, setTags] = useState<Tag[]>([]);
-  const [tagConfigs, setTagConfigs] = useState<{tagId: number, questionCount: number}[]>([]);
+  const [tagConfigs, setTagConfigs] = useState<{ tagId: number, questionCount: number }[]>([]);
   const [availableQuestions, setAvailableQuestions] = useState<QuizQuestion[]>([]);
   const [previewQuestions, setPreviewQuestions] = useState<QuizQuestion[]>([]);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -71,7 +71,9 @@ function CreateQuizPage() {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'duration' || name === 'passing_score' ? Number(value) : value
+      [name]: (name === 'duration' || name === 'passing_score')
+        ? (value === '' ? '' : Number(value))
+        : value
     }));
   };
 
@@ -104,15 +106,15 @@ function CreateQuizPage() {
       if (exists) {
         return prev.filter(config => config.tagId !== tagId);
       } else {
-        return [...prev, { tagId, questionCount: 5 }]; // Default 5 questions per tag
+        return [...prev, { tagId, questionCount: 1 }]; // Default 1 question per tag
       }
     });
   };
 
   const updateTagQuestionCount = (tagId: number, count: number) => {
-    setTagConfigs(prev => 
-      prev.map(config => 
-        config.tagId === tagId 
+    setTagConfigs(prev =>
+      prev.map(config =>
+        config.tagId === tagId
           ? { ...config, questionCount: Math.max(1, count) }
           : config
       )
@@ -167,7 +169,7 @@ function CreateQuizPage() {
 
     try {
       setLoading(true);
-      
+
       // Create quiz with random questions
       const totalQuestions = tagConfigs.reduce((sum, config) => sum + config.questionCount, 0);
       const payload = {
@@ -183,7 +185,7 @@ function CreateQuizPage() {
           questionCount: config.questionCount
         }))
       };
-      
+
       const result = await quizApi.createWithRandomQuestions(payload);
 
       if (result.error) {
@@ -266,20 +268,20 @@ function CreateQuizPage() {
 
       {/* Step Indicator */}
       <div className="mb-8">
-          <div className="flex items-center">
-            <div className={`flex items-center justify-center w-8 h-8 rounded-full ${currentStep >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-500'}`}>
-              {currentStep > 1 ? <CheckCircle className="w-5 h-5" /> : '1'}
-            </div>
-            <div className={`flex-1 h-1 mx-4 ${currentStep > 1 ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
-            <div className={`flex items-center justify-center w-8 h-8 rounded-full ${currentStep >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-500'}`}>
-              2
-            </div>
+        <div className="flex items-center">
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full ${currentStep >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-500'}`}>
+            {currentStep > 1 ? <CheckCircle className="w-5 h-5" /> : '1'}
           </div>
-          <div className="flex justify-between mt-2">
-            <span className="text-sm font-medium text-gray-900">Quiz Information</span>
-            <span className="text-sm font-medium text-gray-900">Select Questions</span>
+          <div className={`flex-1 h-1 mx-4 ${currentStep > 1 ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full ${currentStep >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-500'}`}>
+            2
           </div>
         </div>
+        <div className="flex justify-between mt-2">
+          <span className="text-sm font-medium text-gray-900">Quiz Information</span>
+          <span className="text-sm font-medium text-gray-900">Select Questions</span>
+        </div>
+      </div>
 
       {/* Form */}
       <div className="bg-white shadow rounded-lg p-6">
@@ -408,11 +410,10 @@ function CreateQuizPage() {
                         key={tag.tag_id}
                         type="button"
                         onClick={() => toggleTagSelection(tag.tag_id)}
-                        className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition-colors ${
-                          tagConfigs.find(c => c.tagId === tag.tag_id)
-                            ? 'bg-blue-100 text-blue-800 border-blue-200'
-                            : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200'
-                        } border`}
+                        className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition-colors ${tagConfigs.find(c => c.tagId === tag.tag_id)
+                          ? 'bg-blue-100 text-blue-800 border-blue-200'
+                          : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200'
+                          } border`}
                       >
                         {tagConfigs.find(c => c.tagId === tag.tag_id) && (
                           <CheckCircle className="w-4 h-4 mr-1" />
@@ -438,27 +439,48 @@ function CreateQuizPage() {
                   {tagConfigs.map(config => {
                     const tag = tags.find(t => t.tag_id === config.tagId);
                     if (!tag) return null;
+
+                    const availableCount = availableQuestions.filter(q =>
+                      Array.isArray(q.tags)
+                        ? q.tags.some(tagObj => tagObj.tag_id === config.tagId)
+                        : false
+                    ).length;
+
+                    const isExceed = config.questionCount > availableCount;
+
                     return (
-                      <div key={config.tagId} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                            {tag.name}
-                          </span>
+                      <div key={config.tagId} className="flex flex-col p-3 border border-gray-200 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                              {tag.name}
+                            </span>
+                            <span className="ml-2 text-xs text-gray-500">
+                              ({availableCount} available)
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <label htmlFor={`count-${config.tagId}`} className="text-sm text-gray-600">
+                              Questions:
+                            </label>
+                            <input
+                              type="number"
+                              id={`count-${config.tagId}`}
+                              value={config.questionCount}
+                              onChange={(e) => updateTagQuestionCount(config.tagId, Number(e.target.value))}
+                              min="1"
+                              max="50"
+                              className="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center"
+                            />
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <label htmlFor={`count-${config.tagId}`} className="text-sm text-gray-600">
-                            Questions:
-                          </label>
-                          <input
-                            type="number"
-                            id={`count-${config.tagId}`}
-                            value={config.questionCount}
-                            onChange={(e) => updateTagQuestionCount(config.tagId, Number(e.target.value))}
-                            min="1"
-                            max="50"
-                            className="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center"
-                          />
-                        </div>
+                        {isExceed && (
+                          <div className="mt-2 w-full">
+                            <span className="text-xs text-red-600 font-semibold">
+                              Không được vượt quá {availableCount} câu
+                            </span>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -467,9 +489,28 @@ function CreateQuizPage() {
                   <p className="text-sm text-blue-800">
                     <span className="font-semibold">Total questions:</span> {tagConfigs.reduce((sum, config) => sum + config.questionCount, 0)}
                   </p>
-                  <p className="text-sm text-blue-600 mt-1">
-                    Available questions: {availableQuestions.length}
-                  </p>
+                  {/* Cảnh báo nếu tổng số câu hỏi muốn chọn > availableQuestions.length */}
+                  {tagConfigs.reduce((sum, config) => sum + config.questionCount, 0) > availableQuestions.length && (
+                    (() => {
+                      // Đếm số câu hỏi trùng tag
+                      const questionTagCount: Record<number, number> = {};
+                      availableQuestions.forEach(q => {
+                        if (Array.isArray(q.tags)) {
+                          const matchedTags = q.tags.filter(tagObj => tagConfigs.some(config => config.tagId === tagObj.tag_id));
+                          if (matchedTags.length > 1) {
+                            questionTagCount[q.question_id] = matchedTags.length;
+                          }
+                        }
+                      });
+                      const duplicateCount = Object.keys(questionTagCount).length;
+                      return (
+                        <p className="mt-2 text-xs text-orange-600">
+                          Tổng số câu hỏi bạn muốn chọn vượt quá số lượng câu hỏi khả dụng.<br />
+                          Có {duplicateCount} câu hỏi thuộc nhiều tag nên chỉ có thể tạo quiz với tối đa <b>{availableQuestions.length}</b> câu hỏi.
+                        </p>
+                      );
+                    })()
+                  )}
                 </div>
               </div>
             )}
@@ -478,21 +519,31 @@ function CreateQuizPage() {
             {availableQuestions.length > 0 && (
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex justify-between items-center mb-3">
-                  <h4 className="text-md font-medium text-gray-900">
+                  <h4 className="text-md font-medium text-gray-900 flex items-center">
                     Available Questions ({availableQuestions.length})
+                    {tagConfigs.length > 0 && (() => {
+                      // Đếm số câu hỏi trùng tag
+                      const questionTagCount: Record<number, number> = {};
+                      availableQuestions.forEach(q => {
+                        if (Array.isArray(q.tags)) {
+                          const matchedTags = q.tags.filter(tagObj => tagConfigs.some(config => config.tagId === tagObj.tag_id));
+                          if (matchedTags.length > 1) {
+                            questionTagCount[q.question_id] = matchedTags.length;
+                          }
+                        }
+                      });
+                      const duplicateCount = Object.keys(questionTagCount).length;
+                      if (duplicateCount > 0) {
+                        return (
+                          <span className="ml-4 px-2 py-1 bg-orange-50 text-orange-700 text-xs rounded">
+                            Có {duplicateCount} câu hỏi thuộc nhiều tag
+                          </span>
+                        );
+                      }
+                      return null;
+                    })()}
                   </h4>
                   <div className="flex space-x-2">
-                    {/* <button
-                      type="button"
-                      onClick={() => {
-                        const shuffled = [...availableQuestions].sort(() => Math.random() - 0.5);
-                        setAvailableQuestions(shuffled);
-                      }}
-                      className="inline-flex items-center px-3 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
-                    >
-                      <Shuffle className="w-4 h-4 mr-1" />
-                      Shuffle
-                    </button> */}
                     <button
                       type="button"
                       onClick={handlePreviewQuestions}
@@ -584,7 +635,7 @@ function CreateQuizPage() {
                   </div>
                 </div>
                 <p className="text-gray-700 mb-3">{question.question_text}</p>
-                
+
                 {question.options && (
                   <div className="space-y-1">
                     {parseOptions(question.options).map((option: string, optionIndex: number) => {
@@ -607,10 +658,10 @@ function CreateQuizPage() {
               </div>
             ))}
           </div>
-          
+
           <div className="mt-4 pt-4 border-t border-gray-200">
             <p className="text-sm text-gray-600">
-              This is a preview of {previewQuestions.length} randomly selected questions. 
+              This is a preview of {previewQuestions.length} randomly selected questions.
               The actual quiz will select different random questions each time it taken.
             </p>
           </div>

@@ -101,10 +101,10 @@ export const assignTagsToMaterial = async (req, res) => {
         const { materialId } = req.params;
         const { tagIds } = req.body;
 
-        if (!tagIds || !Array.isArray(tagIds) || tagIds.length === 0) {
+        if (!tagIds || !Array.isArray(tagIds)) {
             return res.status(400).json({
                 error: true,
-                message: "tagIds array is required"
+                message: "tagIds must be an array"
             });
         }
 
@@ -164,10 +164,10 @@ export const assignTagsToQuestion = async (req, res) => {
         const { questionId } = req.params;
         const { tagIds } = req.body;
 
-        if (!tagIds || !Array.isArray(tagIds) || tagIds.length === 0) {
+        if (!tagIds || !Array.isArray(tagIds)) {
             return res.status(400).json({
                 error: true,
-                message: "tagIds array is required"
+                message: "tagIds must be an array"
             });
         }
 

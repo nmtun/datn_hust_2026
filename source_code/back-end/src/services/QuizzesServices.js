@@ -418,6 +418,19 @@ export const getArchivedQuizzesService = async () => {
                     model: User,
                     as: 'creator',
                     attributes: ['user_id', 'full_name']
+                },
+                {
+                    model: QuestionToQuiz,
+                    as: 'questionAssignments',
+                    where: { is_active: true },
+                    required: false,
+                    include: [
+                        {
+                            model: QuizQuestion,
+                            as: 'question',
+                            attributes: ['question_id', 'question_text', 'question_type', 'points']
+                        },
+                    ]
                 }
             ],
             order: [['creation_date', 'DESC']]
@@ -797,6 +810,12 @@ export const hardDeleteQuizService = async (quizId) => {
                 }
             };
         }
+
+        // xóa các liên kết trước khi xóa quiz
+        await MaterialQuizzes.destroy({ where: { quiz_id: quizId } });
+        await QuestionToQuiz.destroy({ where: { quiz_id: quizId } });
+        await QuizTags.destroy({ where: { quiz_id: quizId } });
+        
         await quiz.destroy();
         return {
             status: 200,

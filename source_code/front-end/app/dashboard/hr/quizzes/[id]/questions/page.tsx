@@ -3,7 +3,7 @@
 import { ArrowLeft, Plus, Edit2, Eye, Trash2, CheckCircle, XCircle } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect } from "react";
-import { questionApi, QuizQuestion, quizApi, Quiz } from "@/app/api/quizApi";
+import { questionApi, QuizQuestion, quizApi, Quiz, questionToQuizApi } from "@/app/api/quizApi";
 import { showToast } from "@/app/utils/toast";
 import Modal from "@/app/components/Modal";
 import { withAuth } from "@/app/middleware/withAuth";
@@ -77,20 +77,23 @@ function QuizQuestionsPage() {
 
     try {
       setDeleteLoading(questionToDelete.question_id);
-      const result = await questionApi.delete(questionToDelete.question_id);
+      // Remove question from quiz
+      const result = await questionToQuizApi.removeQuestionFromQuiz({
+        questionId: questionToDelete.question_id,
+        quizId: Number(quizId)
+      });
 
       if (result.error) {
-        throw new Error(result.message || 'Error deleting question');
+        throw new Error(result.message || 'Error removing question from quiz');
       }
 
       // Refresh the list
       await fetchQuestions();
 
-      // Show success message
-      showToast.success('Question deleted successfully');
+      showToast.success('Question removed from quiz successfully');
     } catch (error: any) {
-      console.error("Error deleting question:", error);
-      showToast.error(error.message || 'Error deleting question');
+      console.error("Error removing question from quiz:", error);
+      showToast.error(error.message || 'Error removing question from quiz');
     } finally {
       setDeleteLoading(null);
       setShowDeleteConfirm(false);
@@ -332,11 +335,11 @@ function QuizQuestionsPage() {
         <Modal
           isOpen={showDeleteConfirm}
           onClose={() => setShowDeleteConfirm(false)}
-          title="Confirm Delete"
+          title="Remove Question from Quiz"
         >
           <div className="space-y-4">
             <p className="text-gray-700">
-              Are you sure you want to delete this question? This action cannot be undone.
+              Are you sure you want to remove this question from the quiz? The question will remain in the question bank and can be added to other quizzes.
             </p>
             <div className="bg-gray-50 p-3 rounded-lg">
               <p className="text-sm font-medium text-gray-900">Question:</p>
@@ -354,7 +357,7 @@ function QuizQuestionsPage() {
                 disabled={deleteLoading !== null}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
               >
-                {deleteLoading !== null ? 'Deleting...' : 'Delete Question'}
+                {deleteLoading !== null ? 'Removing...' : 'Remove from Quiz'}
               </button>
             </div>
           </div>
