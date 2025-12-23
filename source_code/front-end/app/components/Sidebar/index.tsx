@@ -27,6 +27,7 @@ const menuItems = {
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Job Descriptions", href: "/dashboard/hr/job-description", icon: FileText },
     { name: "Candidates", href: "/dashboard/hr/candidate", icon: Users },
+    { name : "Employees", href: "/dashboard/hr/employee", icon: UserCircle },
     { name: "Training Materials", href: "/dashboard/hr/training-material", icon: BrainCog },
     { name: "Quizzes", href: "/dashboard/hr/quizzes", icon: CircleQuestionMark },
   ],
