@@ -49,8 +49,8 @@ export const createQuestionService = async (questionData, user = null) => {
             created_by: user?.user_id || null
         });
 
-        return { 
-            status: 201, 
+        return {
+            status: 201,
             data: {
                 error: false,
                 message: "Question created successfully",
@@ -58,8 +58,8 @@ export const createQuestionService = async (questionData, user = null) => {
             }
         };
     } catch (error) {
-        return { 
-            status: 500, 
+        return {
+            status: 500,
             data: {
                 error: true,
                 message: "An error occurred while creating question",
@@ -80,9 +80,9 @@ export const getQuestionsByQuizIdService = async (quizId) => {
         // Get questions through QuestionToQuiz relationships
         console.log('Fetching questions for quiz ID:', quizId);
         const questionAssignments = await QuestionToQuiz.findAll({
-            where: { 
+            where: {
                 quiz_id: quizId,
-                is_active: true 
+                is_active: true
             },
             include: [
                 {
@@ -139,13 +139,13 @@ export const getAllQuestionsService = async (search = '', questionType = '') => 
     try {
         // Import Tag model
         const { default: Tag } = await import('../models/Tag.js');
-        
+
         const whereClause = {};
-        
+
         if (search) {
             whereClause.question_text = { [Op.like]: `%${search}%` };
         }
-        
+
         if (questionType) {
             whereClause.question_type = questionType;
         }
@@ -192,7 +192,7 @@ export const getQuestionByIdService = async (questionId) => {
     try {
         // Import Tag model
         const { default: Tag } = await import('../models/Tag.js');
-        
+
         const question = await QuizQuestion.findByPk(questionId, {
             include: [
                 {
@@ -242,7 +242,7 @@ export const getQuestionByIdService = async (questionId) => {
 export const updateQuestionService = async (questionId, updateData) => {
     try {
         const question = await QuizQuestion.findByPk(questionId);
-        
+
         if (!question) {
             return {
                 status: 404,
@@ -262,8 +262,8 @@ export const updateQuestionService = async (questionId, updateData) => {
         }
 
         // Validate options for multiple choice questions
-        if (updateData.question_type && 
-            (updateData.question_type === 'multiple_choice' || updateData.question_type === 'multiple_response') && 
+        if (updateData.question_type &&
+            (updateData.question_type === 'multiple_choice' || updateData.question_type === 'multiple_response') &&
             !updateData.options) {
             return { status: 400, data: { error: true, message: "Options are required for multiple choice questions" } };
         }
@@ -308,7 +308,7 @@ export const updateQuestionService = async (questionId, updateData) => {
 export const deleteQuestionService = async (questionId) => {
     try {
         const question = await QuizQuestion.findByPk(questionId);
-        
+
         if (!question) {
             return {
                 status: 404,
@@ -319,6 +319,23 @@ export const deleteQuestionService = async (questionId) => {
             };
         }
 
+        // Import models
+        const { default: QuestionTag } = await import('../models/QuestionTag.js');
+        const { default: QuizAnswer } = await import('../models/QuizAnswer.js');
+
+        await QuestionTag.destroy({
+            where: { question_id: questionId }
+        });
+
+        await QuestionToQuiz.destroy({
+            where: { question_id: questionId }
+        });
+
+        await QuizAnswer.destroy({
+            where: { question_id: questionId }
+        });
+
+        // 4. Finally delete the question itself
         await question.destroy();
 
         return {
@@ -376,14 +393,14 @@ export const bulkCreateQuestionsService = async (questionsData) => {
         // Validate all questions first
         for (const questionData of questionsData) {
             const { quiz_id, question_text, question_type, correct_answer } = questionData;
-            
+
             if (!quiz_id || !question_text || !question_type || !correct_answer) {
-                return { 
-                    status: 400, 
-                    data: { 
-                        error: true, 
-                        message: "All fields (quiz_id, question_text, question_type, correct_answer) are required for all questions" 
-                    } 
+                return {
+                    status: 400,
+                    data: {
+                        error: true,
+                        message: "All fields (quiz_id, question_text, question_type, correct_answer) are required for all questions"
+                    }
                 };
             }
 
@@ -440,12 +457,12 @@ export const getQuestionsByTagsService = async (tagIds, questionType = '', limit
         // Import QuestionTag model
         const { default: QuestionTag } = await import('../models/QuestionTag.js');
         const { default: Tags } = await import('../models/Tag.js');
-        
+
         // Build where condition - only get active questions
         let whereCondition = {
             is_active: true // Only get active questions
         };
-        
+
         if (questionType) {
             whereCondition.question_type = questionType;
         }
@@ -469,13 +486,22 @@ export const getQuestionsByTagsService = async (tagIds, questionType = '', limit
             limit: limit,
             order: [['question_id', 'DESC']]
         });
+        
+        const mappedQuestions = questions.map(q => {
+            // Lấy tất cả tag từ các Question_Tags liên kết
+            const tags = (q.Question_Tags || []).map(qt => qt.Tag);
+            return {
+                ...q.toJSON(),
+                tags
+            };
+        });
 
         return {
             status: 200,
             data: {
                 error: false,
                 message: "Questions retrieved successfully",
-                questions: questions
+                questions: mappedQuestions
             }
         };
     } catch (error) {

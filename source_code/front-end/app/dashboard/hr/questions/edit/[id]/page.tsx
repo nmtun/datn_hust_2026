@@ -130,14 +130,6 @@ function EditQuestionPage() {
         const correctAnswers = prev.correct_answer ? prev.correct_answer.split(',') : [];
         const filteredAnswers = correctAnswers.filter(ans => ans !== prev.options[index]);
         newCorrectAnswer = filteredAnswers.join(',');
-      } else if (prev.options[index] === prev.correct_answer && value !== prev.options[index]) {
-        // If option text changed and it was the correct answer, update correct answer
-        newCorrectAnswer = value;
-      } else if (prev.question_type === 'multiple_response' && prev.correct_answer.includes(prev.options[index])) {
-        // For multiple response, update the correct answer if this option was selected
-        const correctAnswers = prev.correct_answer.split(',');
-        const updatedAnswers = correctAnswers.map(ans => ans === prev.options[index] ? value : ans);
-        newCorrectAnswer = updatedAnswers.join(',');
       }
       
       return {
@@ -414,10 +406,20 @@ function EditQuestionPage() {
                         type={formData.question_type === 'multiple_response' ? 'checkbox' : 'radio'}
                         name="correct_answer"
                         value={option}
-                        checked={formData.correct_answer === option || (formData.question_type === 'multiple_response' && formData.correct_answer.includes(option))}
+                        disabled={!option.trim()}
+                        checked={
+                          formData.question_type === 'multiple_response'
+                            ? !!option && formData.correct_answer
+                              .split(',')
+                              .filter(ans => ans.trim() !== '')
+                              .includes(option)
+                            : formData.correct_answer === option && !!option
+                        }
                         onChange={(e) => {
+                          if (!option.trim()) return;
+                          
                           if (formData.question_type === 'multiple_response') {
-                            const currentAnswers = formData.correct_answer ? formData.correct_answer.split(',') : [];
+                            const currentAnswers = formData.correct_answer ? formData.correct_answer.split(',').filter(ans => ans.trim()) : [];
                             if (e.target.checked) {
                               setFormData(prev => ({
                                 ...prev,

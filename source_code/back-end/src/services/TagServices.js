@@ -181,7 +181,6 @@ export const deleteTagService = async (tagId) => {
                 }
             };
         }
-
         await tag.destroy();
 
         return {
@@ -250,14 +249,25 @@ export const assignTagsToMaterialService = async (materialId, tagIds) => {
             return { status: 404, data: { error: true, message: "Training material not found" } };
         }
 
+        // Remove existing tags for this material first
+        await MaterialTag.destroy({ where: { material_id: materialId } });
+
+        // If tagIds is empty, just remove all tags (user wants to clear all tags)
+        if (tagIds.length === 0) {
+            return {
+                status: 200,
+                data: {
+                    error: false,
+                    message: "All tags removed from material successfully"
+                }
+            };
+        }
+
         // Validate if all tags exist
         const tags = await Tag.findAll({ where: { tag_id: tagIds } });
         if (tags.length !== tagIds.length) {
             return { status: 404, data: { error: true, message: "One or more tags not found" } };
         }
-
-        // Remove existing tags for this material
-        await MaterialTag.destroy({ where: { material_id: materialId } });
 
         // Create new material-tag associations
         const materialTags = tagIds.map(tagId => ({
@@ -374,14 +384,26 @@ export const assignTagsToQuestionService = async (questionId, tagIds) => {
             return { status: 404, data: { error: true, message: "Question not found" } };
         }
 
+        // Remove existing tag associations for this question first
+        await QuestionTag.destroy({ where: { question_id: questionId } });
+
+        // If tagIds is empty, just remove all tags (user wants to clear all tags)
+        if (tagIds.length === 0) {
+            return {
+                status: 200,
+                data: {
+                    error: false,
+                    message: "All tags removed from question successfully",
+                    assignedTags: 0
+                }
+            };
+        }
+
         // Check if tags exist
         const tags = await Tag.findAll({ where: { tag_id: { [Op.in]: tagIds } } });
         if (tags.length !== tagIds.length) {
             return { status: 404, data: { error: true, message: "One or more tags not found" } };
         }
-
-        // Remove existing tag associations for this question
-        await QuestionTag.destroy({ where: { question_id: questionId } });
 
         // Create new associations
         const associations = tagIds.map(tagId => ({

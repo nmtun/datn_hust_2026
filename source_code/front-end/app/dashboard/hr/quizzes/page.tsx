@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { Search, Plus, Edit2, Eye, Trash2, Clock, Trophy, Users, Archive, Play, BookOpen } from "lucide-react";
+import { Search, Plus, Edit2, Eye, Trash2, Clock, Trophy, FileQuestionMark, Archive, Play, BookOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { quizApi, Quiz } from "@/app/api/quizApi";
@@ -290,7 +290,7 @@ function QuizPage() {
 
                 <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
                   <div className="flex items-center">
-                    <Users className="w-4 h-4 mr-1" />
+                    <FileQuestionMark className="w-4 h-4 mr-1" />
                     <span>{quiz.questionAssignments?.length || quiz.questions?.length || 0} questions</span>
                   </div>
                   <span className="text-xs">

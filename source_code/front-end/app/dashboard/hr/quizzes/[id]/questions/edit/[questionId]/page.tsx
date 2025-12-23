@@ -18,7 +18,6 @@ function EditQuestionPage() {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [question, setQuestion] = useState<QuizQuestion | null>(null);
   const [formData, setFormData] = useState({
-    quiz_id: "",
     question_text: "",
     question_type: "multiple_choice" as "multiple_choice" | "multiple_response" | "true_false",
     options: ["", "", "", ""],
@@ -69,7 +68,6 @@ function EditQuestionPage() {
       }
 
       setFormData({
-        quiz_id: questionData.quiz_id.toString(),
         question_text: questionData.question_text,
         question_type: questionData.question_type,
         options: questionData.question_type === 'true_false' ? ["True", "False"] : parsedOptions,
@@ -103,10 +101,26 @@ function EditQuestionPage() {
   };
 
   const handleOptionChange = (index: number, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      options: prev.options.map((option, i) => i === index ? value : option)
-    }));
+    setFormData(prev => {
+      const newOptions = prev.options.map((option, i) => i === index ? value : option);
+      let newCorrectAnswer = prev.correct_answer;
+      
+      // If the option text is cleared and it was selected as correct answer, remove it
+      if (value.trim() === '' && prev.options[index] === prev.correct_answer) {
+        newCorrectAnswer = "";
+      } else if (value.trim() === '' && prev.question_type === 'multiple_response') {
+        // For multiple response, remove this option from correct answers
+        const correctAnswers = prev.correct_answer ? prev.correct_answer.split(',') : [];
+        const filteredAnswers = correctAnswers.filter(ans => ans !== prev.options[index]);
+        newCorrectAnswer = filteredAnswers.join(',');
+      }
+      
+      return {
+        ...prev,
+        options: newOptions,
+        correct_answer: newCorrectAnswer
+      };
+    });
   };
 
   const addOption = () => {
@@ -327,10 +341,20 @@ function EditQuestionPage() {
                         type={formData.question_type === 'multiple_response' ? 'checkbox' : 'radio'}
                         name="correct_answer"
                         value={option}
-                        checked={formData.correct_answer === option || (formData.question_type === 'multiple_response' && formData.correct_answer.includes(option))}
+                        disabled={!option.trim()}
+                        checked={
+                          formData.question_type === 'multiple_response'
+                            ? !!option && formData.correct_answer
+                              .split(',')
+                              .filter(ans => ans.trim() !== '')
+                              .includes(option)
+                            : formData.correct_answer === option && !!option
+                        }
                         onChange={(e) => {
+                          if (!option.trim()) return;
+                          
                           if (formData.question_type === 'multiple_response') {
-                            const currentAnswers = formData.correct_answer ? formData.correct_answer.split(',') : [];
+                            const currentAnswers = formData.correct_answer ? formData.correct_answer.split(',').filter(ans => ans.trim()) : [];
                             if (e.target.checked) {
                               setFormData(prev => ({
                                 ...prev,

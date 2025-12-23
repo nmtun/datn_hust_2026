@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { ArrowLeft, Search, Eye, RotateCcw, Clock, Trophy, Users, Trash2 } from "lucide-react";
+import { ArrowLeft, Search, Eye, Undo2, Clock, Trophy, FileQuestionMark, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { quizApi, Quiz } from "@/app/api/quizApi";
@@ -265,8 +265,8 @@ function ArchivedQuizzesPage() {
 
                 <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
                   <div className="flex items-center">
-                    <Users className="w-4 h-4 mr-1" />
-                    <span>{quiz.questions?.length || 0} questions</span>
+                    <FileQuestionMark className="w-4 h-4 mr-1" />
+                    <span>{quiz.questionAssignments?.length || 0} questions</span>
                   </div>
                   <span className="text-xs">
                     {new Date(quiz.creation_date).toLocaleDateString('vi-VN')}
@@ -292,7 +292,7 @@ function ArchivedQuizzesPage() {
                     disabled={restoreLoading === quiz.quiz_id}
                     className="flex-1 flex items-center justify-center px-3 py-2 text-sm bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors disabled:opacity-50"
                   >
-                    <RotateCcw className="w-4 h-4 mr-1" />
+                    <Undo2 className="w-4 h-4 mr-1" />
                     {restoreLoading === quiz.quiz_id ? 'Restoring...' : 'Restore'}
                   </button>
                   <button
@@ -408,7 +408,7 @@ function ArchivedQuizzesPage() {
         >
           <div className="space-y-4">
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-800 font-semibold mb-2">⚠️ Warning: This action cannot be undone!</p>
+              <p className="text-red-800 font-semibold mb-2">Warning: This action cannot be undone!</p>
               <p className="text-red-700 text-sm">
                 You are about to permanently delete the quiz "{quizToDelete.title}". 
                 All associated data will be lost forever.
