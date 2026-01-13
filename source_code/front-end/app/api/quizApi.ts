@@ -303,3 +303,70 @@ export const questionApi = {
     return response.data;
   }
 };
+
+// Quiz Results API
+export interface QuizResult {
+  result_id: number;
+  user_id: number;
+  quiz_id: number;
+  score: number;
+  pass_status: boolean;
+  completion_time: number;
+  attempt_number: number;
+  completion_date: string;
+  created_at: string;
+  quiz?: {
+    quiz_id: number;
+    title: string;
+    passing_score: number;
+    duration: number;
+  };
+  user?: {
+    user_id: number;
+    full_name: string;
+    personal_email: string;
+  };
+}
+
+export const quizResultApi = {
+  submit: async (resultData: {
+    quiz_id: number;
+    score: number;
+    pass_status: boolean;
+    completion_time: number;
+    answers?: {
+      question_id: number;
+      answer: string | string[];
+      is_correct?: boolean;
+    }[];
+  }) => {
+    const response = await apiClient.post("api/quiz-results/submit", resultData);
+    return response.data;
+  },
+
+  getMyResults: async () => {
+    const response = await apiClient.get("api/quiz-results/my-results");
+    return response.data;
+  },
+
+  getById: async (id: number) => {
+    const response = await apiClient.get(`api/quiz-results/get/${id}`);
+    return response.data;
+  },
+
+  getAttemptHistory: async (quizId: number) => {
+    const response = await apiClient.get(`api/quiz-results/quiz/${quizId}/attempts`);
+    return response.data;
+  },
+
+  getAll: async (filters?: {
+    quiz_id?: number;
+    user_id?: number;
+    pass_status?: boolean;
+    from_date?: string;
+    to_date?: string;
+  }) => {
+    const response = await apiClient.get("api/quiz-results/get-all", { params: filters });
+    return response.data;
+  }
+};

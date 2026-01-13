@@ -31,3 +31,29 @@ export const authorize = (...roles) => {
         next();
     };
 };
+
+// Middleware xác thực cho phép token từ query string (dùng cho download/streaming)
+export const authenticateWithQuery = (req, res, next) => {
+    // Kiểm tra token từ header trước
+    let token = null;
+    const authHeader = req.headers.authorization;
+    
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+        token = authHeader.split(" ")[1];
+    } else if (req.query.token) {
+        // Nếu không có trong header, lấy từ query string
+        token = req.query.token;
+    }
+    
+    if (!token) {
+        return res.status(401).json({ message: "Không có token" });
+    }
+    
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded; // { user_id, role }
+        next();
+    } catch (err) {
+        res.status(401).json({ message: "Token không hợp lệ" });
+    }
+};

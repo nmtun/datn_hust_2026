@@ -34,6 +34,7 @@ import TagRoutes from "./src/routes/TagRoutes.js";
 import QuizzesRoutes from "./src/routes/QuizzesRoutes.js";
 import QuizQuestionRoutes from "./src/routes/QuizQuestionRoutes.js";
 import QuestionToQuizRoutes from "./src/routes/QuestionToQuizRoutes.js";
+import QuizResultRoutes from "./src/routes/QuizResultRoutes.js";
 
 dotenv.config();
 
@@ -51,7 +52,13 @@ app.use(cors({
 }));
 
 app.use(helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" }
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: {
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+            "frame-ancestors": ["'self'", "http://localhost:3000", "http://localhost:3001"], // Allow iframe from frontend
+        },
+    },
 }));
 
 app.use(morgan("dev"));     // Log HTTP requests
@@ -74,6 +81,7 @@ app.use("/api/tag", TagRoutes);
 app.use("/api/quizzes", QuizzesRoutes);
 app.use("/api/quiz-questions", QuizQuestionRoutes);
 app.use("/api/question-to-quiz", QuestionToQuizRoutes);
+app.use("/api/quiz-results", QuizResultRoutes);
 
 // Tạo bảng và chạy server
 (async () => {
