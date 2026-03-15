@@ -47,6 +47,7 @@ router.get('/:materialId/shared-tag-quizzes', authenticate, trainingMaterialCont
 
 // File download routes
 import * as fileController from '../controllers/FileControllers.js';
-router.get('/download/:filename', authenticate, fileController.downloadFile);
+import { authenticateWithQuery } from '../middleware/auth.js';
+router.get('/download/:filename', authenticateWithQuery, fileController.downloadFile);
 
 export default router;

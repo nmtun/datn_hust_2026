@@ -19,18 +19,54 @@ export const downloadFile = async (req, res) => {
             });
         }
         
-        // Get file stats
+        // Get file stats and extension
         const stats = await fs.stat(filePath);
-        const originalName = sanitizedFilename.replace(/^.*_\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}_\d+/, '');
+        const ext = path.extname(filePath).toLowerCase();
         
-        // Set headers for file download
-        res.setHeader('Content-Disposition', `attachment; filename="${originalName}"`);
+        // Determine content type based on extension
+        let contentType = 'application/octet-stream';
+        const videoExtensions = ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.mkv'];
+        const pdfExtensions = ['.pdf'];
+        
+        if (videoExtensions.includes(ext)) {
+            contentType = `video/${ext.substring(1)}`;
+            if (ext === '.mp4') contentType = 'video/mp4';
+            if (ext === '.avi') contentType = 'video/x-msvideo';
+            if (ext === '.mov') contentType = 'video/quicktime';
+            if (ext === '.wmv') contentType = 'video/x-ms-wmv';
+            if (ext === '.mkv') contentType = 'video/x-matroska';
+        } else if (pdfExtensions.includes(ext)) {
+            contentType = 'application/pdf';
+        }
+        
+        // Set headers for streaming (inline display for video/pdf)
+        res.setHeader('Content-Type', contentType);
         res.setHeader('Content-Length', stats.size);
-        res.setHeader('Content-Type', 'application/octet-stream');
+        res.setHeader('Accept-Ranges', 'bytes');
         
-        // Stream file to response
-        const fileStream = await fs.readFile(filePath);
-        res.send(fileStream);
+        // Allow iframe embedding for PDF/video
+        res.setHeader('X-Frame-Options', 'ALLOWALL');
+        res.removeHeader('X-Frame-Options'); // Remove default restrictive header
+        
+        // Handle range requests for video streaming
+        const range = req.headers.range;
+        if (range && videoExtensions.includes(ext)) {
+            const parts = range.replace(/bytes=/, "").split("-");
+            const start = parseInt(parts[0], 10);
+            const end = parts[1] ? parseInt(parts[1], 10) : stats.size - 1;
+            const chunksize = (end - start) + 1;
+            
+            res.status(206);
+            res.setHeader('Content-Range', `bytes ${start}-${end}/${stats.size}`);
+            res.setHeader('Content-Length', chunksize);
+            
+            const fileStream = await fs.readFile(filePath);
+            res.send(fileStream.slice(start, end + 1));
+        } else {
+            // Stream entire file
+            const fileStream = await fs.readFile(filePath);
+            res.send(fileStream);
+        }
         
     } catch (error) {
         console.error('Error downloading file:', error);
