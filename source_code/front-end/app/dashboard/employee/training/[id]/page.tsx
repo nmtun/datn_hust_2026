@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { trainingMaterialApi, TrainingMaterial } from "@/app/api/trainingMaterialApi";
-import { ArrowLeft, Clock, User, FileText, Download, Play } from "lucide-react";
+import { quizResultApi, QuizResult } from "@/app/api/quizApi";
+import { ArrowLeft, Clock, User, FileText, Download, Play, History, ChevronDown, ChevronUp, CheckCircle, XCircle } from "lucide-react";
 import { showToast } from "@/app/utils/toast";
 import { withAuth } from "@/app/middleware/withAuth";
 
@@ -13,6 +14,9 @@ function TrainingMaterialDetailPage() {
   const [material, setMaterial] = useState<TrainingMaterial | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"content" | "quizzes">("content");
+  const [expandedHistory, setExpandedHistory] = useState<number | null>(null);
+  const [quizHistories, setQuizHistories] = useState<Record<number, QuizResult[]>>({});
+  const [loadingHistory, setLoadingHistory] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     if (params.id) {
@@ -37,6 +41,24 @@ function TrainingMaterialDetailPage() {
       showToast.error('Lỗi khi tải tài liệu');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleHistory = async (quizId: number) => {
+    if (expandedHistory === quizId) {
+      setExpandedHistory(null);
+      return;
+    }
+    setExpandedHistory(quizId);
+    if (quizHistories[quizId]) return;
+    setLoadingHistory((prev) => ({ ...prev, [quizId]: true }));
+    try {
+      const response = await quizResultApi.getAttemptHistory(quizId);
+      setQuizHistories((prev) => ({ ...prev, [quizId]: response.attempts || [] }));
+    } catch {
+      showToast.error('Lỗi khi tải lịch sử làm bài');
+    } finally {
+      setLoadingHistory((prev) => ({ ...prev, [quizId]: false }));
     }
   };
 
@@ -292,65 +314,151 @@ function TrainingMaterialDetailPage() {
             {material.quizzes.map((quiz) => (
               <div
                 key={quiz.quiz_id}
-                className="border border-gray-200 rounded-lg p-6 hover:border-indigo-300 hover:shadow-sm transition-all"
+                className="border border-gray-200 rounded-lg overflow-hidden hover:border-indigo-300 hover:shadow-sm transition-all"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      {quiz.title}
-                    </h3>
-                    <p className="text-gray-600 mb-4">
-                      {quiz.description || "Không có mô tả"}
-                    </p>
+                <div className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                        {quiz.title}
+                      </h3>
+                      <p className="text-gray-600 mb-4">
+                        {quiz.description || "Không có mô tả"}
+                      </p>
 
-                    <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                      <div className="flex items-center">
-                        <svg
-                          className="w-5 h-5 mr-2 text-blue-500"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        Thời gian: {quiz.duration} phút
-                      </div>
-                      <div className="flex items-center">
-                        <svg
-                          className="w-5 h-5 mr-2 text-green-500"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        Điểm đạt: {quiz.passing_score}%
+                      <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                        <div className="flex items-center">
+                          <svg
+                            className="w-5 h-5 mr-2 text-blue-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          Thời gian: {quiz.duration} phút
+                        </div>
+                        <div className="flex items-center">
+                          <svg
+                            className="w-5 h-5 mr-2 text-green-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          Điểm đạt: {quiz.passing_score}%
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <button
-                    onClick={() =>
-                      router.push(
-                        `/dashboard/employee/training/quiz/${quiz.quiz_id}`
-                      )
-                    }
-                    className="ml-4 px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium flex items-center"
-                  >
-                    <Play className="w-5 h-5 mr-2" />
-                    Bắt đầu làm bài
-                  </button>
+                    <div className="ml-4 flex flex-col gap-2">
+                      <button
+                        onClick={() =>
+                          router.push(
+                            `/dashboard/employee/training/quiz/${quiz.quiz_id}`
+                          )
+                        }
+                        className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium flex items-center"
+                      >
+                        <Play className="w-5 h-5 mr-2" />
+                        Bắt đầu làm bài
+                      </button>
+                      <button
+                        onClick={() => toggleHistory(quiz.quiz_id)}
+                        className="px-6 py-3 border border-indigo-300 text-indigo-600 rounded-md hover:bg-indigo-50 transition-colors font-medium flex items-center justify-center"
+                      >
+                        <History className="w-5 h-5 mr-2" />
+                        Lịch sử làm bài
+                        {expandedHistory === quiz.quiz_id ? (
+                          <ChevronUp className="w-4 h-4 ml-2" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 ml-2" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
                 </div>
+
+                {/* History Section */}
+                {expandedHistory === quiz.quiz_id && (
+                  <div className="border-t border-gray-200 bg-gray-50 p-6">
+                    <h4 className="text-base font-semibold text-gray-800 mb-4 flex items-center">
+                      <History className="w-4 h-4 mr-2 text-indigo-500" />
+                      Lịch sử làm bài
+                    </h4>
+                    {loadingHistory[quiz.quiz_id] ? (
+                      <div className="flex justify-center py-6">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+                      </div>
+                    ) : quizHistories[quiz.quiz_id]?.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="text-left text-gray-500 border-b border-gray-200">
+                              <th className="pb-3 pr-4">Lần</th>
+                              <th className="pb-3 pr-4">Điểm số</th>
+                              <th className="pb-3 pr-4">Kết quả</th>
+                              <th className="pb-3 pr-4">Thời gian làm</th>
+                              <th className="pb-3">Ngày làm</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {quizHistories[quiz.quiz_id].map((attempt) => {
+                              const mins = Math.floor(attempt.completion_time / 60);
+                              const secs = attempt.completion_time % 60;
+                              return (
+                                <tr key={attempt.result_id} className="hover:bg-white transition-colors">
+                                  <td className="py-3 pr-4 font-medium text-gray-700">
+                                    #{attempt.attempt_number}
+                                  </td>
+                                  <td className="py-3 pr-4">
+                                    <span className={`font-semibold ${attempt.pass_status ? 'text-green-600' : 'text-red-600'}`}>
+                                      {attempt.score.toFixed(0)}%
+                                    </span>
+                                  </td>
+                                  <td className="py-3 pr-4">
+                                    {attempt.pass_status ? (
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                        <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                                        Đạt
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                                        <XCircle className="w-3.5 h-3.5 mr-1" />
+                                        Chưa đạt
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="py-3 pr-4 text-gray-600">
+                                    {mins > 0 ? `${mins} phút ` : ''}{secs} giây
+                                  </td>
+                                  <td className="py-3 text-gray-600">
+                                    {new Date(attempt.completion_date).toLocaleDateString("vi-VN")}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p className="text-center text-gray-500 py-6">
+                        Bạn chưa làm bài kiểm tra này lần nào.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>

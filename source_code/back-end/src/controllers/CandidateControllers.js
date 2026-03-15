@@ -27,7 +27,7 @@ export const createCandidate = async (req, res) => {
                 const fullName = (req.body.full_name || 'unknown').replace(/[^a-zA-Z0-9_.-]/g, '_');
                 const now = new Date();
                 const applyDate = (req.body.apply_date || now.toISOString().slice(0, 10)).replace(/[^0-9\-]/g, '');
-                
+
                 // Tạo timestamp để phân biệt CV theo thời gian nộp (giờ:phút:giây)
                 const timestamp = now.toTimeString().slice(0, 8).replace(/:/g, '-'); // HH-MM-SS
                 const ext = path.extname(req.file.originalname) || '.pdf';
@@ -47,7 +47,7 @@ export const createCandidate = async (req, res) => {
 
         // Gửi email thông báo
         const userEmail = req.body.personal_email;
-        
+
         if (userEmail) {
             const subject = 'Xác nhận nộp CV thành công - Cảm ơn bạn đã ứng tuyển';
             const htmlContent = `
@@ -72,11 +72,11 @@ export const createCandidate = async (req, res) => {
             message: "Nộp CV thành công! Vui lòng kiểm tra email để nhận xác nhận."
         });
 
-        } catch (error) {
-            console.error("Lỗi tạo candidate:", error);
-            return res.status(500).json({ error: true, message: "Internal server error" });
-        }
-    };
+    } catch (error) {
+        console.error("Lỗi tạo candidate:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
 
 export const getAllCandidates = async (req, res) => {
     try {
@@ -124,7 +124,7 @@ export const deleteCandidate = async (req, res) => {
 
 export const restoreCandidate = async (req, res) => {
     try {
-        const candidateId = req.params.id;  
+        const candidateId = req.params.id;
         const result = await candidateService.restoreCandidateService(candidateId);
         return res.status(result.status).json(result.data);
     } catch (error) {
@@ -191,7 +191,7 @@ export const createCompanyEmail = async (req, res) => {
         }
 
         const result = await candidateService.createCompanyEmailService(candidateId, company_email, password);
-        
+
         if (result.status !== 200) {
             return res.status(result.status).json(result.data);
         }
@@ -199,7 +199,7 @@ export const createCompanyEmail = async (req, res) => {
         // Gửi email thông báo company_email và password
         const candidate = result.data.candidate;
         const personalEmail = candidate.personal_email;
-        
+
         if (personalEmail) {
             const subject = 'Chào mừng bạn đến với công ty - Đây là thông tin đăng nhập của bạn';
             const htmlContent = `
