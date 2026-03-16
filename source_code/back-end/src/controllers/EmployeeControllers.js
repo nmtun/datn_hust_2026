@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 
 export const createEmployee = async (req, res) => {
     try {
-        const { 
+        const {
             personal_email,
             company_email,
             password,
@@ -18,7 +18,6 @@ export const createEmployee = async (req, res) => {
             employee_id_number,
         } = req.body;
 
-        // Kiểm tra thông tin bắt buộc
         if (!personal_email) return res.status(400).json({ error: true, message: "Personal email is required" });
         if (!company_email) return res.status(400).json({ error: true, message: "Company email is required" });
         if (!password) return res.status(400).json({ error: true, message: "Password is required" });
@@ -27,14 +26,11 @@ export const createEmployee = async (req, res) => {
         if (!address) return res.status(400).json({ error: true, message: "Address is required" });
         if (!role) return res.status(400).json({ error: true, message: "Role is required" });
 
-        // Kiểm tra email đã tồn tại
         const existingUser = await userService.findUserByEmailService(personal_email);
         if (existingUser) return res.status(409).json({ error: true, message: "Personal email already exists" });
 
-        // Mã hóa mật khẩu
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Tạo người dùng
         const user = await userService.createUserService({
             personal_email,
             company_email,
@@ -45,7 +41,6 @@ export const createEmployee = async (req, res) => {
             role,
         });
 
-        // Tạo nhân viên
         const employee = await employeeService.createEmployeeService({
             user_id: user.user_id,
             hire_date,
@@ -65,4 +60,77 @@ export const createEmployee = async (req, res) => {
         console.error("Error creating employee:", error);
         res.status(500).json({ error: true, message: "Internal server error" });
     }
-}
+};
+
+export const getMyProfile = async (req, res) => {
+    try {
+        const result = await employeeService.getMyProfileService(req.user.user_id);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error getting profile:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
+
+export const updateMyProfile = async (req, res) => {
+    try {
+        const { phone_number, address } = req.body;
+        const result = await employeeService.updateMyProfileService(req.user.user_id, { phone_number, address });
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error updating profile:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
+
+export const getAllEmployees = async (req, res) => {
+    try {
+        const result = await employeeService.getAllEmployeesService(req.query);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error getting employees:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
+
+export const getEmployeeById = async (req, res) => {
+    try {
+        const result = await employeeService.getEmployeeByIdService(req.params.id);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error getting employee:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
+
+export const updateEmployee = async (req, res) => {
+    try {
+        const result = await employeeService.updateEmployeeService(req.params.id, req.body);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error updating employee:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
+
+export const updateEmployeeStatus = async (req, res) => {
+    try {
+        const { status } = req.body;
+        if (!status) return res.status(400).json({ error: true, message: "Status is required" });
+        const result = await employeeService.updateEmployeeStatusService(req.params.id, status);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error updating employee status:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
+
+export const getMyTeam = async (req, res) => {
+    try {
+        const result = await employeeService.getMyTeamService(req.user.user_id);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error getting team:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};

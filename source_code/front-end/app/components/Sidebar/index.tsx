@@ -17,7 +17,14 @@ import {
   ChevronLeft,
   ChevronRight,
   BrainCog,
-  GraduationCap
+  GraduationCap,
+  UserCog,
+  TrendingUp,
+  Wallet,
+  CalendarDays,
+  Star,
+  DollarSign,
+  BarChart3
 } from "lucide-react";
 
 const menuItems = {
@@ -26,18 +33,32 @@ const menuItems = {
   ],
   hr: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Job Descriptions", href: "/dashboard/hr/job-description", icon: FileText },
-    { name: "Candidates", href: "/dashboard/hr/candidate", icon: Users },
-    { name : "Employees", href: "/dashboard/hr/employee", icon: UserCircle },
-    { name: "Training Materials", href: "/dashboard/hr/training-material", icon: BrainCog },
-    { name: "Quizzes", href: "/dashboard/hr/quizzes", icon: CircleQuestionMark },
+    { name: "Mô tả công việc", href: "/dashboard/hr/job-description", icon: FileText },
+    { name: "Ứng viên", href: "/dashboard/hr/candidate", icon: Users },
+    { name: "Nhân viên", href: "/dashboard/hr/employee", icon: UserCircle },
+    // { name: "Phòng ban", href: "/dashboard/hr/department", icon: Building2 },
+    // { name: "Nhóm", href: "/dashboard/hr/team", icon: Users },
+    // { name: "Kỳ đánh giá", href: "/dashboard/hr/performance-period", icon: CalendarDays },
+    // { name: "Hiệu suất", href: "/dashboard/hr/performance", icon: Star },
+    // { name: "Lương thưởng", href: "/dashboard/hr/compensation", icon: DollarSign },
+    // { name: "Dự báo nhân lực", href: "/dashboard/hr/forecast", icon: TrendingUp },
+    // { name: "Báo cáo", href: "/dashboard/hr/report", icon: BarChart3 },
+    { name: "Tài liệu đào tạo", href: "/dashboard/hr/training-material", icon: BrainCog },
+    { name: "Bài kiểm tra", href: "/dashboard/hr/quizzes", icon: CircleQuestionMark },
   ],
   manager: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Phòng ban", href: "/dashboard/manager/department", icon: Building2 },
+    { name: "Nhóm", href: "/dashboard/manager/team", icon: Users },
+    { name: "Kỳ đánh giá", href: "/dashboard/manager/performance-period", icon: CalendarDays },
+    { name: "Hiệu suất", href: "/dashboard/manager/performance", icon: Star },
   ],
   employee: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Training", href: "/dashboard/employee/training", icon: GraduationCap },
+    { name: "Hồ sơ của tôi", href: "/dashboard/employee/profile", icon: UserCog },
+    { name: "Đánh giá hiệu suất", href: "/dashboard/employee/performance", icon: TrendingUp },
+    { name: "Lương thưởng", href: "/dashboard/employee/compensation", icon: Wallet },
+    { name: "Đào tạo", href: "/dashboard/employee/training", icon: GraduationCap },
   ],
 };
 
