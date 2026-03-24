@@ -33,6 +33,7 @@ const menuItems = {
   ],
   hr: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Hồ sơ của tôi", href: "/dashboard/hr/profile", icon: UserCog },
     { name: "Mô tả công việc", href: "/dashboard/hr/job-description", icon: FileText },
     { name: "Ứng viên", href: "/dashboard/hr/candidate", icon: Users },
     { name: "Nhân viên", href: "/dashboard/hr/employee", icon: UserCircle },
@@ -48,6 +49,7 @@ const menuItems = {
   ],
   manager: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Hồ sơ của tôi", href: "/dashboard/manager/profile", icon: UserCog },
     { name: "Phòng ban", href: "/dashboard/manager/department", icon: Building2 },
     { name: "Nhóm", href: "/dashboard/manager/team", icon: Users },
     { name: "Kỳ đánh giá", href: "/dashboard/manager/performance-period", icon: CalendarDays },

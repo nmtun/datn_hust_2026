@@ -23,9 +23,12 @@ export const createPerformanceService = async (data, reviewerId) => {
     }
 };
 
-export const getAllPerformanceService = async () => {
+export const getAllPerformanceServiceOfManager = async ({ managerId, role }) => {
     try {
+        const where = role === 'manager' ? { reviewer_id: managerId } : undefined;
+
         const records = await Performance.findAll({
+            where,
             include: [
                 { model: User, as: 'employee', attributes: employeeAttributes },
                 { model: User, as: 'reviewer', attributes: employeeAttributes },
@@ -35,7 +38,7 @@ export const getAllPerformanceService = async () => {
         });
         return { status: 200, data: { error: false, message: "All performance records retrieved", records } };
     } catch (error) {
-        console.error('Error in getAllPerformanceService:', error);
+        console.error('Error in getAllPerformanceServiceOfManager:', error);
         return { status: 500, data: { error: true, message: "Internal server error", details: error.message } };
     }
 };

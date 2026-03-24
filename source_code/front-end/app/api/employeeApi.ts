@@ -11,7 +11,7 @@ export interface EmployeeProfile {
   role: string;
   Employee_Info?: {
     employee_id: number;
-    employee_code?: string;
+    employee_id_number?: string;
     position?: string;
     hire_date?: string;
     department_id?: number;

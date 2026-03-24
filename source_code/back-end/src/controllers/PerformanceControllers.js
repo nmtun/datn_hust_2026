@@ -12,7 +12,10 @@ export const createPerformance = async (req, res) => {
 
 export const getAllPerformance = async (req, res) => {
     try {
-        const result = await performanceService.getAllPerformanceService();
+        const result = await performanceService.getAllPerformanceServiceOfManager({
+            managerId: req.user.user_id,
+            role: req.user.role,
+        });
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error getting performance:", error);

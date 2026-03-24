@@ -1,12 +1,25 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User, Mail, Phone, MapPin, Briefcase, Building2, Users, Calendar, Edit2, Save, X, Shield } from "lucide-react";
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Briefcase,
+  Building2,
+  Users,
+  Calendar,
+  Edit2,
+  Save,
+  X,
+  Shield,
+} from "lucide-react";
 import { employeeApi, EmployeeProfile } from "@/app/api/employeeApi";
 import { showToast } from "@/app/utils/toast";
 import { withAuth } from "@/app/middleware/withAuth";
 
-function MyProfilePage() {
+function HRProfilePage() {
   const [profile, setProfile] = useState<EmployeeProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -60,19 +73,27 @@ function MyProfilePage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "active": return "bg-green-100 text-green-800";
-      case "on_leave": return "bg-yellow-100 text-yellow-800";
-      case "terminated": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "active":
+        return "bg-green-100 text-green-800";
+      case "on_leave":
+        return "bg-yellow-100 text-yellow-800";
+      case "terminated":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "active": return "Đang làm việc";
-      case "on_leave": return "Nghỉ phép";
-      case "terminated": return "Đã nghỉ";
-      default: return status;
+      case "active":
+        return "Đang làm việc";
+      case "on_leave":
+        return "Nghỉ phép";
+      case "terminated":
+        return "Đã nghỉ";
+      default:
+        return status;
     }
   };
 
@@ -97,7 +118,6 @@ function MyProfilePage() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Hồ sơ của tôi</h1>
         {!isEditing ? (
@@ -113,7 +133,10 @@ function MyProfilePage() {
             <button
               onClick={() => {
                 setIsEditing(false);
-                setEditForm({ phone_number: profile.phone_number || "", address: profile.address || "" });
+                setEditForm({
+                  phone_number: profile.phone_number || "",
+                  address: profile.address || "",
+                });
               }}
               className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200"
             >
@@ -136,7 +159,6 @@ function MyProfilePage() {
         )}
       </div>
 
-      {/* Avatar & Status */}
       <div className="bg-white shadow rounded-lg p-6 mb-6">
         <div className="flex items-center space-x-6">
           <div className="h-20 w-20 rounded-full bg-indigo-100 flex items-center justify-center">
@@ -146,9 +168,15 @@ function MyProfilePage() {
           </div>
           <div>
             <h2 className="text-xl font-semibold text-gray-900">{profile.full_name}</h2>
-            <p className="text-sm text-gray-500 mt-1">{profile.company_email || profile.personal_email}</p>
+            <p className="text-sm text-gray-500 mt-1">
+              {profile.company_email || profile.personal_email}
+            </p>
             <div className="flex items-center space-x-3 mt-2">
-              <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getStatusColor(profile.status)}`}>
+              <span
+                className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getStatusColor(
+                  profile.status
+                )}`}
+              >
                 {getStatusLabel(profile.status)}
               </span>
               <span className="flex items-center text-xs text-gray-500">
@@ -160,7 +188,6 @@ function MyProfilePage() {
         </div>
       </div>
 
-      {/* Contact Info (Editable) */}
       <div className="bg-white shadow rounded-lg p-6 mb-6">
         <h3 className="text-base font-semibold text-gray-900 mb-4">Thông tin liên hệ</h3>
         <div className="space-y-4">
@@ -188,7 +215,9 @@ function MyProfilePage() {
                 <input
                   type="text"
                   value={editForm.phone_number}
-                  onChange={(e) => setEditForm({ ...editForm, phone_number: e.target.value })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, phone_number: e.target.value })
+                  }
                   placeholder="Nhập số điện thoại..."
                   className="w-full text-sm border border-gray-300 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
@@ -217,12 +246,11 @@ function MyProfilePage() {
         </div>
         {isEditing && (
           <p className="mt-4 text-xs text-gray-400">
-            * Chỉ có thể chỉnh sửa số điện thoại và địa chỉ. Các thông tin khác do HR quản lý.
+            * Chỉ có thể chỉnh sửa số điện thoại và địa chỉ. Các thông tin khác do hệ thống quản lý.
           </p>
         )}
       </div>
 
-      {/* Work Info (Read-only) */}
       {emp && (
         <div className="bg-white shadow rounded-lg p-6">
           <h3 className="text-base font-semibold text-gray-900 mb-4">Thông tin công việc</h3>
@@ -231,14 +259,18 @@ function MyProfilePage() {
               <User className="w-5 h-5 text-gray-400 mt-0.5" />
               <div>
                 <p className="text-xs text-gray-500">Mã nhân viên</p>
-                <p className="text-sm font-medium text-gray-900 mt-0.5">{emp.employee_id_number || "Chưa cập nhật"}</p>
+                <p className="text-sm font-medium text-gray-900 mt-0.5">
+                  {emp.employee_id_number || "Chưa cập nhật"}
+                </p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
               <Briefcase className="w-5 h-5 text-gray-400 mt-0.5" />
               <div>
                 <p className="text-xs text-gray-500">Chức vụ</p>
-                <p className="text-sm font-medium text-gray-900 mt-0.5">{emp.position || "Chưa cập nhật"}</p>
+                <p className="text-sm font-medium text-gray-900 mt-0.5">
+                  {emp.position || "Chưa cập nhật"}
+                </p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
@@ -246,7 +278,9 @@ function MyProfilePage() {
               <div>
                 <p className="text-xs text-gray-500">Ngày vào làm</p>
                 <p className="text-sm font-medium text-gray-900 mt-0.5">
-                  {emp.hire_date ? new Date(emp.hire_date).toLocaleDateString("vi-VN") : "Chưa cập nhật"}
+                  {emp.hire_date
+                    ? new Date(emp.hire_date).toLocaleDateString("vi-VN")
+                    : "Chưa cập nhật"}
                 </p>
               </div>
             </div>
@@ -254,7 +288,9 @@ function MyProfilePage() {
               <Building2 className="w-5 h-5 text-gray-400 mt-0.5" />
               <div>
                 <p className="text-xs text-gray-500">Phòng ban</p>
-                <p className="text-sm font-medium text-gray-900 mt-0.5">{emp.department?.name || "Chưa cập nhật"}</p>
+                <p className="text-sm font-medium text-gray-900 mt-0.5">
+                  {emp.department?.name || "Chưa cập nhật"}
+                </p>
                 <p className="text-xs text-gray-400">{emp.department?.code || ""}</p>
               </div>
             </div>
@@ -262,7 +298,9 @@ function MyProfilePage() {
               <Users className="w-5 h-5 text-gray-400 mt-0.5" />
               <div>
                 <p className="text-xs text-gray-500">Nhóm</p>
-                <p className="text-sm font-medium text-gray-900 mt-0.5">{emp.team?.name || "Chưa cập nhật"}</p>
+                <p className="text-sm font-medium text-gray-900 mt-0.5">
+                  {emp.team?.name || "Chưa cập nhật"}
+                </p>
                 <p className="text-xs text-gray-400">{emp.team?.code || ""}</p>
               </div>
             </div>
@@ -270,7 +308,9 @@ function MyProfilePage() {
               <User className="w-5 h-5 text-gray-400 mt-0.5" />
               <div>
                 <p className="text-xs text-gray-500">Quản lý trực tiếp</p>
-                <p className="text-sm font-medium text-gray-900 mt-0.5">{emp.manager?.full_name || "Chưa cập nhật"}</p>
+                <p className="text-sm font-medium text-gray-900 mt-0.5">
+                  {emp.manager?.full_name || "Chưa cập nhật"}
+                </p>
                 {emp.manager?.company_email && (
                   <p className="text-xs text-gray-400">{emp.manager.company_email}</p>
                 )}
@@ -283,4 +323,4 @@ function MyProfilePage() {
   );
 }
 
-export default withAuth(MyProfilePage);
+export default withAuth(HRProfilePage);

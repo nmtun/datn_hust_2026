@@ -2,6 +2,7 @@ import '../models/associations.js';
 import Candidate from '../models/Candidate.js';
 import User from '../models/User.js';
 import JobDescription from '../models/JobDescription.js';
+import Employee from '../models/Employee.js';
 import * as userService from './UserServices.js';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
@@ -658,6 +659,9 @@ export const updateCandidateApplicationService = async (candidateInfoId, updateD
 
 export const createCompanyEmailService = async (candidateId, companyEmail, password) => {
     try {
+        const transaction = await User.sequelize.transaction();
+
+        try {
         // Kiểm tra candidate exists
         const candidate = await User.findOne({
             where: { 
@@ -671,14 +675,16 @@ export const createCompanyEmailService = async (candidateId, companyEmail, passw
                     include: [
                         {
                             model: JobDescription,
-                            attributes: ['job_id', 'title', 'experience_level', 'employment_type']
+                            attributes: ['job_id', 'title', 'experience_level', 'employment_type', 'department_id']
                         }
                     ]
                 }
-            ]
+            ],
+            transaction
         });
 
         if (!candidate) {
+            await transaction.rollback();
             return {
                 status: 404,
                 data: {
@@ -693,10 +699,12 @@ export const createCompanyEmailService = async (candidateId, companyEmail, passw
             where: { 
                 company_email: companyEmail,
                 is_deleted: false 
-            }
+            },
+            transaction
         });
 
-        if (existingEmailUser) {
+        if (existingEmailUser && existingEmailUser.user_id !== Number(candidateId)) {
+            await transaction.rollback();
             return {
                 status: 400,
                 data: {
@@ -706,8 +714,9 @@ export const createCompanyEmailService = async (candidateId, companyEmail, passw
             };
         }
 
-        // Kiểm tra candidate đã có company_email chưa
-        if (candidate.company_email) {
+        // Nếu đã có company_email khác với email nhập vào thì chặn
+        if (candidate.company_email && candidate.company_email !== companyEmail) {
+            await transaction.rollback();
             return {
                 status: 400,
                 data: {
@@ -717,16 +726,39 @@ export const createCompanyEmailService = async (candidateId, companyEmail, passw
             };
         }
 
-        // Hash password
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
+        // Chỉ cập nhật thông tin đăng nhập khi candidate chưa có company_email
+        if (!candidate.company_email) {
+            const saltRounds = 10;
+            const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-        // Cập nhật candidate với company_email và role thành employee
-        await candidate.update({
-            company_email: companyEmail,
-            password: hashedPassword, // Cập nhật password mới cho company email
-            role: 'employee' // Chuyển role từ candidate thành employee
+            await candidate.update({
+                company_email: companyEmail,
+                password: hashedPassword,
+                role: 'employee'
+            }, { transaction });
+        } else if (candidate.role !== 'employee') {
+            await candidate.update({ role: 'employee' }, { transaction });
+        }
+
+        // Đảm bảo có bản ghi Employee_Info tương ứng (idempotent)
+        const existingEmployeeInfo = await Employee.findOne({
+            where: { user_id: candidate.user_id },
+            transaction
         });
+
+        if (!existingEmployeeInfo) {
+            const hiredCandidateInfo = candidate.Candidate_Infos?.[0];
+            const hiredJob = hiredCandidateInfo?.Job_Description;
+
+            await Employee.create({
+                user_id: candidate.user_id,
+                hire_date: new Date(),
+                position: hiredJob?.title || 'Employee',
+                department_id: hiredJob?.department_id || null
+            }, { transaction });
+        }
+
+        await transaction.commit();
 
         // Lấy dữ liệu đã cập nhật
         const updatedCandidate = await User.findOne({
@@ -739,9 +771,13 @@ export const createCompanyEmailService = async (candidateId, companyEmail, passw
                     include: [
                         {
                             model: JobDescription,
-                            attributes: ['job_id', 'title', 'experience_level', 'employment_type']
+                            attributes: ['job_id', 'title', 'experience_level', 'employment_type', 'department_id']
                         }
                     ]
+                },
+                {
+                    model: Employee,
+                    as: 'Employee_Info'
                 }
             ]
         });
@@ -754,6 +790,10 @@ export const createCompanyEmailService = async (candidateId, companyEmail, passw
                 candidate: updatedCandidate
             }
         };
+        } catch (txError) {
+            await transaction.rollback();
+            throw txError;
+        }
     } catch (error) {
         console.error('Error in createCompanyEmailService:', error);
         return {
