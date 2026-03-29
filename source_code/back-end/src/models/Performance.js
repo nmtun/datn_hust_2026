@@ -36,6 +36,11 @@ const Performance = sequelize.define("Performance", {
     feedback: {
         type: DataTypes.TEXT
     },
+    visibility: {
+        type: DataTypes.ENUM('private', 'shared_with_employee'),
+        allowNull: false,
+        defaultValue: 'shared_with_employee'
+    },
     review_date: {
         type: DataTypes.DATEONLY,
         allowNull: false

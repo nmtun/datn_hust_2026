@@ -2,7 +2,7 @@ import * as periodService from '../services/PerformancePeriodServices.js';
 
 export const createPeriod = async (req, res) => {
     try {
-        const result = await periodService.createPeriodService(req.body);
+        const result = await periodService.createPeriodService(req.body, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error creating period:", error);
@@ -32,7 +32,7 @@ export const getPeriodById = async (req, res) => {
 
 export const updatePeriod = async (req, res) => {
     try {
-        const result = await periodService.updatePeriodService(req.params.id, req.body);
+        const result = await periodService.updatePeriodService(req.params.id, req.body, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error updating period:", error);
@@ -42,7 +42,7 @@ export const updatePeriod = async (req, res) => {
 
 export const togglePeriodStatus = async (req, res) => {
     try {
-        const result = await periodService.togglePeriodStatusService(req.params.id);
+        const result = await periodService.togglePeriodStatusService(req.params.id, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error toggling period status:", error);

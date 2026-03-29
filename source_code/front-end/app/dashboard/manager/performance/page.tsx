@@ -4,18 +4,38 @@ import { useState, useEffect } from "react";
 import { Plus, Eye, Edit2, Star, X, Save } from "lucide-react";
 import { performanceApi, Performance } from "@/app/api/performanceApi";
 import { performancePeriodApi, PerformancePeriod } from "@/app/api/performancePeriodApi";
-import { employeeApi, EmployeeProfile } from "@/app/api/employeeApi";
 import { showToast } from "@/app/utils/toast";
 import Modal from "@/app/components/Modal";
 import { withAuth } from "@/app/middleware/withAuth";
+import { useAuth } from "@/app/context/AuthContext";
 
-const BLANK_FORM = { user_id: "" as any, period_id: "" as any, kpi_goals: "", achievement: "", rating: "" as any, feedback: "", review_date: "" };
+const BLANK_FORM = {
+  user_id: "" as any,
+  period_id: "" as any,
+  visibility: "shared_with_employee",
+  kpi_goals: "",
+  achievement: "",
+  rating: "" as any,
+  feedback: "",
+  review_date: "",
+};
+
+interface EvaluableEmployee {
+  user_id: number;
+  full_name: string;
+  company_email?: string;
+  role: string;
+  Employee_Info?: {
+    department?: { name: string; code: string };
+    team?: { name: string; code: string };
+  };
+}
 
 interface FormModalProps {
   title: string;
   onClose: () => void;
   initialForm?: any;
-  employees: EmployeeProfile[];
+  employees: EvaluableEmployee[];
   periods: PerformancePeriod[];
   isEdit: boolean;
   saving: boolean;
@@ -55,6 +75,17 @@ function FormModal({ title, onClose, initialForm, employees, periods, isEdit, sa
             <input type="date" value={form.review_date} onChange={e => setForm({ ...form, review_date: e.target.value })}
               className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
+          <div className="col-span-2">
+            <label className="block text-xs font-medium text-gray-700 mb-1">Loại đánh giá *</label>
+            <select
+              value={form.visibility}
+              onChange={e => setForm({ ...form, visibility: e.target.value })}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="private">Đánh giá ẩn (chỉ bạn xem được)</option>
+              <option value="shared_with_employee">Nhận xét cho nhân viên (bạn và nhân viên đều xem được)</option>
+            </select>
+          </div>
         </div>
         {[{ label: "Mục tiêu KPI", key: "kpi_goals" }, { label: "Kết quả đạt được", key: "achievement" }, { label: "Nhận xét", key: "feedback" }].map(({ label, key }) => (
           <div key={key}>
@@ -77,9 +108,11 @@ function FormModal({ title, onClose, initialForm, employees, periods, isEdit, sa
 }
 
 function PerformancePage() {
+  const { user } = useAuth();
   const [records, setRecords] = useState<Performance[]>([]);
   const [periods, setPeriods] = useState<PerformancePeriod[]>([]);
-  const [employees, setEmployees] = useState<EmployeeProfile[]>([]);
+  const [evaluableEmployees, setEvaluableEmployees] = useState<EvaluableEmployee[]>([]);
+  const [hierarchyRole, setHierarchyRole] = useState<string>(user?.hierarchy_role || user?.role || "manager");
   const [loading, setLoading] = useState(true);
   const [viewRecord, setViewRecord] = useState<Performance | null>(null);
   const [createModal, setCreateModal] = useState(false);
@@ -96,11 +129,16 @@ function PerformancePage() {
       const [rRes, pRes, eRes] = await Promise.all([
         performanceApi.getAll(),
         performancePeriodApi.getAll(),
-        employeeApi.getAll(),
+        performanceApi.getEvaluables(),
       ]);
       if (!rRes.error) setRecords(rRes.records || []);
       if (!pRes.error) setPeriods(pRes.periods || []);
-      if (!eRes.error) setEmployees(eRes.employees || []);
+      if (!eRes.error) {
+        setEvaluableEmployees(eRes.employees || []);
+        if (eRes.hierarchy_role) {
+          setHierarchyRole(eRes.hierarchy_role);
+        }
+      }
     } catch { showToast.error("Lỗi tải dữ liệu"); }
     finally { setLoading(false); }
   };
@@ -110,12 +148,20 @@ function PerformancePage() {
       showToast.error("Hiện không có kỳ đánh giá đang thực hiện");
       return;
     }
+    if (evaluableEmployees.length === 0) {
+      showToast.error("Bạn chưa có nhân sự nào trong phạm vi được đánh giá");
+      return;
+    }
     setCreateModal(true);
   };
   const openEdit = (r: Performance) => { setEditRecord(r); };
 
   const handleSave = async (form: any) => {
     if (!form.user_id || !form.period_id) { showToast.error("Vui lòng chọn nhân viên và kỳ đánh giá"); return; }
+    if (!editRecord && !evaluableEmployees.some((employee) => employee.user_id === Number(form.user_id))) {
+      showToast.error("Nhân viên không thuộc phạm vi đánh giá của bạn");
+      return;
+    }
     if (!editRecord && !inProgressPeriods.some(p => p.period_id === Number(form.period_id))) {
       showToast.error("Chỉ có thể chọn kỳ đánh giá đang thực hiện");
       return;
@@ -123,6 +169,7 @@ function PerformancePage() {
     setSaving(true);
     try {
       const payload: any = { user_id: Number(form.user_id), period_id: Number(form.period_id) };
+      payload.visibility = form.visibility || "shared_with_employee";
       if (form.kpi_goals) payload.kpi_goals = form.kpi_goals;
       if (form.achievement) payload.achievement = form.achievement;
       if (form.rating !== "") payload.rating = Number(form.rating);
@@ -152,13 +199,30 @@ function PerformancePage() {
     );
   };
 
-  const empName = (id: number) => employees.find(e => e.user_id === id)?.full_name || `#${id}`;
+  const empName = (record: Performance) => {
+    if (record.employee?.full_name) return record.employee.full_name;
+    const found = evaluableEmployees.find((employee) => employee.user_id === record.user_id);
+    if (found?.full_name) return found.full_name;
+    return `#${record.user_id}`;
+  };
+
+  const titleByHierarchy: Record<string, string> = {
+    manager: "Đánh giá trưởng phòng",
+    department_head: "Đánh giá trưởng nhóm",
+    team_lead: "Đánh giá thành viên nhóm",
+    hr: "Quản lý đánh giá hiệu suất",
+  };
+
   const filtered = filterPeriod ? records.filter(r => r.period_id === Number(filterPeriod)) : records;
+  const visibilityLabel = (visibility?: string) => {
+    if (visibility === "private") return "Cá nhân";
+    return "Cho nhân viên xem";
+  };
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Quản lý đánh giá hiệu suất</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{titleByHierarchy[hierarchyRole] || "Quản lý đánh giá hiệu suất"}</h1>
         <button onClick={openCreate} className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
           <Plus className="w-4 h-4 mr-2" />Tạo đánh giá
         </button>
@@ -181,7 +245,7 @@ function PerformancePage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                {["Nhân viên", "Kỳ đánh giá", "Đánh giá", "Ngày đánh giá", "Người đánh giá", "Hành động"].map(h => (
+                {["Nhân viên", "Kỳ đánh giá", "Loại", "Đánh giá", "Ngày đánh giá", "Người đánh giá", "Hành động"].map(h => (
                   <th key={h} className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
                 ))}
               </tr>
@@ -192,12 +256,13 @@ function PerformancePage() {
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">
                       <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs font-semibold text-indigo-700">{empName(r.user_id).charAt(0)}</span>
+                        <span className="text-xs font-semibold text-indigo-700">{empName(r).charAt(0)}</span>
                       </div>
-                      <span className="text-sm font-medium text-gray-900">{empName(r.user_id)}</span>
+                      <span className="text-sm font-medium text-gray-900">{empName(r)}</span>
                     </div>
                   </td>
-                  <td className="px-5 py-4 text-sm text-gray-700">{r.Period?.period_name || `#${r.period_id}`}</td>
+                  <td className="px-5 py-4 text-sm text-gray-700">{r.period?.period_name || r.Period?.period_name || `#${r.period_id}`}</td>
+                  <td className="px-5 py-4 text-sm text-gray-700">{visibilityLabel(r.visibility)}</td>
                   <td className="px-5 py-4">{renderStars(r.rating)}</td>
                   <td className="px-5 py-4 text-sm text-gray-600">{r.review_date ? new Date(r.review_date).toLocaleDateString("vi-VN") : "—"}</td>
                   <td className="px-5 py-4 text-sm text-gray-600">{r.reviewer?.full_name || "—"}</td>
@@ -223,8 +288,9 @@ function PerformancePage() {
         {viewRecord && (
           <div className="p-6 space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div><p className="text-xs text-gray-500">Nhân viên</p><p className="text-sm font-medium mt-0.5">{empName(viewRecord.user_id)}</p></div>
-              <div><p className="text-xs text-gray-500">Kỳ đánh giá</p><p className="text-sm font-medium mt-0.5">{viewRecord.Period?.period_name || "—"}</p></div>
+              <div><p className="text-xs text-gray-500">Nhân viên</p><p className="text-sm font-medium mt-0.5">{empName(viewRecord)}</p></div>
+              <div><p className="text-xs text-gray-500">Kỳ đánh giá</p><p className="text-sm font-medium mt-0.5">{viewRecord.period?.period_name || viewRecord.Period?.period_name || "—"}</p></div>
+              <div><p className="text-xs text-gray-500">Loại đánh giá</p><p className="text-sm font-medium mt-0.5">{visibilityLabel(viewRecord.visibility)}</p></div>
               <div><p className="text-xs text-gray-500">Đánh giá</p><div className="mt-0.5">{renderStars(viewRecord.rating)}</div></div>
               <div><p className="text-xs text-gray-500">Ngày đánh giá</p><p className="text-sm font-medium mt-0.5">{viewRecord.review_date ? new Date(viewRecord.review_date).toLocaleDateString("vi-VN") : "—"}</p></div>
               <div><p className="text-xs text-gray-500">Người đánh giá</p><p className="text-sm font-medium mt-0.5">{viewRecord.reviewer?.full_name || "—"}</p></div>
@@ -238,18 +304,19 @@ function PerformancePage() {
 
       {createModal && (
         <FormModal title="Tạo đánh giá mới" onClose={() => setCreateModal(false)}
-          employees={employees} periods={inProgressPeriods}
+          employees={evaluableEmployees} periods={inProgressPeriods}
           isEdit={false} saving={saving} onSave={handleSave} />
       )}
       {editRecord && (
-        <FormModal title={`Sửa đánh giá: ${empName(editRecord.user_id)}`} onClose={() => setEditRecord(null)}
+        <FormModal title={`Sửa đánh giá: ${empName(editRecord)}`} onClose={() => setEditRecord(null)}
           initialForm={{
             user_id: editRecord.user_id, period_id: editRecord.period_id,
+            visibility: editRecord.visibility || "shared_with_employee",
             kpi_goals: editRecord.kpi_goals || "", achievement: editRecord.achievement || "",
             rating: editRecord.rating ?? "", feedback: editRecord.feedback || "",
             review_date: editRecord.review_date?.split("T")[0] || "",
           }}
-          employees={employees} periods={periods}
+          employees={evaluableEmployees} periods={periods}
           isEdit saving={saving} onSave={handleSave} />
       )}
     </div>

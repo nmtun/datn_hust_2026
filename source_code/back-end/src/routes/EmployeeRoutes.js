@@ -13,7 +13,8 @@ router.get('/my-profile', authenticate, authorize("employee", "manager", "hr"), 
 router.put('/my-profile', authenticate, authorize("employee", "manager", "hr"), employeeController.updateMyProfile);
 
 // Manager: view team
-router.get('/my-team', authenticate, authorize("manager"), employeeController.getMyTeam);
+router.get('/my-team', authenticate, authorize("manager", "employee"), employeeController.getMyTeam);
+router.get('/managed', authenticate, authorize("manager", "employee", "hr"), employeeController.getManagedEmployees);
 
 // HR: employee management
 router.get('/get-all', authenticate, authorize("hr", "manager"), employeeController.getAllEmployees);

@@ -9,6 +9,7 @@ export interface EmployeeProfile {
   address?: string;
   status: 'active' | 'on_leave' | 'terminated';
   role: string;
+  hierarchy_role?: string;
   Employee_Info?: {
     employee_id: number;
     employee_id_number?: string;
@@ -35,6 +36,10 @@ export const employeeApi = {
   // HR functions
   getAll: async (params?: { full_name?: string; department_id?: number; status?: string }) => {
     const response = await apiClient.get('/api/employee/get-all', { params });
+    return response.data;
+  },
+  getManaged: async () => {
+    const response = await apiClient.get('/api/employee/managed');
     return response.data;
   },
   getById: async (id: number) => {

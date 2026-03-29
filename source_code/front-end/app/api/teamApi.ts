@@ -21,6 +21,10 @@ export const teamApi = {
     });
     return response.data;
   },
+  getManaged: async () => {
+    const response = await apiClient.get('/api/team/managed');
+    return response.data;
+  },
   getById: async (id: number) => {
     const response = await apiClient.get(`/api/team/get/${id}`);
     return response.data;

@@ -1,20 +1,65 @@
 import '../models/associations.js';
+import { Op } from 'sequelize';
 import Performance from '../models/Performance.js';
 import PerformancePeriod from '../models/PerformancePeriod.js';
 import User from '../models/User.js';
 import Employee from '../models/Employee.js';
+import Department from '../models/Department.js';
+import Team from '../models/Team.js';
+import { getEvaluationTargetUserIds, getManagementTargetUserIds, resolveHierarchyRole } from './HierarchyServices.js';
 
 const employeeAttributes = ['user_id', 'full_name', 'company_email'];
 
-export const createPerformanceService = async (data, reviewerId) => {
+const getUserById = async (userId) => {
+    return User.findOne({ where: { user_id: userId, is_deleted: false } });
+};
+
+export const createPerformanceService = async (data, reviewerUser) => {
     try {
-        const { user_id, period_id, kpi_goals, achievement, rating, feedback, review_date } = data;
+        const { user_id, period_id, kpi_goals, achievement, rating, feedback, review_date, visibility } = data;
         if (!user_id || !period_id || !review_date) {
             return { status: 400, data: { error: true, message: "user_id, period_id and review_date are required" } };
         }
+
+        if (visibility && !['private', 'shared_with_employee'].includes(visibility)) {
+            return { status: 400, data: { error: true, message: "visibility must be private or shared_with_employee" } };
+        }
+
+        const reviewerId = reviewerUser.user_id;
+
+        if (Number(user_id) === Number(reviewerId)) {
+            return { status: 400, data: { error: true, message: "You cannot review yourself" } };
+        }
+
+        const targetUser = await getUserById(user_id);
+        if (!targetUser) {
+            return { status: 404, data: { error: true, message: "Employee not found" } };
+        }
+
+        if (targetUser.role === 'candidate') {
+            return { status: 400, data: { error: true, message: "Candidate cannot be reviewed in performance module" } };
+        }
+
+        if (reviewerUser.role !== 'hr') {
+            const evaluableIds = await getEvaluationTargetUserIds(reviewerUser);
+            if (!evaluableIds.includes(Number(user_id))) {
+                return {
+                    status: 403,
+                    data: {
+                        error: true,
+                        message: "You do not have permission to evaluate this employee"
+                    }
+                };
+            }
+        }
+
         const perf = await Performance.create({
             user_id, period_id, kpi_goals, achievement, rating: rating || 0,
-            feedback, review_date, reviewer_id: reviewerId, created_at: new Date()
+            feedback,
+            visibility: visibility || 'shared_with_employee',
+            review_date,
+            reviewer_id: reviewerId,
+            created_at: new Date()
         });
         return { status: 201, data: { error: false, message: "Performance record created successfully", performance: perf } };
     } catch (error) {
@@ -23,9 +68,37 @@ export const createPerformanceService = async (data, reviewerId) => {
     }
 };
 
-export const getAllPerformanceServiceOfManager = async ({ managerId, role }) => {
+export const getAllPerformanceServiceOfManager = async ({ requestingUser }) => {
     try {
-        const where = role === 'manager' ? { reviewer_id: managerId } : undefined;
+        let where;
+
+        if (requestingUser.role === 'hr') {
+            where = undefined;
+        } else {
+            const hierarchyRole = await resolveHierarchyRole({
+                userId: requestingUser.user_id,
+                role: requestingUser.role
+            });
+
+            const canReview =
+                requestingUser.role === 'manager' ||
+                hierarchyRole === 'department_head' ||
+                hierarchyRole === 'team_lead';
+
+            if (!canReview) {
+                return { status: 403, data: { error: true, message: 'Access denied' } };
+            }
+
+            const evaluableIds = await getEvaluationTargetUserIds(requestingUser);
+            if (evaluableIds.length === 0) {
+                return { status: 200, data: { error: false, message: "No evaluable employees found", records: [] } };
+            }
+
+            where = {
+                reviewer_id: requestingUser.user_id,
+                user_id: { [Op.in]: evaluableIds }
+            };
+        }
 
         const records = await Performance.findAll({
             where,
@@ -54,17 +127,19 @@ export const getPerformanceByIdService = async (id, requestingUser) => {
         });
         if (!perf) return { status: 404, data: { error: true, message: "Performance record not found" } };
 
-        // Authorization check
-        if (requestingUser.role === 'employee' && perf.user_id !== requestingUser.user_id) {
-            return { status: 403, data: { error: true, message: "Access denied" } };
+        if (requestingUser.role === 'hr') {
+            return { status: 200, data: { error: false, message: "Performance record retrieved", performance: perf } };
         }
-        if (requestingUser.role === 'manager') {
-            const isTeamMember = await Employee.findOne({ where: { user_id: perf.user_id, manager_id: requestingUser.user_id } });
-            if (!isTeamMember && perf.user_id !== requestingUser.user_id) {
-                return { status: 403, data: { error: true, message: "Access denied" } };
-            }
+
+        const isReviewer = Number(perf.reviewer_id) === Number(requestingUser.user_id);
+        const isOwner = Number(perf.user_id) === Number(requestingUser.user_id);
+        const isSharedWithEmployee = perf.visibility === 'shared_with_employee';
+
+        if (isReviewer || (isOwner && isSharedWithEmployee)) {
+            return { status: 200, data: { error: false, message: "Performance record retrieved", performance: perf } };
         }
-        return { status: 200, data: { error: false, message: "Performance record retrieved", performance: perf } };
+
+        return { status: 403, data: { error: true, message: "Access denied" } };
     } catch (error) {
         console.error('Error in getPerformanceByIdService:', error);
         return { status: 500, data: { error: true, message: "Internal server error", details: error.message } };
@@ -76,12 +151,22 @@ export const updatePerformanceService = async (id, data, requestingUser) => {
         const perf = await Performance.findByPk(id);
         if (!perf) return { status: 404, data: { error: true, message: "Performance record not found" } };
 
-        // Manager can only update reviews they created
-        if (requestingUser.role === 'manager' && perf.reviewer_id !== requestingUser.user_id) {
+        if (requestingUser.role !== 'hr' && Number(perf.reviewer_id) !== Number(requestingUser.user_id)) {
             return { status: 403, data: { error: true, message: "You can only update reviews you created" } };
         }
 
-        const allowed = ['kpi_goals', 'achievement', 'rating', 'feedback', 'review_date'];
+        if (requestingUser.role !== 'hr') {
+            const evaluableIds = await getEvaluationTargetUserIds(requestingUser);
+            if (!evaluableIds.includes(Number(perf.user_id))) {
+                return { status: 403, data: { error: true, message: "You no longer have permission to update this review" } };
+            }
+        }
+
+        if (data.visibility && !['private', 'shared_with_employee'].includes(data.visibility)) {
+            return { status: 400, data: { error: true, message: "visibility must be private or shared_with_employee" } };
+        }
+
+        const allowed = ['kpi_goals', 'achievement', 'rating', 'feedback', 'review_date', 'visibility'];
         const updateData = {};
         Object.keys(data).forEach(key => { if (allowed.includes(key)) updateData[key] = data[key]; });
         updateData.updated_at = new Date();
@@ -97,7 +182,10 @@ export const updatePerformanceService = async (id, data, requestingUser) => {
 export const getMyPerformanceService = async (userId) => {
     try {
         const records = await Performance.findAll({
-            where: { user_id: userId },
+            where: {
+                user_id: userId,
+                visibility: 'shared_with_employee'
+            },
             include: [
                 { model: User, as: 'reviewer', attributes: employeeAttributes },
                 { model: PerformancePeriod, as: 'period' }
@@ -111,17 +199,19 @@ export const getMyPerformanceService = async (userId) => {
     }
 };
 
-export const getTeamPerformanceService = async (managerId) => {
+export const getTeamPerformanceService = async (requestingUser) => {
     try {
-        const teamMembers = await Employee.findAll({ where: { manager_id: managerId }, attributes: ['user_id'] });
-        const userIds = teamMembers.map(e => e.user_id);
+        const userIds = await getManagementTargetUserIds(requestingUser);
 
         if (userIds.length === 0) {
             return { status: 200, data: { error: false, message: "No team members found", records: [] } };
         }
 
         const records = await Performance.findAll({
-            where: { user_id: userIds },
+            where: {
+                user_id: userIds,
+                reviewer_id: requestingUser.user_id
+            },
             include: [
                 { model: User, as: 'employee', attributes: employeeAttributes },
                 { model: User, as: 'reviewer', attributes: employeeAttributes },
@@ -133,5 +223,62 @@ export const getTeamPerformanceService = async (managerId) => {
     } catch (error) {
         console.error('Error in getTeamPerformanceService:', error);
         return { status: 500, data: { error: true, message: "Internal server error", details: error.message } };
+    }
+};
+
+export const getEvaluableEmployeesService = async (requestingUser) => {
+    try {
+        const hierarchyRole = await resolveHierarchyRole({
+            userId: requestingUser.user_id,
+            role: requestingUser.role
+        });
+
+        const userIds = await getEvaluationTargetUserIds(requestingUser);
+
+        if (userIds.length === 0) {
+            return {
+                status: 200,
+                data: {
+                    error: false,
+                    message: 'No evaluable employees found',
+                    hierarchy_role: hierarchyRole,
+                    employees: []
+                }
+            };
+        }
+
+        const employees = await User.findAll({
+            where: {
+                user_id: { [Op.in]: userIds },
+                is_deleted: false
+            },
+            attributes: ['user_id', 'full_name', 'company_email', 'role'],
+            include: [
+                {
+                    model: Employee,
+                    as: 'Employee_Info',
+                    required: false,
+                    attributes: ['department_id', 'team_id', 'manager_id', 'position'],
+                    include: [
+                        { model: Department, as: 'department', attributes: ['department_id', 'name', 'code'], required: false },
+                        { model: Team, as: 'team', attributes: ['team_id', 'name', 'code'], required: false }
+                    ]
+                }
+            ],
+            order: [['full_name', 'ASC']]
+        });
+
+        return {
+            status: 200,
+            data: {
+                error: false,
+                message: 'Evaluable employees retrieved successfully',
+                hierarchy_role: hierarchyRole,
+                employees
+            }
+        };
+    } catch (error) {
+        console.error('Error in getEvaluableEmployeesService:', error);
+        return { status: 500, data: { error: true, message: 'Internal server error', details: error.message } };
     }
 };

@@ -1,18 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, Users, X, Save, ChevronDown } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Plus, Edit2, Trash2, Users, X, Save, ChevronDown, Eye } from "lucide-react";
 import { teamApi, Team } from "@/app/api/teamApi";
 import { departmentApi, Department } from "@/app/api/departmentApi";
 import { employeeApi, EmployeeProfile } from "@/app/api/employeeApi";
 import { showToast } from "@/app/utils/toast";
 import Modal from "@/app/components/Modal";
 import { withAuth } from "@/app/middleware/withAuth";
+import { useAuth } from "@/app/context/AuthContext";
 
 const emptyForm = { name: "", code: "", description: "", department_id: "", leader_id: "" };
 
 function TeamPage() {
+  const { user } = useAuth();
+  const isDepartmentHeadView = user?.hierarchy_role === "department_head";
   const [teams, setTeams] = useState<Team[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [employees, setEmployees] = useState<EmployeeProfile[]>([]);
@@ -25,35 +28,47 @@ function TeamPage() {
   const [form, setForm] = useState<any>({ ...emptyForm });
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [viewTeam, setViewTeam] = useState<any | null>(null);
+  const [loadingMembers, setLoadingMembers] = useState(false);
 
-  useEffect(() => { fetchRefs(); }, []);
-  useEffect(() => { fetchTeams(); }, [filterDept]);
-
-  const fetchRefs = async () => {
+  const fetchRefs = useCallback(async () => {
     try {
-      const [dRes, eRes] = await Promise.all([departmentApi.getAll(), employeeApi.getAll()]);
+      const employeeSource =
+        user?.role === "manager" && (user?.hierarchy_role || "manager") === "manager"
+          ? employeeApi.getAll()
+          : employeeApi.getManaged();
+
+      const [dRes, eRes] = await Promise.all([departmentApi.getAll(), employeeSource]);
       if (!dRes.error) setDepartments(dRes.departments || []);
       if (!eRes.error) setEmployees(eRes.employees || []);
     } catch { /* ignore */ }
-  };
+  }, [user?.hierarchy_role, user?.role]);
 
-  const fetchTeams = async () => {
+  const fetchTeams = useCallback(async () => {
     setLoading(true);
     try {
       const result = await teamApi.getAll(filterDept ? Number(filterDept) : undefined);
       if (!result.error) setTeams(result.teams || []);
     } catch { setTeams([]); }
     finally { setLoading(false); }
-  };
+  }, [filterDept]);
+
+  useEffect(() => { fetchRefs(); }, [fetchRefs]);
+  useEffect(() => { fetchTeams(); }, [fetchTeams]);
 
   const openCreate = () => { setEditing(null); setForm({ ...emptyForm }); setModalOpen(true); };
   const openEdit = (t: Team) => {
+    if (isDepartmentHeadView) return;
     setEditing(t);
     setForm({ name: t.name, code: t.code, description: t.description || "", department_id: t.department_id || "", leader_id: t.leader_id || "" });
     setModalOpen(true);
   };
 
   const handleSave = async () => {
+    if (isDepartmentHeadView) {
+      showToast.error("Trưởng phòng chỉ có quyền xem nhóm");
+      return;
+    }
     if (!form.name || !form.code) { showToast.error("Vui lòng nhập tên và mã nhóm"); return; }
     if (!form.department_id) { showToast.error("Vui lòng chọn phòng ban"); return; }
     try {
@@ -71,6 +86,10 @@ function TeamPage() {
   };
 
   const handleDelete = async () => {
+    if (isDepartmentHeadView) {
+      showToast.error("Trưởng phòng chỉ có quyền xem nhóm");
+      return;
+    }
     if (!toDelete) return;
     try {
       setDeleting(true);
@@ -84,13 +103,34 @@ function TeamPage() {
     finally { setDeleting(false); }
   };
 
+  const openMembers = async (team: Team) => {
+    setLoadingMembers(true);
+    setViewTeam({ ...team, members: [] });
+    try {
+      const result = await teamApi.getById(team.team_id);
+      if (result.error) {
+        showToast.error(result.message || "Không thể tải danh sách thành viên");
+        setViewTeam(null);
+        return;
+      }
+      setViewTeam(result.team || null);
+    } catch {
+      showToast.error("Không thể tải danh sách thành viên");
+      setViewTeam(null);
+    } finally {
+      setLoadingMembers(false);
+    }
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Quản lý nhóm</h1>
-        <button onClick={openCreate} className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
-          <Plus className="w-4 h-4 mr-2" />Thêm nhóm
-        </button>
+        {!isDepartmentHeadView && (
+          <button onClick={openCreate} className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
+            <Plus className="w-4 h-4 mr-2" />Thêm nhóm
+          </button>
+        )}
       </div>
 
       <div className="mb-4 flex">
@@ -143,8 +183,15 @@ function TeamPage() {
                   </td>
                   <td className="px-5 py-3 text-right">
                     <div className="flex justify-end space-x-2">
-                      <button onClick={() => openEdit(team)} className="text-blue-400 hover:text-blue-600"><Edit2 className="w-4 h-4" /></button>
-                      <button onClick={() => { setToDelete(team); setDeleteModal(true); }} className="text-red-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                      <button onClick={() => openMembers(team)} className="text-gray-400 hover:text-indigo-600" title="Xem thành viên">
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      {!isDepartmentHeadView && (
+                        <button onClick={() => openEdit(team)} className="text-blue-400 hover:text-blue-600"><Edit2 className="w-4 h-4" /></button>
+                      )}
+                      {!isDepartmentHeadView && (
+                        <button onClick={() => { setToDelete(team); setDeleteModal(true); }} className="text-red-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -161,7 +208,7 @@ function TeamPage() {
       </div>
 
       {/* Create/Edit Modal */}
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editing ? `Sửa: ${editing.name}` : "Thêm nhóm mới"}>
+      <Modal isOpen={!isDepartmentHeadView && modalOpen} onClose={() => setModalOpen(false)} title={editing ? `Sửa: ${editing.name}` : "Thêm nhóm mới"}>
         <div className="p-1 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -215,7 +262,7 @@ function TeamPage() {
       </Modal>
 
       {/* Delete Confirm */}
-      <Modal isOpen={deleteModal} onClose={() => { setDeleteModal(false); setToDelete(null); }} title="Xác nhận xóa">
+      <Modal isOpen={!isDepartmentHeadView && deleteModal} onClose={() => { setDeleteModal(false); setToDelete(null); }} title="Xác nhận xóa">
         <div className="p-4">
           <p className="text-sm text-gray-700">Bạn có chắc muốn xóa nhóm <span className="font-semibold">{toDelete?.name}</span>?</p>
           <div className="flex justify-end space-x-3 mt-5">
@@ -224,6 +271,37 @@ function TeamPage() {
               {deleting ? "Đang xóa..." : "Xóa"}
             </button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Team Members */}
+      <Modal isOpen={!!viewTeam} onClose={() => setViewTeam(null)} title={`Thành viên nhóm: ${viewTeam?.name || ""}`}>
+        <div className="p-4">
+          {loadingMembers ? (
+            <div className="flex justify-center items-center py-10">
+              <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-indigo-600" />
+            </div>
+          ) : (
+            <div>
+              {(viewTeam?.members || []).length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-6">Nhóm này chưa có thành viên</p>
+              ) : (
+                <div className="max-h-72 overflow-y-auto divide-y divide-gray-100">
+                  {(viewTeam?.members || []).map((member: any) => (
+                    <div key={member.user_id} className="flex items-center justify-between py-2.5">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{member.User?.full_name || `#${member.user_id}`}</p>
+                        <p className="text-xs text-gray-500">{member.User?.company_email || "—"}</p>
+                      </div>
+                      {viewTeam?.leader_id === member.user_id && (
+                        <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-medium">Trưởng nhóm</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </Modal>
     </div>

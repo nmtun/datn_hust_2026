@@ -85,7 +85,7 @@ export const updateMyProfile = async (req, res) => {
 
 export const getAllEmployees = async (req, res) => {
     try {
-        const result = await employeeService.getAllEmployeesService(req.query);
+        const result = await employeeService.getAllEmployeesService(req.query, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error getting employees:", error);
@@ -95,7 +95,7 @@ export const getAllEmployees = async (req, res) => {
 
 export const getEmployeeById = async (req, res) => {
     try {
-        const result = await employeeService.getEmployeeByIdService(req.params.id);
+        const result = await employeeService.getEmployeeByIdService(req.params.id, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error getting employee:", error);
@@ -127,10 +127,20 @@ export const updateEmployeeStatus = async (req, res) => {
 
 export const getMyTeam = async (req, res) => {
     try {
-        const result = await employeeService.getMyTeamService(req.user.user_id);
+        const result = await employeeService.getMyTeamService(req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error getting team:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
+
+export const getManagedEmployees = async (req, res) => {
+    try {
+        const result = await employeeService.getManagedEmployeesService(req.user);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error getting managed employees:", error);
         return res.status(500).json({ error: true, message: "Internal server error" });
     }
 };

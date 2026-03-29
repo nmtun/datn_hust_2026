@@ -2,7 +2,7 @@ import * as performanceService from '../services/PerformanceServices.js';
 
 export const createPerformance = async (req, res) => {
     try {
-        const result = await performanceService.createPerformanceService(req.body, req.user.user_id);
+        const result = await performanceService.createPerformanceService(req.body, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error creating performance:", error);
@@ -13,8 +13,7 @@ export const createPerformance = async (req, res) => {
 export const getAllPerformance = async (req, res) => {
     try {
         const result = await performanceService.getAllPerformanceServiceOfManager({
-            managerId: req.user.user_id,
-            role: req.user.role,
+            requestingUser: req.user,
         });
         return res.status(result.status).json(result.data);
     } catch (error) {
@@ -55,10 +54,20 @@ export const getMyPerformance = async (req, res) => {
 
 export const getTeamPerformance = async (req, res) => {
     try {
-        const result = await performanceService.getTeamPerformanceService(req.user.user_id);
+        const result = await performanceService.getTeamPerformanceService(req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error getting team performance:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
+
+export const getEvaluableEmployees = async (req, res) => {
+    try {
+        const result = await performanceService.getEvaluableEmployeesService(req.user);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error getting evaluable employees:", error);
         return res.status(500).json({ error: true, message: "Internal server error" });
     }
 };

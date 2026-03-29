@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useState, useEffect } from "react";
 import { Plus, Edit2, Calendar, RefreshCw, Save, X } from "lucide-react";
@@ -6,6 +5,7 @@ import { performancePeriodApi, PerformancePeriod } from "@/app/api/performancePe
 import { showToast } from "@/app/utils/toast";
 import Modal from "@/app/components/Modal";
 import { withAuth } from "@/app/middleware/withAuth";
+import { useAuth } from "@/app/context/AuthContext";
 
 const STATUS_META: Record<string, { label: string; color: string; next: string }> = {
   planned:     { label: "Kế hoạch",       color: "bg-gray-100 text-gray-700",   next: "Bắt đầu" },
@@ -17,6 +17,7 @@ const BLANK: { period_name: string; start_date: string; end_date: string; descri
   { period_name: "", start_date: "", end_date: "", description: "", status: "planned" };
 
 function PerformancePeriodPage() {
+  const { user } = useAuth();
   const [periods, setPeriods] = useState<PerformancePeriod[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -24,6 +25,7 @@ function PerformancePeriodPage() {
   const [form, setForm] = useState({ ...BLANK });
   const [saving, setSaving] = useState(false);
   const [toggling, setToggling] = useState<number | null>(null);
+  const canManagePeriod = user?.role === "hr" || (user?.role === "manager" && (user?.hierarchy_role || "manager") === "manager");
 
   useEffect(() => { fetchPeriods(); }, []);
 
@@ -73,9 +75,11 @@ function PerformancePeriodPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Kỳ đánh giá hiệu suất</h1>
-        <button onClick={openCreate} className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
-          <Plus className="w-4 h-4 mr-2" />Tạo kỳ đánh giá
-        </button>
+        {canManagePeriod && (
+          <button onClick={openCreate} className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
+            <Plus className="w-4 h-4 mr-2" />Tạo kỳ đánh giá
+          </button>
+        )}
       </div>
 
       <div className="bg-white shadow rounded-lg overflow-hidden">
@@ -111,8 +115,10 @@ function PerformancePeriodPage() {
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <button onClick={() => openEdit(p)} className="text-gray-400 hover:text-blue-600"><Edit2 className="w-4 h-4" /></button>
-                        {meta.next && (
+                        {canManagePeriod && (
+                          <button onClick={() => openEdit(p)} className="text-gray-400 hover:text-blue-600"><Edit2 className="w-4 h-4" /></button>
+                        )}
+                        {canManagePeriod && meta.next && (
                           <button onClick={() => handleToggle(p)} disabled={toggling === p.period_id}
                             className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-indigo-50 text-indigo-700 rounded hover:bg-indigo-100 disabled:opacity-50">
                             {toggling === p.period_id ? <div className="animate-spin h-3 w-3 border border-indigo-700 border-t-transparent rounded-full" /> : <RefreshCw className="w-3 h-3" />}
@@ -133,7 +139,7 @@ function PerformancePeriodPage() {
       </div>
 
       {/* Create/Edit Modal */}
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editing ? `Sửa kỳ: ${editing.period_name}` : "Tạo kỳ đánh giá mới"}>
+      <Modal isOpen={canManagePeriod && modalOpen} onClose={() => setModalOpen(false)} title={editing ? `Sửa kỳ: ${editing.period_name}` : "Tạo kỳ đánh giá mới"}>
         <div className="p-6 space-y-4">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Tên kỳ đánh giá *</label>

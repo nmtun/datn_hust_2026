@@ -2,7 +2,7 @@ import * as teamService from '../services/TeamServices.js';
 
 export const createTeam = async (req, res) => {
     try {
-        const result = await teamService.createTeamService(req.body);
+        const result = await teamService.createTeamService(req.body, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error creating team:", error);
@@ -12,7 +12,7 @@ export const createTeam = async (req, res) => {
 
 export const getAllTeams = async (req, res) => {
     try {
-        const result = await teamService.getAllTeamsService(req.query);
+        const result = await teamService.getAllTeamsService(req.query, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error getting teams:", error);
@@ -22,7 +22,7 @@ export const getAllTeams = async (req, res) => {
 
 export const getTeamById = async (req, res) => {
     try {
-        const result = await teamService.getTeamByIdService(req.params.id);
+        const result = await teamService.getTeamByIdService(req.params.id, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error getting team:", error);
@@ -32,7 +32,7 @@ export const getTeamById = async (req, res) => {
 
 export const updateTeam = async (req, res) => {
     try {
-        const result = await teamService.updateTeamService(req.params.id, req.body);
+        const result = await teamService.updateTeamService(req.params.id, req.body, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error updating team:", error);
@@ -42,7 +42,7 @@ export const updateTeam = async (req, res) => {
 
 export const addMember = async (req, res) => {
     try {
-        const result = await teamService.addMemberToTeamService(req.params.id, req.body.user_id);
+        const result = await teamService.addMemberToTeamService(req.params.id, req.body.user_id, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error adding member:", error);
@@ -52,7 +52,7 @@ export const addMember = async (req, res) => {
 
 export const removeMember = async (req, res) => {
     try {
-        const result = await teamService.removeMemberFromTeamService(req.params.id, req.body.user_id);
+        const result = await teamService.removeMemberFromTeamService(req.params.id, req.body.user_id, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error removing member:", error);
@@ -62,10 +62,20 @@ export const removeMember = async (req, res) => {
 
 export const deleteTeam = async (req, res) => {
     try {
-        const result = await teamService.deleteTeamService(req.params.id);
+        const result = await teamService.deleteTeamService(req.params.id, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error deleting team:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
+
+export const getManagedTeams = async (req, res) => {
+    try {
+        const result = await teamService.getManagedTeamsService(req.user);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error getting managed teams:", error);
         return res.status(500).json({ error: true, message: "Internal server error" });
     }
 };

@@ -8,9 +8,7 @@ import { useState } from "react";
 import {
   Users,
   UserCircle,
-  Briefcase,
   FileText,
-  Settings,
   Building2,
   LayoutDashboard,
   CircleQuestionMark,
@@ -23,8 +21,6 @@ import {
   Wallet,
   CalendarDays,
   Star,
-  DollarSign,
-  BarChart3
 } from "lucide-react";
 
 const menuItems = {
@@ -64,6 +60,36 @@ const menuItems = {
   ],
 };
 
+const hierarchyMenuItems = {
+  department_head: [
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Hồ sơ của tôi", href: "/dashboard/employee/profile", icon: UserCog },
+    { name: "Đánh giá của tôi", href: "/dashboard/employee/performance", icon: TrendingUp },
+    { name: "Lương thưởng", href: "/dashboard/employee/compensation", icon: Wallet },
+    { name: "Đào tạo", href: "/dashboard/employee/training", icon: GraduationCap },
+    { name: "Quản lý nhóm", href: "/dashboard/department-head/team", icon: Users },
+    { name: "Đánh giá nhân sự", href: "/dashboard/department-head/performance", icon: Star },
+  ],
+  team_lead: [
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Hồ sơ của tôi", href: "/dashboard/employee/profile", icon: UserCog },
+    { name: "Đánh giá của tôi", href: "/dashboard/employee/performance", icon: TrendingUp },
+    { name: "Lương thưởng", href: "/dashboard/employee/compensation", icon: Wallet },
+    { name: "Đào tạo", href: "/dashboard/employee/training", icon: GraduationCap },
+    { name: "Thành viên nhóm", href: "/dashboard/team-lead/team", icon: Users },
+    { name: "Đánh giá thành viên", href: "/dashboard/team-lead/performance", icon: Star },
+  ],
+};
+
+const roleLabels: Record<string, string> = {
+  hr: 'hr',
+  manager: 'manager',
+  employee: 'employee',
+  candidate: 'candidate',
+  department_head: 'truong phong',
+  team_lead: 'truong nhom',
+};
+
 interface SidebarProps {
   onCollapse?: (collapsed: boolean) => void;
 }
@@ -72,8 +98,15 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
   const { user } = useAuth();
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  
-  const userMenuItems = menuItems[user?.role as keyof typeof menuItems] || menuItems.employee;
+
+  const userMenuItems =
+    user?.hierarchy_role && hierarchyMenuItems[user.hierarchy_role as keyof typeof hierarchyMenuItems]
+      ? hierarchyMenuItems[user.hierarchy_role as keyof typeof hierarchyMenuItems]
+      : menuItems[user?.role as keyof typeof menuItems] || menuItems.employee;
+
+  const roleLabel = user?.hierarchy_role
+    ? roleLabels[user.hierarchy_role] || user.hierarchy_role
+    : roleLabels[user?.role || 'employee'] || user?.role;
 
   const handleCollapse = (collapsed: boolean) => {
     setIsCollapsed(collapsed);
@@ -150,7 +183,7 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
             {!isCollapsed && (
               <div>
                 <p className="text-sm font-medium text-gray-700">{user?.full_name}</p>
-                <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+                <p className="text-xs text-gray-500 capitalize">{roleLabel}</p>
               </div>
             )}
           </div>
