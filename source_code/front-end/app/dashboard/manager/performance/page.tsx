@@ -86,6 +86,7 @@ function PerformancePage() {
   const [editRecord, setEditRecord] = useState<Performance | null>(null);
   const [saving, setSaving] = useState(false);
   const [filterPeriod, setFilterPeriod] = useState("");
+  const inProgressPeriods = periods.filter(p => p.status === "in_progress");
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -104,11 +105,21 @@ function PerformancePage() {
     finally { setLoading(false); }
   };
 
-  const openCreate = () => { setCreateModal(true); };
+  const openCreate = () => {
+    if (inProgressPeriods.length === 0) {
+      showToast.error("Hiện không có kỳ đánh giá đang thực hiện");
+      return;
+    }
+    setCreateModal(true);
+  };
   const openEdit = (r: Performance) => { setEditRecord(r); };
 
   const handleSave = async (form: any) => {
     if (!form.user_id || !form.period_id) { showToast.error("Vui lòng chọn nhân viên và kỳ đánh giá"); return; }
+    if (!editRecord && !inProgressPeriods.some(p => p.period_id === Number(form.period_id))) {
+      showToast.error("Chỉ có thể chọn kỳ đánh giá đang thực hiện");
+      return;
+    }
     setSaving(true);
     try {
       const payload: any = { user_id: Number(form.user_id), period_id: Number(form.period_id) };
@@ -227,7 +238,7 @@ function PerformancePage() {
 
       {createModal && (
         <FormModal title="Tạo đánh giá mới" onClose={() => setCreateModal(false)}
-          employees={employees} periods={periods}
+          employees={employees} periods={inProgressPeriods}
           isEdit={false} saving={saving} onSave={handleSave} />
       )}
       {editRecord && (

@@ -2,15 +2,17 @@
 "use client";
 import { Search, BookOpen, Video, FileText, Play } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { trainingMaterialApi, TrainingMaterial } from "@/app/api/trainingMaterialApi";
 import { showToast } from "@/app/utils/toast";
 import { withAuth } from "@/app/middleware/withAuth";
+import { quizResultApi, QuizResult } from "@/app/api/quizApi";
 
 function EmployeeTrainingPage() {
   const [materials, setMaterials] = useState<TrainingMaterial[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -20,32 +22,75 @@ function EmployeeTrainingPage() {
   const fetchMaterials = async () => {
     try {
       setLoading(true);
-      const response = await trainingMaterialApi.getAll();
-      
-      if (!response || response.error) {
-        console.error("API Error:", response?.message || "Unknown error");
+      const [materialsResponse, quizResultsResponse] = await Promise.allSettled([
+        trainingMaterialApi.getAll(),
+        quizResultApi.getMyResults(),
+      ]);
+
+      if (materialsResponse.status !== "fulfilled" || !materialsResponse.value || materialsResponse.value.error) {
+        const message =
+          materialsResponse.status === "fulfilled"
+            ? materialsResponse.value?.message || "Unknown error"
+            : materialsResponse.reason;
+        console.error("API Error:", message);
         setMaterials([]);
         return;
       }
-      
+
       // Chỉ hiển thị tài liệu active
-      const activeMaterials = response.materials?.filter(
+      const activeMaterials = materialsResponse.value.materials?.filter(
         (m: TrainingMaterial) => m.status === "active"
       ) || [];
       setMaterials(activeMaterials);
+
+      if (
+        quizResultsResponse.status === "fulfilled" &&
+        !quizResultsResponse.value?.error
+      ) {
+        setQuizResults(quizResultsResponse.value.results || []);
+      } else {
+        setQuizResults([]);
+      }
     } catch (error) {
       console.error("Error fetching materials:", error);
       showToast.error('Lỗi khi tải danh sách tài liệu');
       setMaterials([]);
+      setQuizResults([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredMaterials = materials.filter((material) =>
-    material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    material.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  const passedQuizIds = useMemo(
+    () => new Set(quizResults.filter((result) => result.pass_status).map((result) => result.quiz_id)),
+    [quizResults]
   );
+
+  const isMaterialCompleted = (material: TrainingMaterial) => {
+    const quizzes = material.quizzes || [];
+    if (quizzes.length === 0) return false;
+    return quizzes.every((quiz) => passedQuizIds.has(quiz.quiz_id));
+  };
+
+  const filteredMaterials = useMemo(() => {
+    const normalizedSearchTerm = searchTerm.toLowerCase().trim();
+
+    return materials
+      .filter((material) => {
+        if (!normalizedSearchTerm) return true;
+        return (
+          material.title.toLowerCase().includes(normalizedSearchTerm) ||
+          material.description?.toLowerCase().includes(normalizedSearchTerm)
+        );
+      })
+      .sort((a, b) => {
+        const aCompleted = isMaterialCompleted(a);
+        const bCompleted = isMaterialCompleted(b);
+
+        if (aCompleted === bCompleted) return 0;
+        return aCompleted ? 1 : -1;
+      });
+  }, [materials, searchTerm, passedQuizIds]);
 
   return (
     <div className="space-y-6">
@@ -92,6 +137,7 @@ function EmployeeTrainingPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {filteredMaterials.map((material) => (
+                  
                   <div
                     key={material.material_id}
                     className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden cursor-pointer border border-gray-200"
@@ -128,6 +174,12 @@ function EmployeeTrainingPage() {
 
                     {/* Card Body */}
                     <div className="p-6">
+                      {isMaterialCompleted(material) && (
+                        <div className="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold mb-3">
+                          Đã hoàn thành
+                        </div>
+                      )}
+
                       <p className="text-gray-600 text-sm mb-4 line-clamp-3">
                         {material.description || "Không có mô tả"}
                       </p>
