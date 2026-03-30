@@ -277,54 +277,42 @@ CREATE TABLE HR_Forecasts (
 CREATE TABLE Projects (
   project_id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
+  goal TEXT,
   description TEXT,
-  start_date DATE NOT NULL,
+  start_date DATE,
   end_date DATE,
-  status ENUM('planning', 'active', 'on_hold', 'completed', 'cancelled') NOT NULL,
-  manager_id INT,
+  status ENUM('to_do', 'doing', 'review', 'done', 'on_hold', 'cancelled') NOT NULL DEFAULT 'to_do',
+  manager_id INT NOT NULL,
   department_id INT,
-  budget DECIMAL(18,2),
+  active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at DATETIME NOT NULL,
   updated_at DATETIME,
   FOREIGN KEY (manager_id) REFERENCES Users(user_id),
   FOREIGN KEY (department_id) REFERENCES Departments(department_id)
 );
 
-CREATE TABLE Project_Assignments (
-  assignment_id INT AUTO_INCREMENT PRIMARY KEY,
-  project_id INT NOT NULL,
-  user_id INT NOT NULL,
-  role_in_project VARCHAR(100) NOT NULL,
-  assigned_date DATE NOT NULL,
-  end_date DATE,
-  allocation_percentage INT DEFAULT 100,
-  created_at DATETIME NOT NULL,
-  updated_at DATETIME,
-  FOREIGN KEY (project_id) REFERENCES Projects(project_id),
-  FOREIGN KEY (user_id) REFERENCES Users(user_id)
-);
-
 CREATE TABLE Tasks (
   task_id INT AUTO_INCREMENT PRIMARY KEY,
+  project_id INT NOT NULL,
+  parent_task_id INT,
+  team_id INT,
   title VARCHAR(255) NOT NULL,
   description TEXT,
-  assigned_to INT,
+  assigned_to INT NOT NULL,
   created_by INT NOT NULL,
-  start_date DATE NOT NULL,
+  start_date DATE,
   due_date DATE,
   completed_date DATE,
-  estimated_hours FLOAT,
-  actual_hours FLOAT,
-  status ENUM('pending', 'in_progress', 'review', 'completed', 'cancelled') NOT NULL,
-  priority ENUM('low', 'medium', 'high', 'urgent') NOT NULL,
-  project_id INT,
-  parent_task_id INT,
+  status ENUM('to_do', 'doing', 'review', 'done') NOT NULL DEFAULT 'to_do',
+  priority ENUM('low', 'medium', 'high', 'urgent') NOT NULL DEFAULT 'medium',
+  active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at DATETIME NOT NULL,
   updated_at DATETIME,
-  FOREIGN KEY (assigned_to) REFERENCES Users(user_id),
-  FOREIGN KEY (created_by) REFERENCES Users(user_id),
   FOREIGN KEY (project_id) REFERENCES Projects(project_id),
-  FOREIGN KEY (parent_task_id) REFERENCES Tasks(task_id)
+  FOREIGN KEY (parent_task_id) REFERENCES Tasks(task_id),
+  FOREIGN KEY (team_id) REFERENCES Teams(team_id),
+  FOREIGN KEY (assigned_to) REFERENCES Users(user_id),
+  FOREIGN KEY (created_by) REFERENCES Users(user_id)
 );
 
 CREATE TABLE Task_Comments (
@@ -336,5 +324,19 @@ CREATE TABLE Task_Comments (
   updated_at DATETIME,
   FOREIGN KEY (task_id) REFERENCES Tasks(task_id),
   FOREIGN KEY (user_id) REFERENCES Users(user_id)
+);
+
+CREATE TABLE Task_Reviews (
+  review_id INT AUTO_INCREMENT PRIMARY KEY,
+  task_id INT NOT NULL,
+  reviewer_id INT NOT NULL,
+  reviewed_user_id INT NOT NULL,
+  decision ENUM('approved', 'changes_requested') NOT NULL,
+  note TEXT,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME,
+  FOREIGN KEY (task_id) REFERENCES Tasks(task_id),
+  FOREIGN KEY (reviewer_id) REFERENCES Users(user_id),
+  FOREIGN KEY (reviewed_user_id) REFERENCES Users(user_id)
 );
 

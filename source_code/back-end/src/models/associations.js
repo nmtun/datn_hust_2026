@@ -20,6 +20,10 @@ import PerformancePeriod from "./PerformancePeriod.js";
 import Performance from "./Performance.js";
 import Compensation from "./Compensation.js";
 import HRForecast from "./HRForecast.js";
+import Project from "./Project.js";
+import Task from "./Task.js";
+import TaskComment from "./TaskComment.js";
+import TaskReview from "./TaskReview.js";
 
 // Define one-to-many associations between User and Candidate_Info
 User.hasMany(Candidate, { foreignKey: "user_id" });
@@ -235,3 +239,47 @@ User.hasMany(Compensation, { foreignKey: "approved_by", as: "approvedCompensatio
 // HRForecast ↔ Department
 HRForecast.belongsTo(Department, { foreignKey: "department_id", as: "department" });
 Department.hasMany(HRForecast, { foreignKey: "department_id", as: "forecasts" });
+
+// Project ↔ User (manager)
+Project.belongsTo(User, { foreignKey: "manager_id", as: "manager" });
+User.hasMany(Project, { foreignKey: "manager_id", as: "managedProjects" });
+
+// Project ↔ Department
+Project.belongsTo(Department, { foreignKey: "department_id", as: "department" });
+Department.hasMany(Project, { foreignKey: "department_id", as: "projects" });
+
+// Task ↔ Project
+Task.belongsTo(Project, { foreignKey: "project_id", as: "project" });
+Project.hasMany(Task, { foreignKey: "project_id", as: "tasks" });
+
+// Task self-reference (parent ↔ sub tasks)
+Task.belongsTo(Task, { foreignKey: "parent_task_id", as: "parentTask" });
+Task.hasMany(Task, { foreignKey: "parent_task_id", as: "subTasks" });
+
+// Task ↔ Team
+Task.belongsTo(Team, { foreignKey: "team_id", as: "team" });
+Team.hasMany(Task, { foreignKey: "team_id", as: "tasks" });
+
+// Task ↔ User (assignee/creator)
+Task.belongsTo(User, { foreignKey: "assigned_to", as: "assignee" });
+User.hasMany(Task, { foreignKey: "assigned_to", as: "assignedTasks" });
+
+Task.belongsTo(User, { foreignKey: "created_by", as: "creator" });
+User.hasMany(Task, { foreignKey: "created_by", as: "createdTasks" });
+
+// TaskComment ↔ Task/User
+TaskComment.belongsTo(Task, { foreignKey: "task_id", as: "task" });
+Task.hasMany(TaskComment, { foreignKey: "task_id", as: "comments" });
+
+TaskComment.belongsTo(User, { foreignKey: "user_id", as: "author" });
+User.hasMany(TaskComment, { foreignKey: "user_id", as: "taskComments" });
+
+// TaskReview ↔ Task/User
+TaskReview.belongsTo(Task, { foreignKey: "task_id", as: "task" });
+Task.hasMany(TaskReview, { foreignKey: "task_id", as: "reviews" });
+
+TaskReview.belongsTo(User, { foreignKey: "reviewer_id", as: "reviewer" });
+User.hasMany(TaskReview, { foreignKey: "reviewer_id", as: "givenTaskReviews" });
+
+TaskReview.belongsTo(User, { foreignKey: "reviewed_user_id", as: "reviewedUser" });
+User.hasMany(TaskReview, { foreignKey: "reviewed_user_id", as: "receivedTaskReviews" });

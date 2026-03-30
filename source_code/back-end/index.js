@@ -29,6 +29,10 @@ import "./src/models/PerformancePeriod.js";
 import "./src/models/Performance.js";
 import "./src/models/Compensation.js";
 import "./src/models/HRForecast.js";
+import "./src/models/Project.js";
+import "./src/models/Task.js";
+import "./src/models/TaskComment.js";
+import "./src/models/TaskReview.js";
 
 // Import routes here
 import UserRoutes from "./src/routes/UserRoutes.js";
@@ -48,6 +52,8 @@ import PerformanceRoutes from "./src/routes/PerformanceRoutes.js";
 import CompensationRoutes from "./src/routes/CompensationRoutes.js";
 import HRForecastRoutes from "./src/routes/HRForecastRoutes.js";
 import HRReportRoutes from "./src/routes/HRReportRoutes.js";
+import ProjectRoutes from "./src/routes/ProjectRoutes.js";
+import TaskRoutes from "./src/routes/TaskRoutes.js";
 
 dotenv.config();
 
@@ -102,6 +108,8 @@ app.use("/api/performance", PerformanceRoutes);
 app.use("/api/compensation", CompensationRoutes);
 app.use("/api/hr-forecast", HRForecastRoutes);
 app.use("/api/report", HRReportRoutes);
+app.use("/api/project", ProjectRoutes);
+app.use("/api/task", TaskRoutes);
 
 // Tạo bảng và chạy server
 (async () => {

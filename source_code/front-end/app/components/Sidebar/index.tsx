@@ -21,6 +21,7 @@ import {
   Wallet,
   CalendarDays,
   Star,
+  ListTodo,
 } from "lucide-react";
 
 const menuItems = {
@@ -46,6 +47,7 @@ const menuItems = {
   manager: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Hồ sơ của tôi", href: "/dashboard/manager/profile", icon: UserCog },
+    { name: "Dự án & Công việc", href: "/dashboard/manager/task", icon: ListTodo },
     { name: "Phòng ban", href: "/dashboard/manager/department", icon: Building2 },
     { name: "Nhóm", href: "/dashboard/manager/team", icon: Users },
     { name: "Kỳ đánh giá", href: "/dashboard/manager/performance-period", icon: CalendarDays },
@@ -54,6 +56,7 @@ const menuItems = {
   employee: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Hồ sơ của tôi", href: "/dashboard/employee/profile", icon: UserCog },
+    { name: "Công việc", href: "/dashboard/employee/task", icon: ListTodo },
     { name: "Đánh giá hiệu suất", href: "/dashboard/employee/performance", icon: TrendingUp },
     { name: "Lương thưởng", href: "/dashboard/employee/compensation", icon: Wallet },
     { name: "Đào tạo", href: "/dashboard/employee/training", icon: GraduationCap },
@@ -64,6 +67,7 @@ const hierarchyMenuItems = {
   department_head: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Hồ sơ của tôi", href: "/dashboard/employee/profile", icon: UserCog },
+    { name: "Quản lý công việc", href: "/dashboard/department-head/task", icon: ListTodo },
     { name: "Đánh giá của tôi", href: "/dashboard/employee/performance", icon: TrendingUp },
     { name: "Lương thưởng", href: "/dashboard/employee/compensation", icon: Wallet },
     { name: "Đào tạo", href: "/dashboard/employee/training", icon: GraduationCap },
@@ -73,6 +77,7 @@ const hierarchyMenuItems = {
   team_lead: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Hồ sơ của tôi", href: "/dashboard/employee/profile", icon: UserCog },
+    { name: "Quản lý công việc", href: "/dashboard/team-lead/task", icon: ListTodo },
     { name: "Đánh giá của tôi", href: "/dashboard/employee/performance", icon: TrendingUp },
     { name: "Lương thưởng", href: "/dashboard/employee/compensation", icon: Wallet },
     { name: "Đào tạo", href: "/dashboard/employee/training", icon: GraduationCap },
