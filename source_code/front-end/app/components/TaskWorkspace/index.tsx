@@ -226,6 +226,16 @@ export default function TaskWorkspace({ roleMode }: { roleMode: RoleMode }) {
       return employees.filter((item) => teamLeadUserIds.has(item.user_id));
     }
 
+    if (roleMode === "team_lead") {
+      return employees.filter(
+        (item) =>
+          item.user_id !== currentUserId &&
+          !teamLeadUserIds.has(item.user_id) &&
+          item.hierarchy_role !== "department_head" &&
+          item.hierarchy_role !== "team_lead"
+      );
+    }
+
     return employees.filter(
       (item) =>
         item.user_id !== currentUserId &&
@@ -254,6 +264,18 @@ export default function TaskWorkspace({ roleMode }: { roleMode: RoleMode }) {
     );
   }, [currentUserId, editingTask, roleMode, taskForm.project_id, tasks]);
 
+
+  const assignableTeams = useMemo(() => {
+    if (roleMode === "manager") return [];
+
+    if (roleMode === "department_head") {
+      const assigneeId = Number(taskForm.assigned_to || 0);
+      if (!assigneeId) return [];
+      return teams.filter((team) => Number(team.leader_id) === assigneeId);
+    }
+
+    return teams;
+  }, [roleMode, taskForm.assigned_to, teams]);
   const taskStat = useMemo(() => {
     const summary: Record<TaskStatus, number> = {
       to_do: 0,
@@ -380,6 +402,16 @@ export default function TaskWorkspace({ roleMode }: { roleMode: RoleMode }) {
       return next;
     });
   }, [taskIds]);
+
+  useEffect(() => {
+    if (roleMode === "manager") return;
+    if (!taskForm.team_id) return;
+
+    const existsInScope = assignableTeams.some((team) => Number(team.team_id) === Number(taskForm.team_id));
+    if (existsInScope) return;
+
+    setTaskForm((prev) => ({ ...prev, team_id: "" }));
+  }, [assignableTeams, roleMode, taskForm.team_id]);
 
   const toggleTaskExpand = (taskId: number) => {
     setExpandedTaskIds((prev) => {
@@ -511,6 +543,14 @@ export default function TaskWorkspace({ roleMode }: { roleMode: RoleMode }) {
     if ((roleMode === "department_head" || roleMode === "team_lead") && !taskForm.parent_task_id) {
       showToast.error("Vui lòng chọn task cha đã giao cho bạn trước khi phân rã task");
       return;
+    }
+
+    if (roleMode !== "manager" && taskForm.team_id) {
+      const existsInScope = assignableTeams.some((team) => Number(team.team_id) === Number(taskForm.team_id));
+      if (!existsInScope) {
+        showToast.error("Nhóm phụ trách không thuộc phạm vi của người nhận việc");
+        return;
+      }
     }
 
     setSavingTask(true);
@@ -1128,7 +1168,13 @@ export default function TaskWorkspace({ roleMode }: { roleMode: RoleMode }) {
               </label>
               <select
                 value={taskForm.assigned_to}
-                onChange={(event) => setTaskForm((prev) => ({ ...prev, assigned_to: event.target.value }))}
+                onChange={(event) =>
+                  setTaskForm((prev) => ({
+                    ...prev,
+                    assigned_to: event.target.value,
+                    team_id: roleMode === "manager" ? prev.team_id : "",
+                  }))
+                }
                 className="w-full mt-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
                 disabled={roleMode === "manager"}
               >
@@ -1174,7 +1220,7 @@ export default function TaskWorkspace({ roleMode }: { roleMode: RoleMode }) {
                   className="w-full mt-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
                 >
                   <option value="">-- Không chọn nhóm --</option>
-                  {teams.map((team) => (
+                  {assignableTeams.map((team) => (
                     <option key={team.team_id} value={team.team_id}>
                       {team.name}
                     </option>

@@ -31,6 +31,7 @@ const menuItems = {
   hr: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Hồ sơ của tôi", href: "/dashboard/hr/profile", icon: UserCog },
+    { name: "Công việc", href: "/dashboard/hr/task", icon: ListTodo },
     { name: "Mô tả công việc", href: "/dashboard/hr/job-description", icon: FileText },
     { name: "Ứng viên", href: "/dashboard/hr/candidate", icon: Users },
     { name: "Nhân viên", href: "/dashboard/hr/employee", icon: UserCircle },

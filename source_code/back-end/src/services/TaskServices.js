@@ -232,8 +232,8 @@ const validateAssignmentPermission = async ({ requestingUser, assigneeId, teamId
             return { status: 403, message: 'Team lead can only split tasks assigned to themselves' };
         }
 
-        if (assigneeHierarchyRole !== 'employee') {
-            return { status: 403, message: 'Team lead can only assign tasks to team members' };
+        if (!['employee', 'hr'].includes(assigneeHierarchyRole)) {
+            return { status: 403, message: 'Team lead can only assign tasks to team members (employee/hr)' };
         }
 
         const memberIds = await getMemberIdsForTeamLead(requesterId);
