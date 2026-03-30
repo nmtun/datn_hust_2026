@@ -14,6 +14,12 @@ import MaterialTags from "./MaterialTag.js";
 import QuestionTags from "./QuestionTag.js";
 import QuizTags from "./QuizTag.js";
 import QuestionToQuiz from "./QuesionToQuiz.js";
+import Department from "./Department.js";
+import Team from "./Team.js";
+import PerformancePeriod from "./PerformancePeriod.js";
+import Performance from "./Performance.js";
+import Compensation from "./Compensation.js";
+import HRForecast from "./HRForecast.js";
 
 // Define one-to-many associations between User and Candidate_Info
 User.hasMany(Candidate, { foreignKey: "user_id" });
@@ -177,3 +183,55 @@ QuizTags.belongsTo(Quizzes, { foreignKey: "quiz_id" });
 QuizTags.belongsTo(Tags, { foreignKey: "tag_id" });
 Quizzes.hasMany(QuizTags, { foreignKey: "quiz_id" });
 Tags.hasMany(QuizTags, { foreignKey: "tag_id" });
+
+// Department ↔ User (manager)
+Department.belongsTo(User, { foreignKey: "manager_id", as: "manager" });
+User.hasMany(Department, { foreignKey: "manager_id", as: "managedDepartments" });
+
+// Department self-referential (parent ↔ children)
+Department.belongsTo(Department, { foreignKey: "parent_department_id", as: "parentDepartment" });
+Department.hasMany(Department, { foreignKey: "parent_department_id", as: "subDepartments" });
+
+// Department ↔ Team
+Department.hasMany(Team, { foreignKey: "department_id", as: "teams" });
+Team.belongsTo(Department, { foreignKey: "department_id", as: "department" });
+
+// Team ↔ User (leader)
+Team.belongsTo(User, { foreignKey: "leader_id", as: "leader" });
+User.hasMany(Team, { foreignKey: "leader_id", as: "ledTeams" });
+
+// Employee ↔ Department
+Employee.belongsTo(Department, { foreignKey: "department_id", as: "department" });
+Department.hasMany(Employee, { foreignKey: "department_id", as: "employees" });
+
+// Employee ↔ Team
+Employee.belongsTo(Team, { foreignKey: "team_id", as: "team" });
+Team.hasMany(Employee, { foreignKey: "team_id", as: "members" });
+
+// Employee ↔ User (manager)
+Employee.belongsTo(User, { foreignKey: "manager_id", as: "manager" });
+User.hasMany(Employee, { foreignKey: "manager_id", as: "subordinates" });
+
+// Performance ↔ User (employee)
+Performance.belongsTo(User, { foreignKey: "user_id", as: "employee" });
+User.hasMany(Performance, { foreignKey: "user_id", as: "performances" });
+
+// Performance ↔ User (reviewer)
+Performance.belongsTo(User, { foreignKey: "reviewer_id", as: "reviewer" });
+User.hasMany(Performance, { foreignKey: "reviewer_id", as: "reviewedPerformances" });
+
+// Performance ↔ PerformancePeriod
+PerformancePeriod.hasMany(Performance, { foreignKey: "period_id", as: "performances" });
+Performance.belongsTo(PerformancePeriod, { foreignKey: "period_id", as: "period" });
+
+// Compensation ↔ User (employee)
+Compensation.belongsTo(User, { foreignKey: "user_id", as: "employee" });
+User.hasMany(Compensation, { foreignKey: "user_id", as: "compensations" });
+
+// Compensation ↔ User (approver)
+Compensation.belongsTo(User, { foreignKey: "approved_by", as: "approver" });
+User.hasMany(Compensation, { foreignKey: "approved_by", as: "approvedCompensations" });
+
+// HRForecast ↔ Department
+HRForecast.belongsTo(Department, { foreignKey: "department_id", as: "department" });
+Department.hasMany(HRForecast, { foreignKey: "department_id", as: "forecasts" });

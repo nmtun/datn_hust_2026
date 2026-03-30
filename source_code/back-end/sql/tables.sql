@@ -13,7 +13,7 @@ CREATE TABLE Users (
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL
 );
-
+ 
 CREATE TABLE Candidate_Info (
   candidate_info_id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
@@ -236,6 +236,7 @@ CREATE TABLE Performance (
   achievement TEXT,
   rating FLOAT DEFAULT 0,
   feedback TEXT,
+  visibility ENUM('private', 'shared_with_employee') NOT NULL DEFAULT 'shared_with_employee',
   review_date DATE NOT NULL,
   reviewer_id INT NOT NULL,
   created_at DATETIME NOT NULL,

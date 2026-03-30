@@ -24,30 +24,30 @@ const Employee = sequelize.define("Employee_Info", {
         type: DataTypes.STRING(100),
         allowNull: false,
     },
-    // department_id: {
-    //     type: DataTypes.INTEGER,
-    //     allowNull: true,
-    //     references: {
-    //         model: "Departments", 
-    //         key: "department_id"
-    //     }
-    // },
-    // team_id: {
-    //     type: DataTypes.INTEGER,
-    //     allowNull: true,
-    //     references: {
-    //         model: "Teams", 
-    //         key: "team_id"
-    //     }
-    // },
-    // manager_id: {
-    //     type: DataTypes.INTEGER,
-    //     allowNull: true,
-    //     references: {
-    //         model: "Users", 
-    //         key: "user_id"
-    //     }
-    // },
+    department_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+            model: "Departments",
+            key: "department_id"
+        }
+    },
+    team_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+            model: "Teams",
+            key: "team_id"
+        }
+    },
+    manager_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+            model: "Users",
+            key: "user_id"
+        }
+    },
     termination_date: {
         type: DataTypes.DATE,
         allowNull: true,

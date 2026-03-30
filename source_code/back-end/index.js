@@ -23,6 +23,12 @@ import "./src/models/Tag.js";
 import "./src/models/MaterialTag.js";
 import "./src/models/QuestionTag.js";
 import "./src/models/QuesionToQuiz.js";
+import "./src/models/Department.js";
+import "./src/models/Team.js";
+import "./src/models/PerformancePeriod.js";
+import "./src/models/Performance.js";
+import "./src/models/Compensation.js";
+import "./src/models/HRForecast.js";
 
 // Import routes here
 import UserRoutes from "./src/routes/UserRoutes.js";
@@ -35,6 +41,13 @@ import QuizzesRoutes from "./src/routes/QuizzesRoutes.js";
 import QuizQuestionRoutes from "./src/routes/QuizQuestionRoutes.js";
 import QuestionToQuizRoutes from "./src/routes/QuestionToQuizRoutes.js";
 import QuizResultRoutes from "./src/routes/QuizResultRoutes.js";
+import DepartmentRoutes from "./src/routes/DepartmentRoutes.js";
+import TeamRoutes from "./src/routes/TeamRoutes.js";
+import PerformancePeriodRoutes from "./src/routes/PerformancePeriodRoutes.js";
+import PerformanceRoutes from "./src/routes/PerformanceRoutes.js";
+import CompensationRoutes from "./src/routes/CompensationRoutes.js";
+import HRForecastRoutes from "./src/routes/HRForecastRoutes.js";
+import HRReportRoutes from "./src/routes/HRReportRoutes.js";
 
 dotenv.config();
 
@@ -82,6 +95,13 @@ app.use("/api/quizzes", QuizzesRoutes);
 app.use("/api/quiz-questions", QuizQuestionRoutes);
 app.use("/api/question-to-quiz", QuestionToQuizRoutes);
 app.use("/api/quiz-results", QuizResultRoutes);
+app.use("/api/department", DepartmentRoutes);
+app.use("/api/team", TeamRoutes);
+app.use("/api/performance-period", PerformancePeriodRoutes);
+app.use("/api/performance", PerformanceRoutes);
+app.use("/api/compensation", CompensationRoutes);
+app.use("/api/hr-forecast", HRForecastRoutes);
+app.use("/api/report", HRReportRoutes);
 
 // Tạo bảng và chạy server
 (async () => {

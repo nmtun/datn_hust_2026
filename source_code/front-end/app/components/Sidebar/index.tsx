@@ -8,16 +8,19 @@ import { useState } from "react";
 import {
   Users,
   UserCircle,
-  Briefcase,
   FileText,
-  Settings,
   Building2,
   LayoutDashboard,
   CircleQuestionMark,
   ChevronLeft,
   ChevronRight,
   BrainCog,
-  GraduationCap
+  GraduationCap,
+  UserCog,
+  TrendingUp,
+  Wallet,
+  CalendarDays,
+  Star,
 } from "lucide-react";
 
 const menuItems = {
@@ -26,19 +29,65 @@ const menuItems = {
   ],
   hr: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Job Descriptions", href: "/dashboard/hr/job-description", icon: FileText },
-    { name: "Candidates", href: "/dashboard/hr/candidate", icon: Users },
-    { name : "Employees", href: "/dashboard/hr/employee", icon: UserCircle },
-    { name: "Training Materials", href: "/dashboard/hr/training-material", icon: BrainCog },
-    { name: "Quizzes", href: "/dashboard/hr/quizzes", icon: CircleQuestionMark },
+    { name: "Hồ sơ của tôi", href: "/dashboard/hr/profile", icon: UserCog },
+    { name: "Mô tả công việc", href: "/dashboard/hr/job-description", icon: FileText },
+    { name: "Ứng viên", href: "/dashboard/hr/candidate", icon: Users },
+    { name: "Nhân viên", href: "/dashboard/hr/employee", icon: UserCircle },
+    // { name: "Phòng ban", href: "/dashboard/hr/department", icon: Building2 },
+    // { name: "Nhóm", href: "/dashboard/hr/team", icon: Users },
+    // { name: "Kỳ đánh giá", href: "/dashboard/hr/performance-period", icon: CalendarDays },
+    // { name: "Hiệu suất", href: "/dashboard/hr/performance", icon: Star },
+    // { name: "Lương thưởng", href: "/dashboard/hr/compensation", icon: DollarSign },
+    // { name: "Dự báo nhân lực", href: "/dashboard/hr/forecast", icon: TrendingUp },
+    // { name: "Báo cáo", href: "/dashboard/hr/report", icon: BarChart3 },
+    { name: "Tài liệu đào tạo", href: "/dashboard/hr/training-material", icon: BrainCog },
+    { name: "Bài kiểm tra", href: "/dashboard/hr/quizzes", icon: CircleQuestionMark },
   ],
   manager: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Hồ sơ của tôi", href: "/dashboard/manager/profile", icon: UserCog },
+    { name: "Phòng ban", href: "/dashboard/manager/department", icon: Building2 },
+    { name: "Nhóm", href: "/dashboard/manager/team", icon: Users },
+    { name: "Kỳ đánh giá", href: "/dashboard/manager/performance-period", icon: CalendarDays },
+    { name: "Hiệu suất", href: "/dashboard/manager/performance", icon: Star },
   ],
   employee: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Training", href: "/dashboard/employee/training", icon: GraduationCap },
+    { name: "Hồ sơ của tôi", href: "/dashboard/employee/profile", icon: UserCog },
+    { name: "Đánh giá hiệu suất", href: "/dashboard/employee/performance", icon: TrendingUp },
+    { name: "Lương thưởng", href: "/dashboard/employee/compensation", icon: Wallet },
+    { name: "Đào tạo", href: "/dashboard/employee/training", icon: GraduationCap },
   ],
+};
+
+const hierarchyMenuItems = {
+  department_head: [
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Hồ sơ của tôi", href: "/dashboard/employee/profile", icon: UserCog },
+    { name: "Đánh giá của tôi", href: "/dashboard/employee/performance", icon: TrendingUp },
+    { name: "Lương thưởng", href: "/dashboard/employee/compensation", icon: Wallet },
+    { name: "Đào tạo", href: "/dashboard/employee/training", icon: GraduationCap },
+    { name: "Quản lý nhóm", href: "/dashboard/department-head/team", icon: Users },
+    { name: "Đánh giá nhân sự", href: "/dashboard/department-head/performance", icon: Star },
+  ],
+  team_lead: [
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Hồ sơ của tôi", href: "/dashboard/employee/profile", icon: UserCog },
+    { name: "Đánh giá của tôi", href: "/dashboard/employee/performance", icon: TrendingUp },
+    { name: "Lương thưởng", href: "/dashboard/employee/compensation", icon: Wallet },
+    { name: "Đào tạo", href: "/dashboard/employee/training", icon: GraduationCap },
+    { name: "Thành viên nhóm", href: "/dashboard/team-lead/team", icon: Users },
+    { name: "Đánh giá thành viên", href: "/dashboard/team-lead/performance", icon: Star },
+  ],
+};
+
+const roleLabels: Record<string, string> = {
+  hr: 'hr',
+  manager: 'manager',
+  employee: 'employee',
+  candidate: 'candidate',
+  department_head: 'truong phong',
+  team_lead: 'truong nhom',
 };
 
 interface SidebarProps {
@@ -49,8 +98,15 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
   const { user } = useAuth();
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  
-  const userMenuItems = menuItems[user?.role as keyof typeof menuItems] || menuItems.employee;
+
+  const userMenuItems =
+    user?.hierarchy_role && hierarchyMenuItems[user.hierarchy_role as keyof typeof hierarchyMenuItems]
+      ? hierarchyMenuItems[user.hierarchy_role as keyof typeof hierarchyMenuItems]
+      : menuItems[user?.role as keyof typeof menuItems] || menuItems.employee;
+
+  const roleLabel = user?.hierarchy_role
+    ? roleLabels[user.hierarchy_role] || user.hierarchy_role
+    : roleLabels[user?.role || 'employee'] || user?.role;
 
   const handleCollapse = (collapsed: boolean) => {
     setIsCollapsed(collapsed);
@@ -127,7 +183,7 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
             {!isCollapsed && (
               <div>
                 <p className="text-sm font-medium text-gray-700">{user?.full_name}</p>
-                <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+                <p className="text-xs text-gray-500 capitalize">{roleLabel}</p>
               </div>
             )}
           </div>

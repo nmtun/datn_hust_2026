@@ -17,6 +17,7 @@ function TrainingMaterialDetailPage() {
   const [expandedHistory, setExpandedHistory] = useState<number | null>(null);
   const [quizHistories, setQuizHistories] = useState<Record<number, QuizResult[]>>({});
   const [loadingHistory, setLoadingHistory] = useState<Record<number, boolean>>({});
+  const [myQuizResults, setMyQuizResults] = useState<QuizResult[]>([]);
 
   useEffect(() => {
     if (params.id) {
@@ -27,22 +28,49 @@ function TrainingMaterialDetailPage() {
   const fetchMaterial = async () => {
     try {
       setLoading(true);
-      const response = await trainingMaterialApi.getById(Number(params.id));
-      
-      if (!response || response.error) {
-        console.error("API Error:", response?.message || "Unknown error");
+      const [materialResponse, myResultsResponse] = await Promise.allSettled([
+        trainingMaterialApi.getById(Number(params.id)),
+        quizResultApi.getMyResults(),
+      ]);
+
+      if (
+        materialResponse.status !== "fulfilled" ||
+        !materialResponse.value ||
+        materialResponse.value.error
+      ) {
+        const message =
+          materialResponse.status === "fulfilled"
+            ? materialResponse.value?.message || "Unknown error"
+            : materialResponse.reason;
+        console.error("API Error:", message);
         showToast.error('Lỗi khi tải tài liệu');
         return;
       }
-      
-      setMaterial(response.material);
+
+      setMaterial(materialResponse.value.material);
+
+      if (
+        myResultsResponse.status === "fulfilled" &&
+        !myResultsResponse.value?.error
+      ) {
+        setMyQuizResults(myResultsResponse.value.results || []);
+      } else {
+        setMyQuizResults([]);
+      }
     } catch (error) {
       console.error("Error fetching material:", error);
       showToast.error('Lỗi khi tải tài liệu');
+      setMyQuizResults([]);
     } finally {
       setLoading(false);
     }
   };
+
+  const passedQuizIds = new Set(
+    myQuizResults
+      .filter((result) => result.pass_status)
+      .map((result) => result.quiz_id)
+  );
 
   const toggleHistory = async (quizId: number) => {
     if (expandedHistory === quizId) {
@@ -319,9 +347,16 @@ function TrainingMaterialDetailPage() {
                 <div className="p-6">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                        {quiz.title}
-                      </h3>
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-xl font-semibold text-gray-900">
+                          {quiz.title}
+                        </h3>
+                        {passedQuizIds.has(quiz.quiz_id) && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                            Đạt
+                          </span>
+                        )}
+                      </div>
                       <p className="text-gray-600 mb-4">
                         {quiz.description || "Không có mô tả"}
                       </p>

@@ -11,6 +11,7 @@ interface User {
   user_id: string;
   full_name: string;
   role: string;
+  hierarchy_role?: string;
 }
 
 interface AuthResponse {

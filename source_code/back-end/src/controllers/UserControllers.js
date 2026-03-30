@@ -1,4 +1,5 @@
 import * as userService from '../services/UserServices.js';
+import { resolveHierarchyRole } from '../services/HierarchyServices.js';
 
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
@@ -19,11 +20,17 @@ export const login = async (req, res) => {
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) return res.status(401).json({ error: true, message: "Invalid password" });
 
+        const hierarchyRole = await resolveHierarchyRole({
+            userId: user.user_id,
+            role: user.role
+        });
+
         // Tạo token
         const token = jwt.sign(
             { 
                 user_id: user.user_id,
-                role: user.role
+                role: user.role,
+                hierarchy_role: hierarchyRole
             }, 
             process.env.JWT_SECRET, 
             { expiresIn: '1h' }
@@ -36,7 +43,8 @@ export const login = async (req, res) => {
             user: {
                 user_id: user.user_id,
                 full_name: user.full_name,
-                role: user.role
+                role: user.role,
+                hierarchy_role: hierarchyRole
             },
         });
 
