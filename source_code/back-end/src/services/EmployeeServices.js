@@ -312,12 +312,26 @@ export const getManagedEmployeesService = async (requestingUser) => {
             order: [['full_name', 'ASC']]
         });
 
+        const employeesWithHierarchy = await Promise.all(
+            employees.map(async (employee) => {
+                const hierarchyRole = await resolveHierarchyRole({
+                    userId: employee.user_id,
+                    role: employee.role
+                });
+
+                return {
+                    ...employee.toJSON(),
+                    hierarchy_role: hierarchyRole
+                };
+            })
+        );
+
         return {
             status: 200,
             data: {
                 error: false,
                 message: 'Managed employees retrieved successfully',
-                employees
+                employees: employeesWithHierarchy
             }
         };
     } catch (error) {

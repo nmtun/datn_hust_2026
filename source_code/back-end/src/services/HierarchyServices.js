@@ -45,6 +45,30 @@ export const getLedTeamIds = async (userId, departmentIds = null) => {
     return teams.map((team) => team.team_id);
 };
 
+const getManagedTeamIdsByDirectReports = async (teamLeadId, departmentIds = null) => {
+    const where = {
+        manager_id: teamLeadId,
+        team_id: { [Op.ne]: null }
+    };
+
+    if (Array.isArray(departmentIds)) {
+        if (departmentIds.length === 0) return [];
+        where.department_id = { [Op.in]: departmentIds };
+    }
+
+    const reports = await Employee.findAll({ where, attributes: ['team_id'] });
+    return uniq(reports.map((report) => report.team_id));
+};
+
+export const getEffectiveLedTeamIds = async (userId, departmentIds = null) => {
+    const [ledTeamIds, managedTeamIds] = await Promise.all([
+        getLedTeamIds(userId, departmentIds),
+        getManagedTeamIdsByDirectReports(userId, departmentIds)
+    ]);
+
+    return uniq([...ledTeamIds, ...managedTeamIds]);
+};
+
 const getDirectReportIds = async (managerId) => {
     const reports = await Employee.findAll({
         where: { manager_id: managerId },
@@ -94,15 +118,16 @@ export const getTeamLeadIdsForDepartmentHead = async (departmentHeadId) => {
 };
 
 export const getMemberIdsForTeamLead = async (teamLeadId) => {
-    const ledTeamIds = await getLedTeamIds(teamLeadId);
-    if (ledTeamIds.length === 0) return [];
+    const ledTeamIds = await getEffectiveLedTeamIds(teamLeadId);
+
+    const orClauses = [{ manager_id: teamLeadId }];
+    if (ledTeamIds.length > 0) {
+        orClauses.push({ team_id: { [Op.in]: ledTeamIds } });
+    }
 
     const members = await Employee.findAll({
         where: {
-            [Op.or]: [
-                { team_id: { [Op.in]: ledTeamIds } },
-                { manager_id: teamLeadId }
-            ],
+            [Op.or]: orClauses,
             user_id: { [Op.ne]: teamLeadId }
         },
         attributes: ['user_id']
@@ -139,7 +164,7 @@ export const resolveHierarchyRole = async (context) => {
 
     const [managedDepartments, ledTeams] = await Promise.all([
         getManagedDepartmentIds(userId),
-        getLedTeamIds(userId)
+        getEffectiveLedTeamIds(userId)
     ]);
 
     if (managedDepartments.length > 0) return 'department_head';
@@ -234,7 +259,14 @@ export const getManagementTargetUserIds = async (context) => {
     }
 
     if (hierarchyRole === 'team_lead') {
-        return getMemberIdsForTeamLead(userId);
+        const [memberIds, allDepartmentHeads, allTeamLeads] = await Promise.all([
+            getMemberIdsForTeamLead(userId),
+            getAllDepartmentHeadIds(),
+            getAllTeamLeadIds()
+        ]);
+
+        const blocked = new Set([...allDepartmentHeads, ...allTeamLeads, userId]);
+        return memberIds.filter((memberId) => !blocked.has(memberId));
     }
 
     return [];
@@ -276,7 +308,7 @@ export const getManageableTeamIds = async (context) => {
     }
 
     if (hierarchyRole === 'team_lead') {
-        return getLedTeamIds(userId);
+        return getEffectiveLedTeamIds(userId);
     }
 
     return [];
@@ -303,7 +335,10 @@ export const canManageTeam = async (context) => {
     }
 
     if (hierarchyRole === 'team_lead') {
-        return team.leader_id === userId;
+        if (team.leader_id === userId) return true;
+
+        const manageableTeamIds = await getEffectiveLedTeamIds(userId);
+        return manageableTeamIds.includes(team.team_id);
     }
 
     return false;
