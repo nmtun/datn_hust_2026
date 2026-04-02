@@ -26,6 +26,20 @@ const getNormalizedRole = (input) => {
     return input?.role ?? null;
 };
 
+const getHierarchyRoleByStructure = async (userId, fallbackRole = 'employee') => {
+    if (!userId) return fallbackRole;
+
+    const [managedDepartments, ledTeams] = await Promise.all([
+        getManagedDepartmentIds(userId),
+        getEffectiveLedTeamIds(userId)
+    ]);
+
+    if (managedDepartments.length > 0) return 'department_head';
+    if (ledTeams.length > 0) return 'team_lead';
+
+    return fallbackRole;
+};
+
 export const getManagedDepartmentIds = async (userId) => {
     const departments = await Department.findAll({
         where: { manager_id: userId, active: true },
@@ -157,20 +171,12 @@ export const resolveHierarchyRole = async (context) => {
     const role = getNormalizedRole(context);
 
     if (!role) return 'employee';
-    if (role === 'hr' || role === 'candidate') return role;
+    if (role === 'candidate') return role;
     if (role === 'manager') return 'manager';
-    if (role !== 'employee') return role;
-    if (!userId) return 'employee';
+    if (!['employee', 'hr'].includes(role)) return role;
 
-    const [managedDepartments, ledTeams] = await Promise.all([
-        getManagedDepartmentIds(userId),
-        getEffectiveLedTeamIds(userId)
-    ]);
-
-    if (managedDepartments.length > 0) return 'department_head';
-    if (ledTeams.length > 0) return 'team_lead';
-
-    return 'employee';
+    const fallbackRole = role === 'hr' ? 'hr' : 'employee';
+    return getHierarchyRoleByStructure(userId, fallbackRole);
 };
 
 export const getEvaluationTargetUserIds = async (context) => {
@@ -179,7 +185,15 @@ export const getEvaluationTargetUserIds = async (context) => {
 
     if (!userId || !role) return [];
 
-    if (role === 'hr') {
+    if (role === 'manager') {
+        return getDepartmentHeadIdsForManager(userId);
+    }
+
+    if (!['employee', 'hr'].includes(role)) return [];
+
+    const hierarchyRole = await resolveHierarchyRole({ userId, role });
+
+    if (hierarchyRole === 'hr') {
         const users = await User.findAll({
             where: {
                 role: { [Op.in]: ['employee', 'manager', 'hr'] },
@@ -190,14 +204,6 @@ export const getEvaluationTargetUserIds = async (context) => {
         });
         return users.map((user) => user.user_id);
     }
-
-    if (role === 'manager') {
-        return getDepartmentHeadIdsForManager(userId);
-    }
-
-    if (role !== 'employee') return [];
-
-    const hierarchyRole = await resolveHierarchyRole({ userId, role });
 
     if (hierarchyRole === 'department_head') {
         return getTeamLeadIdsForDepartmentHead(userId);
@@ -223,7 +229,15 @@ export const getManagementTargetUserIds = async (context) => {
 
     if (!userId || !role) return [];
 
-    if (role === 'hr') {
+    if (role === 'manager') {
+        return getDepartmentHeadIdsForManager(userId);
+    }
+
+    if (!['employee', 'hr'].includes(role)) return [];
+
+    const hierarchyRole = await resolveHierarchyRole({ userId, role });
+
+    if (hierarchyRole === 'hr') {
         const users = await User.findAll({
             where: {
                 role: { [Op.in]: ['employee', 'manager', 'hr'] },
@@ -234,14 +248,6 @@ export const getManagementTargetUserIds = async (context) => {
         });
         return users.map((user) => user.user_id);
     }
-
-    if (role === 'manager') {
-        return getDepartmentHeadIdsForManager(userId);
-    }
-
-    if (role !== 'employee') return [];
-
-    const hierarchyRole = await resolveHierarchyRole({ userId, role });
 
     if (hierarchyRole === 'department_head') {
         const managedDepartmentIds = await getManagedDepartmentIds(userId);
@@ -278,19 +284,19 @@ export const getManageableTeamIds = async (context) => {
 
     if (!userId || !role) return [];
 
-    if (role === 'hr') {
-        const teams = await Team.findAll({ where: { active: true }, attributes: ['team_id'] });
-        return teams.map((team) => team.team_id);
-    }
-
     if (role === 'manager') {
         const teams = await Team.findAll({ where: { active: true }, attributes: ['team_id'] });
         return teams.map((team) => team.team_id);
     }
 
-    if (role !== 'employee') return [];
+    if (!['employee', 'hr'].includes(role)) return [];
 
     const hierarchyRole = await resolveHierarchyRole({ userId, role });
+
+    if (hierarchyRole === 'hr') {
+        const teams = await Team.findAll({ where: { active: true }, attributes: ['team_id'] });
+        return teams.map((team) => team.team_id);
+    }
 
     if (hierarchyRole === 'department_head') {
         const managedDepartmentIds = await getManagedDepartmentIds(userId);
@@ -321,13 +327,13 @@ export const canManageTeam = async (context) => {
 
     if (!team) return false;
     if (!role) return false;
-
-    if (role === 'hr') return true;
     if (role === 'manager') return true;
-    if (role !== 'employee') return false;
+    if (!['employee', 'hr'].includes(role)) return false;
     if (!userId) return false;
 
     const hierarchyRole = await resolveHierarchyRole({ userId, role });
+
+    if (hierarchyRole === 'hr') return true;
 
     if (hierarchyRole === 'department_head') {
         const managedDepartmentIds = await getManagedDepartmentIds(userId);
