@@ -47,11 +47,21 @@ function TeamPage() {
   const fetchTeams = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await teamApi.getAll(filterDept ? Number(filterDept) : undefined);
-      if (!result.error) setTeams(result.teams || []);
+      const result = isDepartmentHeadView
+        ? await teamApi.getManaged()
+        : await teamApi.getAll(filterDept ? Number(filterDept) : undefined);
+
+      if (!result.error) {
+        const scopedTeams = result.teams || [];
+        if (isDepartmentHeadView && filterDept) {
+          setTeams(scopedTeams.filter((team: Team) => Number(team.department_id) === Number(filterDept)));
+        } else {
+          setTeams(scopedTeams);
+        }
+      }
     } catch { setTeams([]); }
     finally { setLoading(false); }
-  }, [filterDept]);
+  }, [filterDept, isDepartmentHeadView]);
 
   useEffect(() => { fetchRefs(); }, [fetchRefs]);
   useEffect(() => { fetchTeams(); }, [fetchTeams]);

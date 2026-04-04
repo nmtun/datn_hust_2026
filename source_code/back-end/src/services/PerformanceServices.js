@@ -71,15 +71,14 @@ export const createPerformanceService = async (data, reviewerUser) => {
 export const getAllPerformanceServiceOfManager = async ({ requestingUser }) => {
     try {
         let where;
+        const hierarchyRole = await resolveHierarchyRole({
+            userId: requestingUser.user_id,
+            role: requestingUser.role
+        });
 
-        if (requestingUser.role === 'hr') {
+        if (requestingUser.role === 'hr' && hierarchyRole === 'hr') {
             where = undefined;
         } else {
-            const hierarchyRole = await resolveHierarchyRole({
-                userId: requestingUser.user_id,
-                role: requestingUser.role
-            });
-
             const canReview =
                 requestingUser.role === 'manager' ||
                 hierarchyRole === 'department_head' ||

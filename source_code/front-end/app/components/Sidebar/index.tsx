@@ -25,9 +25,6 @@ import {
 } from "lucide-react";
 
 const menuItems = {
-  candidate: [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  ],
   hr: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Hồ sơ của tôi", href: "/dashboard/hr/profile", icon: UserCog },
@@ -35,13 +32,6 @@ const menuItems = {
     { name: "Mô tả công việc", href: "/dashboard/hr/job-description", icon: FileText },
     { name: "Ứng viên", href: "/dashboard/hr/candidate", icon: Users },
     { name: "Nhân viên", href: "/dashboard/hr/employee", icon: UserCircle },
-    // { name: "Phòng ban", href: "/dashboard/hr/department", icon: Building2 },
-    // { name: "Nhóm", href: "/dashboard/hr/team", icon: Users },
-    // { name: "Kỳ đánh giá", href: "/dashboard/hr/performance-period", icon: CalendarDays },
-    // { name: "Hiệu suất", href: "/dashboard/hr/performance", icon: Star },
-    // { name: "Lương thưởng", href: "/dashboard/hr/compensation", icon: DollarSign },
-    // { name: "Dự báo nhân lực", href: "/dashboard/hr/forecast", icon: TrendingUp },
-    // { name: "Báo cáo", href: "/dashboard/hr/report", icon: BarChart3 },
     { name: "Tài liệu đào tạo", href: "/dashboard/hr/training-material", icon: BrainCog },
     { name: "Bài kiểm tra", href: "/dashboard/hr/quizzes", icon: CircleQuestionMark },
   ],
@@ -87,6 +77,19 @@ const hierarchyMenuItems = {
   ],
 };
 
+const hierarchyManagementMenuItems = {
+  department_head: [
+    { name: "Quản lý công việc", href: "/dashboard/department-head/task", icon: ListTodo },
+    { name: "Quản lý nhóm", href: "/dashboard/department-head/team", icon: Users },
+    { name: "Đánh giá nhân sự", href: "/dashboard/department-head/performance", icon: Star },
+  ],
+  team_lead: [
+    { name: "Quản lý công việc", href: "/dashboard/team-lead/task", icon: ListTodo },
+    { name: "Thành viên nhóm", href: "/dashboard/team-lead/team", icon: Users },
+    { name: "Đánh giá thành viên", href: "/dashboard/team-lead/performance", icon: Star },
+  ],
+};
+
 const roleLabels: Record<string, string> = {
   hr: 'hr',
   manager: 'manager',
@@ -105,14 +108,41 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const userMenuItems =
-    user?.hierarchy_role && hierarchyMenuItems[user.hierarchy_role as keyof typeof hierarchyMenuItems]
-      ? hierarchyMenuItems[user.hierarchy_role as keyof typeof hierarchyMenuItems]
-      : menuItems[user?.role as keyof typeof menuItems] || menuItems.employee;
+  const hierarchyRole = user?.hierarchy_role as keyof typeof hierarchyMenuItems | undefined;
+  const baseRole = user?.role as keyof typeof menuItems;
+  const hasHierarchyManagement = Boolean(
+    hierarchyRole && Object.prototype.hasOwnProperty.call(hierarchyManagementMenuItems, hierarchyRole)
+  );
 
-  const roleLabel = user?.hierarchy_role
-    ? roleLabels[user.hierarchy_role] || user.hierarchy_role
-    : roleLabels[user?.role || 'employee'] || user?.role;
+  const userMenuItems = (() => {
+    const baseItems = menuItems[baseRole] || menuItems.employee;
+    const hierarchyItems = hierarchyRole ? hierarchyMenuItems[hierarchyRole] : undefined;
+
+    if (user?.role === "hr" && hasHierarchyManagement) {
+      const hrItemsWithoutDefaultTask = baseItems.filter((item) => item.href !== "/dashboard/hr/task");
+      const extraItems = hierarchyManagementMenuItems[hierarchyRole as keyof typeof hierarchyManagementMenuItems] || [];
+      return [...hrItemsWithoutDefaultTask, ...extraItems];
+    }
+
+    if (hierarchyItems) {
+      return hierarchyItems;
+    }
+
+    return baseItems;
+  })();
+
+  const roleLabel = (() => {
+    if (user?.role === "hr" && hasHierarchyManagement) {
+      const labelKey = hierarchyRole as string;
+      return `hr (${roleLabels[labelKey] || labelKey})`;
+    }
+
+    if (hierarchyRole) {
+      return roleLabels[hierarchyRole] || hierarchyRole;
+    }
+
+    return roleLabels[user?.role || "employee"] || user?.role;
+  })();
 
   const handleCollapse = (collapsed: boolean) => {
     setIsCollapsed(collapsed);

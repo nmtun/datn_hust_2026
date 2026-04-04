@@ -12,6 +12,42 @@ interface QuizAnswer {
   answer: string | string[];
 }
 
+const normalizeAnswerToken = (value: string) => {
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized === "true" || normalized === "đúng" || normalized === "dung") {
+    return "true";
+  }
+
+  if (normalized === "false" || normalized === "sai") {
+    return "false";
+  }
+
+  return normalized;
+};
+
+const parseQuestionOptions = (optionsValue?: string) => {
+  if (!optionsValue) return [];
+
+  try {
+    const parsed = JSON.parse(optionsValue);
+    if (Array.isArray(parsed)) {
+      return parsed;
+    }
+  } catch {
+    return optionsValue.split(",").map((opt) => opt.trim()).filter(Boolean);
+  }
+
+  return [];
+};
+
+const getOptionLabel = (option: string) => {
+  const normalized = normalizeAnswerToken(option);
+  if (normalized === "true") return "Đúng";
+  if (normalized === "false") return "Sai";
+  return option;
+};
+
 function TakeQuizPage() {
   const params = useParams();
   const router = useRouter();
@@ -129,9 +165,12 @@ function TakeQuizPage() {
       if (!userAnswer) return;
 
       if (question.question_type === "multiple_response") {
-        const correctAnswers = question.correct_answer.split(",").sort();
+        const correctAnswers = question.correct_answer
+          .split(",")
+          .map((ans) => normalizeAnswerToken(ans))
+          .sort();
         const userAnswers = Array.isArray(userAnswer.answer)
-          ? userAnswer.answer.sort()
+          ? [...userAnswer.answer].map((ans) => normalizeAnswerToken(ans)).sort()
           : [];
         
         if (
@@ -141,7 +180,10 @@ function TakeQuizPage() {
           correctCount++;
         }
       } else {
-        if (userAnswer.answer === question.correct_answer) {
+        if (
+          typeof userAnswer.answer === "string" &&
+          normalizeAnswerToken(userAnswer.answer) === normalizeAnswerToken(question.correct_answer)
+        ) {
           correctCount++;
         }
       }
@@ -232,7 +274,8 @@ function TakeQuizPage() {
   }
 
   const question = currentQuestion.question;
-  const options = question.options ? JSON.parse(question.options) : [];
+  const options = parseQuestionOptions(question.options);
+  const trueFalseOptions = options.length > 0 ? options : ["True", "False"];
   const userAnswer = answers.find((a) => a.question_id === question.question_id);
 
   return (
@@ -354,11 +397,12 @@ function TakeQuizPage() {
               ))
             ) : question.question_type === "true_false" ? (
               // True/False (Radio buttons)
-              ["Đúng", "Sai"].map((option, index) => (
+              trueFalseOptions.map((option, index) => (
                 <label
                   key={index}
                   className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                    userAnswer?.answer === option
+                    typeof userAnswer?.answer === "string" &&
+                    normalizeAnswerToken(userAnswer.answer) === normalizeAnswerToken(option)
                       ? "border-indigo-500 bg-indigo-50"
                       : "border-gray-200 hover:border-indigo-300"
                   }`}
@@ -367,14 +411,17 @@ function TakeQuizPage() {
                     type="radio"
                     name={`question-${question.question_id}`}
                     value={option}
-                    checked={userAnswer?.answer === option}
+                    checked={
+                      typeof userAnswer?.answer === "string" &&
+                      normalizeAnswerToken(userAnswer.answer) === normalizeAnswerToken(option)
+                    }
                     onChange={(e) =>
                       handleAnswerChange(question.question_id, e.target.value)
                     }
                     className="h-5 w-5 text-indigo-600 focus:ring-2 focus:ring-indigo-500"
                   />
                   <span className="ml-3 text-gray-700 font-medium">
-                    {option}
+                    {getOptionLabel(option)}
                   </span>
                 </label>
               ))

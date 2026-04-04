@@ -87,6 +87,13 @@ const ensureAssigneeExists = async (userId) => {
 const resolveUserHierarchyRole = async (user) => {
     if (!user) return null;
 
+    if (user.role === 'hr') {
+        return resolveHierarchyRole({
+            userId: user.user_id,
+            role: user.role
+        });
+    }
+
     if (user.role !== 'employee') {
         return user.role;
     }
@@ -102,6 +109,9 @@ const getHierarchyRole = async (requestingUser) => {
     const userId = normalizeUserId(requestingUser);
 
     if (!role || !userId) return null;
+    if (role === 'hr') {
+        return resolveHierarchyRole({ userId, role });
+    }
     if (role !== 'employee') return role;
 
     return resolveHierarchyRole({ userId, role });
@@ -150,6 +160,7 @@ const validateAssignmentPermission = async ({ requestingUser, assigneeId, teamId
     }
 
     const assigneeHierarchyRole = await resolveUserHierarchyRole(assignee);
+    const hierarchyRole = await getHierarchyRole(requestingUser);
 
     if (role === 'manager') {
         if (parentTask) {
@@ -184,11 +195,22 @@ const validateAssignmentPermission = async ({ requestingUser, assigneeId, teamId
         return { teamId: null };
     }
 
-    if (role !== 'employee') {
+    if (role === 'hr' && hierarchyRole === 'hr') {
+        const resolved = await resolveManagerOrHrTeamId(assigneeId, teamId);
+        if (resolved.status) {
+            return resolved;
+        }
+
+        return { teamId: resolved.teamId ?? null };
+    }
+
+    if (!['employee', 'hr'].includes(role)) {
         return { status: 403, message: 'Access denied' };
     }
 
-    const hierarchyRole = await getHierarchyRole(requestingUser);
+    if (!['department_head', 'team_lead'].includes(hierarchyRole || '')) {
+        return { status: 403, message: 'Only department head or team lead can assign tasks' };
+    }
 
     if (hierarchyRole === 'department_head') {
         if (!parentTask) {
@@ -272,9 +294,11 @@ const validateAssignmentPermission = async ({ requestingUser, assigneeId, teamId
 const canViewTask = async (task, requestingUser) => {
     const role = normalizeRole(requestingUser);
     const userId = normalizeUserId(requestingUser);
+    const hierarchyRole = await getHierarchyRole(requestingUser);
 
-    if (role === 'manager' || role === 'hr') return true;
-    if (!userId || role !== 'employee') return false;
+    if (role === 'manager') return true;
+    if (role === 'hr' && hierarchyRole === 'hr') return true;
+    if (!userId || !['employee', 'hr'].includes(role)) return false;
 
     if (Number(task.assigned_to) === Number(userId) || Number(task.created_by) === Number(userId)) {
         return true;
@@ -287,9 +311,11 @@ const canViewTask = async (task, requestingUser) => {
 const canEditTask = async (task, requestingUser) => {
     const role = normalizeRole(requestingUser);
     const userId = normalizeUserId(requestingUser);
+    const hierarchyRole = await getHierarchyRole(requestingUser);
 
-    if (role === 'manager' || role === 'hr') return true;
-    if (!userId || role !== 'employee') return false;
+    if (role === 'manager') return true;
+    if (role === 'hr' && hierarchyRole === 'hr') return true;
+    if (!userId || !['employee', 'hr'].includes(role)) return false;
 
     return Number(task.created_by) === Number(userId);
 };
@@ -300,13 +326,17 @@ const canReviewTask = async (task, requestingUser) => {
 
     if (!role || !reviewerId) return false;
 
-    if (role === 'manager' || role === 'hr') {
+    if (role === 'manager') {
         return Number(task.assigned_to) !== Number(reviewerId);
     }
 
-    if (role !== 'employee') return false;
-
     const hierarchyRole = await getHierarchyRole(requestingUser);
+
+    if (role === 'hr' && hierarchyRole === 'hr') {
+        return Number(task.assigned_to) !== Number(reviewerId);
+    }
+
+    if (!['employee', 'hr'].includes(role)) return false;
 
     if (hierarchyRole === 'department_head') {
         if (Number(task.assigned_to) === Number(reviewerId)) return false;
@@ -348,12 +378,17 @@ const buildTaskWhere = async (query = {}, requestingUser) => {
 
     const role = normalizeRole(requestingUser);
     const userId = normalizeUserId(requestingUser);
+    const hierarchyRole = await getHierarchyRole(requestingUser);
 
-    if (role === 'manager' || role === 'hr') {
+    if (role === 'manager' || (role === 'hr' && hierarchyRole === 'hr')) {
         return where;
     }
 
-    if (role !== 'employee' || !userId) {
+    const useScopedVisibility =
+        role === 'employee' ||
+        (role === 'hr' && ['department_head', 'team_lead'].includes(hierarchyRole || ''));
+
+    if (!useScopedVisibility || !userId) {
         return { active: true, task_id: -1 };
     }
 
@@ -688,8 +723,9 @@ export const updateTaskStatusService = async (id, status, requestingUser) => {
 
         const role = normalizeRole(requestingUser);
         const userId = normalizeUserId(requestingUser);
+        const hierarchyRole = await getHierarchyRole(requestingUser);
 
-        const isPrivileged = role === 'manager' || role === 'hr';
+        const isPrivileged = role === 'manager' || (role === 'hr' && hierarchyRole === 'hr');
         const isOwner = Number(task.created_by) === Number(userId) || Number(task.assigned_to) === Number(userId);
 
         if (!isPrivileged && !isOwner) {
