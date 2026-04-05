@@ -14,7 +14,22 @@ export interface CandidateInfo {
     title: string;
     experience_level: string;
     employment_type: string;
+    department_id?: number;
+    department?: {
+      department_id: number;
+      name: string;
+      code: string;
+    } | null;
   };
+}
+
+export interface EmployeeInfo {
+  employee_info_id: number;
+  position: string;
+  department_id?: number | null;
+  team_id?: number | null;
+  manager_id?: number | null;
+  hire_date?: string;
 }
 
 export interface Candidate {
@@ -27,6 +42,7 @@ export interface Candidate {
   status: 'active' | 'on_leave' | 'terminated';
   role?: 'candidate' | 'employee' | 'hr' | 'manager';
   Candidate_Infos?: CandidateInfo[];
+  Employee_Info?: EmployeeInfo | null;
 }
 
 export const candidateApi = {

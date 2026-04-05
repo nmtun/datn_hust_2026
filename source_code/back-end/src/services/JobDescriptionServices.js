@@ -1,5 +1,27 @@
+import '../models/associations.js';
 import JobDescription from "../models/JobDescription.js";
+import Department from "../models/Department.js";
 import { Op } from "sequelize";
+
+const jobDescriptionIncludes = [
+    { model: Department, as: 'department', attributes: ['department_id', 'name', 'code'], required: false }
+];
+
+const parseDepartmentId = (value) => {
+    const parsed = Number(value);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
+const findActiveDepartment = async (departmentId) => {
+    if (!departmentId) return null;
+    return Department.findOne({
+        where: {
+            department_id: departmentId,
+            active: true
+        },
+        attributes: ['department_id', 'name', 'code']
+    });
+};
 
 export const createJobDescriptionService = async (jobData, user) => {
     const {
@@ -30,6 +52,20 @@ export const createJobDescriptionService = async (jobData, user) => {
         return { status: 400, data: { error: true, message: "Thiếu thông tin" } };
     }
 
+    if (department_id == null || department_id === '') {
+        return { status: 400, data: { error: true, message: "Department is required" } };
+    }
+
+    const normalizedDepartmentId = parseDepartmentId(department_id);
+    if (!normalizedDepartmentId) {
+        return { status: 400, data: { error: true, message: "Invalid department id" } };
+    }
+
+    const department = await findActiveDepartment(normalizedDepartmentId);
+    if (!department) {
+        return { status: 404, data: { error: true, message: "Department not found or inactive" } };
+    }
+
     const created_by = user.user_id;
 
     const newJob = await JobDescription.create({
@@ -48,8 +84,13 @@ export const createJobDescriptionService = async (jobData, user) => {
         posting_date,
         closing_date,
         positions_count,
-        department_id,
+        department_id: normalizedDepartmentId,
         created_by
+    });
+
+    const createdJob = await JobDescription.findOne({
+        where: { job_id: newJob.job_id },
+        include: jobDescriptionIncludes
     });
 
     return { 
@@ -57,14 +98,16 @@ export const createJobDescriptionService = async (jobData, user) => {
         data: { 
             error: false,
             message: "Job description created successfully",
-            newJob 
+            newJob: createdJob || newJob
         } 
     };
 };
 
 export const getAllJobDescriptionsService = async (includeDeleted = false) => {
     const jobs = await JobDescription.findAll({
-        where: includeDeleted ? {} : { is_deleted: false }
+        where: includeDeleted ? {} : { is_deleted: false },
+        include: jobDescriptionIncludes,
+        order: [['updated_at', 'DESC'], ['created_at', 'DESC']]
     });
     return {
         status: 200,
@@ -77,7 +120,9 @@ export const getAllJobDescriptionsService = async (includeDeleted = false) => {
 
 export const getDeletedJobDescriptionsService = async () => {
     const jobs = await JobDescription.findAll({
-        where: { is_deleted: true }
+        where: { is_deleted: true },
+        include: jobDescriptionIncludes,
+        order: [['updated_at', 'DESC'], ['created_at', 'DESC']]
     });
     return {
         status: 200,
@@ -109,7 +154,10 @@ export const restoreJobDescriptionService = async (jobId) => {
 };
 
 export const getJobDescriptionByIdService = async (jobId) => {
-    const job = await JobDescription.findByPk(jobId);
+    const job = await JobDescription.findOne({
+        where: { job_id: Number(jobId) },
+        include: jobDescriptionIncludes
+    });
     return {
         status: 200,
         data: {
@@ -124,18 +172,38 @@ export const updateJobDescriptionService = async (jobId, jobData) => {
     if (!job) {
         return { status: 404, data: { error: true, message: "Job description not found" } };
     }
+
+    if ('department_id' in jobData) {
+        const normalizedDepartmentId = parseDepartmentId(jobData.department_id);
+        if (!normalizedDepartmentId) {
+            return { status: 400, data: { error: true, message: "Invalid department id" } };
+        }
+
+        const department = await findActiveDepartment(normalizedDepartmentId);
+        if (!department) {
+            return { status: 404, data: { error: true, message: "Department not found or inactive" } };
+        }
+
+        jobData.department_id = normalizedDepartmentId;
+    }
     
     const updated_at = new Date();
     jobData.updated_at = updated_at;
 
     // Update job description
     await job.update(jobData);
+
+    const updatedJob = await JobDescription.findOne({
+        where: { job_id: Number(jobId) },
+        include: jobDescriptionIncludes
+    });
+
     return {
         status: 200,
         data: {
             error: false,
             message: "Job description updated successfully",
-            job
+            job: updatedJob || job
         }
     };
 };
@@ -180,6 +248,7 @@ export const searchJobDescriptionsService = async (query = {}) => {
 
     const jobs = await JobDescription.findAll({
         where,
+        include: jobDescriptionIncludes,
         order: [['posting_date', 'DESC']]
     });
     return {
@@ -214,6 +283,7 @@ export const searchDeletedJobDescriptionsService = async (query = {}) => {
 
     const jobs = await JobDescription.findAll({
         where,
+        include: jobDescriptionIncludes,
         order: [['updated_at', 'DESC'], ['created_at', 'DESC']]
     });
     return {

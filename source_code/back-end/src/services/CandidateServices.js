@@ -2,11 +2,112 @@ import '../models/associations.js';
 import Candidate from '../models/Candidate.js';
 import User from '../models/User.js';
 import JobDescription from '../models/JobDescription.js';
+import Department from '../models/Department.js';
 import Employee from '../models/Employee.js';
 import * as userService from './UserServices.js';
+import { createNotificationsForUsers } from './NotificationServices.js';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { Op } from 'sequelize';
+
+const POSITION_BY_EXPERIENCE_LEVEL = {
+    intern: 'Thực tập sinh',
+    fresher: 'Nhân viên tập sự',
+    mid: 'Chuyên viên',
+    senior: 'Chuyên viên cao cấp',
+    manager: 'Quản lý'
+};
+
+const resolveEmployeePositionFromJob = (job) => {
+    if (!job) return 'Nhân viên';
+
+    const basePosition = POSITION_BY_EXPERIENCE_LEVEL[job.experience_level] || 'Nhân viên';
+    if (job.employment_type === 'part-time' && basePosition !== 'Quản lý') {
+        return `${basePosition} bán thời gian`;
+    }
+
+    return basePosition;
+};
+
+const getEmployeeInfoInclude = () => ({
+    model: Employee,
+    as: 'Employee_Info',
+    required: false,
+    attributes: ['employee_info_id', 'position', 'department_id', 'team_id', 'manager_id', 'hire_date']
+});
+
+const sendHrNotificationForNewApplication = async ({ candidate, candidateUser, candidateData }) => {
+    try {
+        const jobId = Number(candidate?.job_id ?? candidateData?.job_id);
+        if (!Number.isInteger(jobId) || jobId <= 0) return;
+
+        const job = await JobDescription.findOne({
+            where: { job_id: jobId },
+            attributes: ['job_id', 'title', 'created_by', 'department_id'],
+            include: [
+                {
+                    model: Department,
+                    as: 'department',
+                    attributes: ['department_id', 'name', 'code'],
+                    required: false
+                }
+            ]
+        });
+
+        if (!job?.created_by) return;
+
+        const hrCreator = await User.findOne({
+            where: {
+                user_id: job.created_by,
+                role: 'hr',
+                is_deleted: false
+            },
+            attributes: ['user_id']
+        });
+
+        if (!hrCreator) return;
+
+        const actorIdRaw = Number(candidate?.user_id ?? candidateUser?.user_id);
+        const actorId = Number.isInteger(actorIdRaw) && actorIdRaw > 0 ? actorIdRaw : null;
+        const candidateName = candidateUser?.full_name || candidateData?.full_name || 'Ứng viên';
+        const candidateInfoIdRaw = Number(candidate?.candidate_info_id);
+        const candidateInfoId = Number.isInteger(candidateInfoIdRaw) && candidateInfoIdRaw > 0 ? candidateInfoIdRaw : null;
+
+        const notificationPayload = {
+            recipientIds: [hrCreator.user_id],
+            actorId,
+            title: 'Có ứng viên mới ứng tuyển',
+            message: `${candidateName} vừa nộp CV cho vị trí ${job.title || 'không xác định'}${job.department?.name ? ` - Phòng ban ${job.department.name}` : ''}.`,
+            entityType: 'candidate',
+            entityId: candidateInfoId,
+            metadata: {
+                job_id: job.job_id,
+                job_title: job.title,
+                department_id: job.department_id || null,
+                department_name: job.department?.name || null,
+                candidate_user_id: actorId,
+                candidate_info_id: candidateInfoId,
+                source: candidate?.source || candidateData?.source || 'website'
+            }
+        };
+
+        try {
+            await createNotificationsForUsers({
+                ...notificationPayload,
+                type: 'candidate_applied'
+            });
+        } catch (error) {
+            // Fallback cho DB cũ chưa thêm enum candidate_applied.
+            console.error('Candidate notification type fallback triggered:', error);
+            await createNotificationsForUsers({
+                ...notificationPayload,
+                type: 'task_updated'
+            });
+        }
+    } catch (error) {
+        console.error('Failed to send HR notification for new application:', error);
+    }
+};
 
 export const createCandidateService = async (candidateData) => {
     const {
@@ -32,6 +133,40 @@ export const createCandidateService = async (candidateData) => {
     // Validate
     if (!personal_email) return { status: 400, data: { error: true, message: "Email is required" } };
     if (!full_name) return { status: 400, data: { error: true, message: "Fullname is required" } };
+    if (job_id == null || job_id === '') return { status: 400, data: { error: true, message: "Vui lòng chọn vị trí ứng tuyển" } };
+
+    const normalizedJobId = Number(job_id);
+    if (!Number.isInteger(normalizedJobId) || normalizedJobId <= 0) {
+        return { status: 400, data: { error: true, message: "Mã vị trí ứng tuyển không hợp lệ" } };
+    }
+
+    const selectedJob = await JobDescription.findOne({
+        where: {
+            job_id: normalizedJobId,
+            is_deleted: false
+        },
+        attributes: ['job_id', 'title', 'department_id'],
+        include: [
+            {
+                model: Department,
+                as: 'department',
+                attributes: ['department_id', 'name', 'code'],
+                required: false
+            }
+        ]
+    });
+
+    if (!selectedJob) {
+        return { status: 404, data: { error: true, message: "Vị trí ứng tuyển không tồn tại" } };
+    }
+
+    const appliedJob = {
+        job_id: selectedJob.job_id,
+        title: selectedJob.title,
+        department_id: selectedJob.department_id || null,
+        department_name: selectedJob.department?.name || null,
+        department_code: selectedJob.department?.code || null
+    };
 
     // Check user exists thì tạo bản ghi candidate liên kết với user đó 
     const existingUser = await userService.findUserByEmailService(personal_email);
@@ -41,7 +176,7 @@ export const createCandidateService = async (candidateData) => {
         const existingJobApplication = await Candidate.findOne({
             where: {
                 user_id: existingUser.user_id,
-                job_id: job_id
+                job_id: normalizedJobId
             }
         });
         // Kiểm tra xem user này đã có bản ghi candidate có status = hired thì không cho ứng tuyển lại
@@ -76,15 +211,23 @@ export const createCandidateService = async (candidateData) => {
                 source,
                 apply_date,
                 evaluation,
-                job_id,
+                job_id: normalizedJobId,
                 cover_letter: processedCoverLetter
             });
+
+            await sendHrNotificationForNewApplication({
+                candidate: newCandidate,
+                candidateUser: existingUser,
+                candidateData
+            });
+
             return {
                 status: 201,
                 data: {
                     error: false,
                     message: "Candidate created successfully",
                     candidate: newCandidate,
+                    applied_job: appliedJob,
                     user: existingUser,
                     temp_password_generated: false
                 }
@@ -118,8 +261,14 @@ export const createCandidateService = async (candidateData) => {
             source: "website",
             apply_date,
             evaluation,
-            job_id,
+            job_id: normalizedJobId,
             cover_letter: processedCoverLetter
+        });
+
+        await sendHrNotificationForNewApplication({
+            candidate: newCandidate,
+            candidateUser: newUser,
+            candidateData
         });
 
         return {
@@ -128,6 +277,7 @@ export const createCandidateService = async (candidateData) => {
                 error: false,
                 message: "Candidate created successfully",
                 candidate: newCandidate,
+                applied_job: appliedJob,
                 user: newUser,
                 temp_password_generated: !password ? true : false
             }
@@ -156,7 +306,8 @@ export const getAllCandidatesService = async () => {
                             attributes: ['job_id', 'title', 'experience_level', 'employment_type']
                         }
                     ]
-                }
+                },
+                getEmployeeInfoInclude()
             ],
             attributes: ['user_id', 'personal_email', 'full_name', 'phone_number', 'address', 'status', 'password'],
             order: [['created_at', 'DESC']]
@@ -199,7 +350,8 @@ export const getCandidateByIdService = async (userId) => {
                             attributes: ['job_id', 'title', 'experience_level', 'employment_type']
                         }
                     ]
-                }
+                },
+                getEmployeeInfoInclude()
             ],
             attributes: ['user_id', 'personal_email', 'full_name', 'phone_number', 'address', 'status', 'password'],
 
@@ -316,7 +468,8 @@ export const updateCandidateService = async (userId, updateData) => {
                             attributes: ['job_id', 'title', 'experience_level', 'employment_type']
                         }
                     ]
-                }
+                },
+                getEmployeeInfoInclude()
             ],
             attributes: ['user_id', 'personal_email', 'full_name', 'phone_number', 'address', 'status'],
         });
@@ -397,7 +550,8 @@ export const getDeletedCandidatesService = async () => {
                             attributes: ['job_id', 'title', 'experience_level', 'employment_type']
                         }
                     ]
-                }   
+                },
+                getEmployeeInfoInclude()
             ],
             attributes: ['user_id', 'personal_email', 'full_name', 'phone_number', 'address', 'status', 'password'],
             order: [['created_at', 'DESC']]
@@ -502,7 +656,8 @@ export const searchCandidatesService = async (query = {}) => {
                             attributes: ['job_id', 'title', 'experience_level', 'employment_type']
                         }
                     ]
-                }
+                },
+                getEmployeeInfoInclude()
             ],
             attributes: ['user_id', 'personal_email', 'full_name', 'phone_number', 'address', 'status'],
             order: [['created_at', 'DESC']]
@@ -570,7 +725,8 @@ export const searchDeletedCandidatesService = async (query = {}) => {
                             attributes: ['job_id', 'title', 'experience_level', 'employment_type']
                         }
                     ]
-                }
+                },
+                getEmployeeInfoInclude()
             ],
             attributes: ['user_id', 'personal_email', 'full_name', 'phone_number', 'address', 'status'],
             order: [['created_at', 'DESC']]
@@ -749,13 +905,33 @@ export const createCompanyEmailService = async (candidateId, companyEmail, passw
         if (!existingEmployeeInfo) {
             const hiredCandidateInfo = candidate.Candidate_Infos?.[0];
             const hiredJob = hiredCandidateInfo?.Job_Description;
+            const resolvedPosition = resolveEmployeePositionFromJob(hiredJob);
 
             await Employee.create({
                 user_id: candidate.user_id,
                 hire_date: new Date(),
-                position: hiredJob?.title || 'Employee',
+                position: resolvedPosition,
                 department_id: hiredJob?.department_id || null
             }, { transaction });
+        } else {
+            const hiredCandidateInfo = candidate.Candidate_Infos?.[0];
+            const hiredJob = hiredCandidateInfo?.Job_Description;
+            const resolvedPosition = resolveEmployeePositionFromJob(hiredJob);
+            const resolvedDepartmentId = hiredJob?.department_id || null;
+
+            const employeeUpdateData = {};
+
+            if (existingEmployeeInfo.position !== resolvedPosition) {
+                employeeUpdateData.position = resolvedPosition;
+            }
+
+            if (!existingEmployeeInfo.department_id && resolvedDepartmentId) {
+                employeeUpdateData.department_id = resolvedDepartmentId;
+            }
+
+            if (Object.keys(employeeUpdateData).length > 0) {
+                await existingEmployeeInfo.update(employeeUpdateData, { transaction });
+            }
         }
 
         await transaction.commit();

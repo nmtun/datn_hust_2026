@@ -18,6 +18,11 @@ export interface JobDescription {
   closing_date: string;
   positions_count: number;
   department_id: number;
+  department?: {
+    department_id: number;
+    name: string;
+    code: string;
+  } | null;
   created_by: number;
   created_at: string;
   updated_at: string | null;

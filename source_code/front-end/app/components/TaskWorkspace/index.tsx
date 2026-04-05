@@ -180,6 +180,10 @@ export default function TaskWorkspace({ roleMode }: { roleMode: RoleMode }) {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [projectForm, setProjectForm] = useState<ProjectFormState>({ ...EMPTY_PROJECT_FORM });
   const [savingProject, setSavingProject] = useState(false);
+  const [deleteTaskTarget, setDeleteTaskTarget] = useState<Task | null>(null);
+  const [deleteProjectTarget, setDeleteProjectTarget] = useState<Project | null>(null);
+  const [deletingTask, setDeletingTask] = useState(false);
+  const [deletingProject, setDeletingProject] = useState(false);
 
   const [viewTask, setViewTask] = useState<Task | null>(null);
   const [loadingTaskDetail, setLoadingTaskDetail] = useState(false);
@@ -260,9 +264,20 @@ export default function TaskWorkspace({ roleMode }: { roleMode: RoleMode }) {
       (item) =>
         Number(item.project_id) === Number(taskForm.project_id) &&
         Number(item.assigned_to) === Number(currentUserId) &&
+        item.status !== "done" &&
         (!editingTask || Number(item.task_id) !== Number(editingTask.task_id))
     );
   }, [currentUserId, editingTask, roleMode, taskForm.project_id, tasks]);
+
+  const selectedParentTask = useMemo(() => {
+    if (!taskForm.parent_task_id) return null;
+    const parentTaskId = Number(taskForm.parent_task_id);
+    if (!parentTaskId) return null;
+
+    return tasks.find((item) => Number(item.task_id) === parentTaskId) || null;
+  }, [taskForm.parent_task_id, tasks]);
+
+  const isPriorityInheritedFromParent = Boolean(taskForm.parent_task_id && selectedParentTask);
 
 
   const assignableTeams = useMemo(() => {
@@ -412,6 +427,15 @@ export default function TaskWorkspace({ roleMode }: { roleMode: RoleMode }) {
 
     setTaskForm((prev) => ({ ...prev, team_id: "" }));
   }, [assignableTeams, roleMode, taskForm.team_id]);
+
+  useEffect(() => {
+    if (!selectedParentTask) return;
+
+    setTaskForm((prev) => {
+      if (prev.priority === selectedParentTask.priority) return prev;
+      return { ...prev, priority: selectedParentTask.priority };
+    });
+  }, [selectedParentTask]);
 
   const toggleTaskExpand = (taskId: number) => {
     setExpandedTaskIds((prev) => {
@@ -565,7 +589,7 @@ export default function TaskWorkspace({ roleMode }: { roleMode: RoleMode }) {
         team_id: taskForm.team_id ? Number(taskForm.team_id) : undefined,
         start_date: taskForm.start_date || undefined,
         due_date: taskForm.due_date || undefined,
-        priority: taskForm.priority,
+        priority: selectedParentTask?.priority || taskForm.priority,
         status: taskForm.status,
       } as CreateTaskPayload;
 
@@ -595,19 +619,27 @@ export default function TaskWorkspace({ roleMode }: { roleMode: RoleMode }) {
       return;
     }
 
-    const confirmed = window.confirm(`Xóa công việc ${task.title}?`);
-    if (!confirmed) return;
+    setDeleteTaskTarget(task);
+  };
 
+  const confirmDeleteTask = async () => {
+    if (!deleteTaskTarget) return;
+
+    setDeletingTask(true);
     try {
-      const response = await taskApi.delete(task.task_id);
+      const response = await taskApi.delete(deleteTaskTarget.task_id);
       if (response.error) {
         showToast.error(response.message || "Không thể xóa công việc");
         return;
       }
+
       showToast.success("Đã xóa công việc");
+      setDeleteTaskTarget(null);
       await fetchTasks();
     } catch {
       showToast.error("Không thể xóa công việc");
+    } finally {
+      setDeletingTask(false);
     }
   };
 
@@ -772,20 +804,28 @@ export default function TaskWorkspace({ roleMode }: { roleMode: RoleMode }) {
   const removeProject = async (project: Project) => {
     if (!canManageProjects) return;
 
-    const confirmed = window.confirm(`Xóa dự án ${project.name}?`);
-    if (!confirmed) return;
+    setDeleteProjectTarget(project);
+  };
+
+  const confirmDeleteProject = async () => {
+    if (!deleteProjectTarget) return;
+
+    setDeletingProject(true);
 
     try {
-      const response = await projectApi.delete(project.project_id);
+      const response = await projectApi.delete(deleteProjectTarget.project_id);
       if (response.error) {
         showToast.error(response.message || "Không thể xóa dự án");
         return;
       }
 
       showToast.success("Đã xóa dự án");
+      setDeleteProjectTarget(null);
       await Promise.all([fetchProjects(), fetchTasks()]);
     } catch {
       showToast.error("Không thể xóa dự án");
+    } finally {
+      setDeletingProject(false);
     }
   };
 
@@ -1099,6 +1139,72 @@ export default function TaskWorkspace({ roleMode }: { roleMode: RoleMode }) {
       )}
 
       <Modal
+        isOpen={!!deleteTaskTarget}
+        onClose={() => {
+          if (!deletingTask) setDeleteTaskTarget(null);
+        }}
+        title="Xác nhận xóa công việc"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-700">
+            Bạn có chắc chắn muốn xóa công việc
+            <span className="font-semibold"> {deleteTaskTarget?.title}</span>?
+          </p>
+          <p className="text-xs text-gray-500">Hành động này không thể hoàn tác.</p>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              onClick={() => setDeleteTaskTarget(null)}
+              disabled={deletingTask}
+              className="px-4 py-2 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50"
+            >
+              Hủy
+            </button>
+            <button
+              onClick={confirmDeleteTask}
+              disabled={deletingTask}
+              className="px-4 py-2 text-sm rounded-md bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+            >
+              {deletingTask ? "Đang xóa..." : "Xóa"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={!!deleteProjectTarget}
+        onClose={() => {
+          if (!deletingProject) setDeleteProjectTarget(null);
+        }}
+        title="Xác nhận xóa dự án"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-700">
+            Bạn có chắc chắn muốn xóa dự án
+            <span className="font-semibold"> {deleteProjectTarget?.name}</span>?
+          </p>
+          <p className="text-xs text-gray-500">Hành động này không thể hoàn tác.</p>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              onClick={() => setDeleteProjectTarget(null)}
+              disabled={deletingProject}
+              className="px-4 py-2 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50"
+            >
+              Hủy
+            </button>
+            <button
+              onClick={confirmDeleteProject}
+              disabled={deletingProject}
+              className="px-4 py-2 text-sm rounded-md bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+            >
+              {deletingProject ? "Đang xóa..." : "Xóa"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
         isOpen={taskModalOpen}
         onClose={() => {
           setTaskModalOpen(false);
@@ -1199,7 +1305,7 @@ export default function TaskWorkspace({ roleMode }: { roleMode: RoleMode }) {
                 <option value="">-- {roleMode === "manager" ? "Chọn task" : "Chọn task cha"} --</option>
                 {availableParentTasks.map((task) => (
                   <option key={task.task_id} value={task.task_id}>
-                    {task.title}
+                    {task.title} - {PRIORITY_LABELS[task.priority]}
                   </option>
                 ))}
               </select>
@@ -1207,7 +1313,7 @@ export default function TaskWorkspace({ roleMode }: { roleMode: RoleMode }) {
                 <p className="mt-1 text-[11px] text-gray-500">Manager chỉ giao task lớn cho trưởng phòng.</p>
               )}
               {(roleMode === "department_head" || roleMode === "team_lead") && (
-                <p className="mt-1 text-[11px] text-gray-500">Bạn chỉ có thể chọn task cha đang được giao cho chính bạn.</p>
+                <p className="mt-1 text-[11px] text-gray-500">Bạn chỉ có thể chọn task cha đang được giao cho chính bạn và chưa hoàn thành.</p>
               )}
             </div>
 
@@ -1255,6 +1361,7 @@ export default function TaskWorkspace({ roleMode }: { roleMode: RoleMode }) {
                 value={taskForm.priority}
                 onChange={(event) => setTaskForm((prev) => ({ ...prev, priority: event.target.value as TaskPriority }))}
                 className="w-full mt-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
+                disabled={isPriorityInheritedFromParent}
               >
                 {(Object.keys(PRIORITY_LABELS) as TaskPriority[]).map((priority) => (
                   <option key={priority} value={priority}>
@@ -1262,6 +1369,11 @@ export default function TaskWorkspace({ roleMode }: { roleMode: RoleMode }) {
                   </option>
                 ))}
               </select>
+              {isPriorityInheritedFromParent && selectedParentTask && (
+                <p className="mt-1 text-[11px] text-gray-500">
+                  Sub task kế thừa ưu tiên từ task cha: {PRIORITY_LABELS[selectedParentTask.priority]}.
+                </p>
+              )}
             </div>
 
             <div>

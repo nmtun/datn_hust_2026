@@ -8,12 +8,26 @@ import { JobDescriptionApi } from '../api/jobDescriptionApi';
 import { CandidateApi } from '../api/candidateApi';
 import { validateEmail, validateVietnamPhoneNumber, validateName, validateAge } from '../../utils/validate';
 
+interface JobDepartment {
+  department_id: number;
+  name: string;
+  code: string;
+}
+
+interface JobDescription {
+  job_id: number;
+  title: string;
+  department_id?: number;
+  department?: JobDepartment | null;
+}
+
 export default function Apply() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const formRef = useRef<HTMLDivElement>(null);
   const [jobPosition, setJobPosition] = useState<string>('');
   const [jobTitle, setJobTitle] = useState<string>('');
+  const [jobDepartmentName, setJobDepartmentName] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   
   // Form state
@@ -54,7 +68,9 @@ export default function Apply() {
         try {
           const result = await JobDescriptionApi.getById(Number(positionId));
           if (!result.error && result.job) {
-            setJobTitle(result.job.title);
+            const job: JobDescription = result.job;
+            setJobTitle(job.title || '');
+            setJobDepartmentName(job.department?.name || '');
           }
         } catch (err) {
           console.error('Error fetching job details:', err);
@@ -240,6 +256,9 @@ export default function Apply() {
                 Bạn đang ứng tuyển vào: <span className="font-semibold">
                   {jobTitle || 'Vị trí công việc'}
                 </span>
+                {jobDepartmentName ? (
+                  <span className="block mt-2 text-base text-blue-100">Phòng ban: {jobDepartmentName}</span>
+                ) : null}
               </p>
             )}
           </div>

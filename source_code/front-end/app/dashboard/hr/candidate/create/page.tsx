@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Save, User, Mail, Phone, MapPin, Building2, FileText, Upload } from "lucide-react";
+import { ArrowLeft, User, Building2, Upload } from "lucide-react";
 import { candidateApi } from "@/app/api/candidateApi";
 import { jobDescriptionApi } from "@/app/api/jobDescriptionApi";
 import { showToast } from "@/app/utils/toast";
@@ -14,12 +14,20 @@ interface JobDescription {
   title: string;
   experience_level: string;
   employment_type: string;
+  type_of_work?: string;
+  status: 'draft' | 'active' | 'paused' | 'closed';
+  department?: {
+    department_id: number;
+    name: string;
+    code: string;
+  } | null;
 }
 
 function CreateCandidatePage() {
   const router = useRouter();
 
   const [saving, setSaving] = useState(false);
+  const [loadingJobs, setLoadingJobs] = useState(false);
   const [jobDescriptions, setJobDescriptions] = useState<JobDescription[]>([]);
 
   // Form data state
@@ -41,14 +49,24 @@ function CreateCandidatePage() {
     fetchJobDescriptions();
   }, []);
 
+  const selectedJob = jobDescriptions.find(
+    (job) => Number(job.job_id) === Number(formData.job_id)
+  );
+
   const fetchJobDescriptions = async () => {
     try {
+      setLoadingJobs(true);
       const result = await jobDescriptionApi.getAll();
       if (!result.error) {
-        setJobDescriptions(result.jobs || []);
+        const jobs = Array.isArray(result.jobs) ? result.jobs : [];
+        const activeJobs = jobs.filter((job: JobDescription) => job.status === 'active');
+        setJobDescriptions(activeJobs);
       }
     } catch (error) {
       console.error("Error fetching job descriptions:", error);
+      showToast.error('Failed to load job positions');
+    } finally {
+      setLoadingJobs(false);
     }
   };
 
@@ -62,7 +80,24 @@ function CreateCandidatePage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setCvFile(e.target.files[0]);
+      const file = e.target.files[0];
+      const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ];
+
+      if (!allowedTypes.includes(file.type)) {
+        showToast.error('Only PDF, DOC, DOCX files are allowed');
+        return;
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        showToast.error('CV file size must be less than 10MB');
+        return;
+      }
+
+      setCvFile(file);
     }
   };
 
@@ -78,6 +113,17 @@ function CreateCandidatePage() {
 
       if (!formData.job_id) {
         showToast.error('Please select a job position');
+        return;
+      }
+
+      if (!cvFile) {
+        showToast.error('Please upload candidate CV');
+        return;
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.personal_email.trim())) {
+        showToast.error('Please enter a valid email address');
         return;
       }
 
@@ -222,6 +268,11 @@ function CreateCandidatePage() {
             <Building2 className="w-5 h-5 mr-2" />
             Job Application Information
           </h2>
+          {jobDescriptions.length === 0 && !loadingJobs && (
+            <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              No active job descriptions found. Please create and activate a JD before creating candidate.
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -234,10 +285,10 @@ function CreateCandidatePage() {
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
-                <option value="">Select a job position</option>
+                <option value="">{loadingJobs ? 'Loading positions...' : 'Select a job position'}</option>
                 {jobDescriptions.map(job => (
                   <option key={job.job_id} value={job.job_id}>
-                    {job.title} - {job.experience_level} ({job.employment_type})
+                    {job.title} - {job.department?.name || 'No department'} ({job.experience_level} · {job.employment_type})
                   </option>
                 ))}
               </select>
@@ -256,11 +307,22 @@ function CreateCandidatePage() {
                 <option value="screening">Screening</option>
                 <option value="interview">Interview</option>
                 <option value="offered">Offered</option>
-                <option value="hired">Hired</option>
                 <option value="rejected">Rejected</option>
               </select>
             </div>
           </div>
+
+          {selectedJob && (
+            <div className="mt-4 rounded-md border border-indigo-100 bg-indigo-50 p-4">
+              <h3 className="text-sm font-semibold text-indigo-900 mb-2">Selected Job Summary</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-indigo-900">
+                <p><span className="font-medium">Position:</span> {selectedJob.title}</p>
+                <p><span className="font-medium">Department:</span> {selectedJob.department?.name || 'No department'}</p>
+                <p><span className="font-medium">Level:</span> {selectedJob.experience_level}</p>
+                <p><span className="font-medium">Type:</span> {selectedJob.employment_type}{selectedJob.type_of_work ? ` · ${selectedJob.type_of_work}` : ''}</p>
+              </div>
+            </div>
+          )}
           
           {/* CV Upload */}
           <div className="mt-4">
@@ -290,7 +352,7 @@ function CreateCandidatePage() {
                 )}
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                Supported formats: PDF, DOC, DOCX (Max 5MB)
+                Supported formats: PDF, DOC, DOCX (Max 10MB)
               </p>
             </div>
           </div>

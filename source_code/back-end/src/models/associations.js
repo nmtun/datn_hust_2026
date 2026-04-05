@@ -24,6 +24,7 @@ import Project from "./Project.js";
 import Task from "./Task.js";
 import TaskComment from "./TaskComment.js";
 import TaskReview from "./TaskReview.js";
+import Notification from "./Notification.js";
 
 // Define one-to-many associations between User and Candidate_Info
 User.hasMany(Candidate, { foreignKey: "user_id" });
@@ -36,6 +37,10 @@ Employee.belongsTo(User, { foreignKey: "user_id" });
 // Define one-to-many associations between Job_Description and Candidate_Info
 JobDescription.hasMany(Candidate, { foreignKey: "job_id" });
 Candidate.belongsTo(JobDescription, { foreignKey: "job_id" });
+
+// JobDescription ↔ Department
+JobDescription.belongsTo(Department, { foreignKey: "department_id", as: "department" });
+Department.hasMany(JobDescription, { foreignKey: "department_id", as: "jobDescriptions" });
 
 // User and TrainingMaterial associations
 User.hasMany(TrainingMaterial, { foreignKey: "created_by", as: "createdTrainingMaterials" });
@@ -283,3 +288,10 @@ User.hasMany(TaskReview, { foreignKey: "reviewer_id", as: "givenTaskReviews" });
 
 TaskReview.belongsTo(User, { foreignKey: "reviewed_user_id", as: "reviewedUser" });
 User.hasMany(TaskReview, { foreignKey: "reviewed_user_id", as: "receivedTaskReviews" });
+
+// Notification ↔ User (recipient/actor)
+Notification.belongsTo(User, { foreignKey: "user_id", as: "recipient" });
+User.hasMany(Notification, { foreignKey: "user_id", as: "receivedNotifications" });
+
+Notification.belongsTo(User, { foreignKey: "actor_id", as: "actor" });
+User.hasMany(Notification, { foreignKey: "actor_id", as: "sentNotifications" });
