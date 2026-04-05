@@ -38,7 +38,8 @@ function CreateJobDescriptionPage() {
       if (!data.title || !data.description || !data.requirements || 
           !data.responsibilities || !data.qualifications || 
           !data.experience_level || !data.employment_type || 
-          data.salary_range_min === undefined || data.salary_range_max === undefined) {
+          data.salary_range_min === undefined || data.salary_range_max === undefined ||
+          !data.department_id) {
         throw new Error('Please fill in all required fields');
       }
 
@@ -59,7 +60,7 @@ function CreateJobDescriptionPage() {
         posting_date: data.posting_date || new Date().toISOString().split('T')[0],
         closing_date: data.closing_date || '',
         positions_count: data.positions_count || 1,
-        department_id: data.department_id || 1,
+        department_id: data.department_id,
         created_by: Number(user?.user_id),
       };
 
@@ -135,7 +136,7 @@ function CreateJobDescriptionPage() {
               posting_date: new Date().toISOString().split('T')[0],
               closing_date: '',
               positions_count: 1,
-              department_id: 1, // This should be selected by user or set based on their department
+              department_id: undefined,
             }}
           />
         </div>

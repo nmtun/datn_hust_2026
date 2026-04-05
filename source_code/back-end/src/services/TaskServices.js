@@ -16,6 +16,7 @@ import {
     getMemberIdsForTeamLead,
     resolveHierarchyRole
 } from './HierarchyServices.js';
+import { createNotificationsForUsers } from './NotificationServices.js';
 
 const TASK_STATUSES = ['to_do', 'doing', 'review', 'done'];
 const TASK_PRIORITIES = ['low', 'medium', 'high', 'urgent'];
@@ -26,6 +27,13 @@ const TASK_STATUS_TRANSITIONS = {
     doing: ['review'],
     review: ['doing', 'done'],
     done: []
+};
+
+const TASK_STATUS_LABELS = {
+    to_do: 'To do',
+    doing: 'Doing',
+    review: 'Review',
+    done: 'Done'
 };
 
 const normalizeUserId = (context) => {
@@ -44,6 +52,39 @@ const toNumberOrNull = (value) => {
     if (value == null || value === '') return null;
     const parsed = Number(value);
     return Number.isNaN(parsed) ? null : parsed;
+};
+
+const buildRecipientIds = (userIds = [], actorId = null) => {
+    const normalizedActorId = Number(actorId || 0);
+    const uniqueIds = [
+        ...new Set(userIds.map((id) => Number(id)).filter((id) => Number.isInteger(id) && id > 0))
+    ];
+
+    return uniqueIds.filter((id) => id !== normalizedActorId);
+};
+
+const pushTaskNotifications = async ({ recipientIds = [], actorId = null, type, title, message, task }) => {
+    const cleanRecipientIds = buildRecipientIds(recipientIds, actorId);
+    if (cleanRecipientIds.length === 0) return;
+
+    try {
+        await createNotificationsForUsers({
+            recipientIds: cleanRecipientIds,
+            actorId,
+            type,
+            title,
+            message,
+            entityType: 'task',
+            entityId: task?.task_id || null,
+            metadata: {
+                project_id: task?.project_id || null,
+                task_status: task?.status || null,
+                task_priority: task?.priority || null
+            }
+        });
+    } catch (error) {
+        console.error('Failed to send task notification:', error);
+    }
 };
 
 const baseTaskIncludes = [
@@ -475,6 +516,8 @@ export const createTaskService = async (data, requestingUser) => {
             resolvedTeamId = parentTask.team_id;
         }
 
+        const resolvedPriority = parentTask?.priority || priority || 'medium';
+
         const task = await Task.create({
             project_id: projectId,
             parent_task_id: parentTaskId,
@@ -487,9 +530,18 @@ export const createTaskService = async (data, requestingUser) => {
             due_date: due_date || null,
             completed_date: null,
             status: status || 'to_do',
-            priority: priority || 'medium',
+            priority: resolvedPriority,
             active: true,
             created_at: new Date()
+        });
+
+        await pushTaskNotifications({
+            recipientIds: [assigneeId],
+            actorId: requesterId,
+            type: 'task_assigned',
+            title: 'Bạn có công việc mới',
+            message: `Bạn vừa được giao công việc "${task.title}" trong dự án "${project.name}".`,
+            task
         });
 
         return { status: 201, data: { error: false, message: 'Task created successfully', task } };
@@ -586,6 +638,9 @@ export const updateTaskService = async (id, data, requestingUser) => {
             return { status: 404, data: { error: true, message: 'Task not found' } };
         }
 
+        const requesterId = normalizeUserId(requestingUser);
+        const previousAssigneeId = Number(task.assigned_to);
+
         const canEdit = await canEditTask(task, requestingUser);
         if (!canEdit) {
             return { status: 403, data: { error: true, message: 'Only task creator or manager can update task metadata' } };
@@ -672,9 +727,45 @@ export const updateTaskService = async (id, data, requestingUser) => {
             updateData.team_id = permission.teamId ?? null;
         }
 
+        // Sub tasks always inherit priority from their current parent task.
+        if (targetParentTask?.priority) {
+            updateData.priority = targetParentTask.priority;
+        }
+
         updateData.updated_at = new Date();
 
         await task.update(updateData);
+
+        const currentAssigneeId = Number(task.assigned_to);
+
+        if (previousAssigneeId !== currentAssigneeId) {
+            await pushTaskNotifications({
+                recipientIds: [currentAssigneeId],
+                actorId: requesterId,
+                type: 'task_reassigned',
+                title: 'Bạn được giao lại công việc',
+                message: `Công việc "${task.title}" vừa được giao cho bạn.`,
+                task
+            });
+
+            await pushTaskNotifications({
+                recipientIds: [previousAssigneeId],
+                actorId: requesterId,
+                type: 'task_reassigned',
+                title: 'Công việc đã được chuyển giao',
+                message: `Công việc "${task.title}" đã được chuyển cho thành viên khác.`,
+                task
+            });
+        } else {
+            await pushTaskNotifications({
+                recipientIds: [task.assigned_to],
+                actorId: requesterId,
+                type: 'task_updated',
+                title: 'Công việc được cập nhật',
+                message: `Thông tin công việc "${task.title}" vừa được cập nhật.`,
+                task
+            });
+        }
 
         return { status: 200, data: { error: false, message: 'Task updated successfully' } };
     } catch (error) {
@@ -755,6 +846,15 @@ export const updateTaskStatusService = async (id, status, requestingUser) => {
 
         await task.update(updateData);
 
+        await pushTaskNotifications({
+            recipientIds: [task.created_by, task.assigned_to],
+            actorId: userId,
+            type: 'task_status_changed',
+            title: 'Trạng thái công việc thay đổi',
+            message: `Công việc "${task.title}" đã chuyển sang trạng thái "${TASK_STATUS_LABELS[status]}".`,
+            task
+        });
+
         return { status: 200, data: { error: false, message: 'Task status updated successfully', status } };
     } catch (error) {
         console.error('Error in updateTaskStatusService:', error);
@@ -784,6 +884,18 @@ export const addTaskCommentService = async (taskId, data, requestingUser) => {
             user_id: normalizeUserId(requestingUser),
             comment: commentText,
             created_at: new Date()
+        });
+
+        const actorId = normalizeUserId(requestingUser);
+        const shortComment = commentText.length > 120 ? `${commentText.slice(0, 117)}...` : commentText;
+
+        await pushTaskNotifications({
+            recipientIds: [task.created_by, task.assigned_to],
+            actorId,
+            type: 'task_commented',
+            title: 'Có bình luận mới',
+            message: `Công việc "${task.title}" có bình luận mới: "${shortComment}"`,
+            task
         });
 
         return { status: 201, data: { error: false, message: 'Comment added successfully', comment } };
@@ -858,6 +970,18 @@ export const createTaskReviewService = async (taskId, data, requestingUser) => {
         };
 
         await task.update(updateData);
+
+        const actorId = normalizeUserId(requestingUser);
+        const decisionLabel = decision === 'approved' ? 'được duyệt' : 'cần chỉnh sửa';
+
+        await pushTaskNotifications({
+            recipientIds: [task.assigned_to, task.created_by],
+            actorId,
+            type: 'task_reviewed',
+            title: 'Kết quả review công việc',
+            message: `Công việc "${task.title}" đã được review: ${decisionLabel}.`,
+            task
+        });
 
         return {
             status: 201,

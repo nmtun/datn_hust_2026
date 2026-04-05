@@ -348,6 +348,7 @@ function HiredCandidatesPage() {
               {hiredCandidates.map((candidate) => {
                 // Lấy thông tin hired job đầu tiên
                 const hiredJob = candidate.Candidate_Infos?.find(info => info.candidate_status === 'hired');
+                const employeePosition = candidate.Employee_Info?.position;
                 
                 return (
                   <tr key={candidate.user_id} className="hover:bg-gray-50">
@@ -373,7 +374,10 @@ function HiredCandidatesPage() {
                           <div className="flex items-center justify-between">
                             <div>
                               <div className="text-sm font-medium text-gray-900">
-                                {hiredJob.Job_Description.title}
+                                {employeePosition || hiredJob.Job_Description.title}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                Ứng tuyển: {hiredJob.Job_Description.title}
                               </div>
                               <div className="text-sm text-gray-500">
                                 {hiredJob.Job_Description.experience_level} · {hiredJob.Job_Description.employment_type}
@@ -467,6 +471,14 @@ function HiredCandidatesPage() {
                 <div>
                   <p className="text-sm font-medium text-gray-500">Phone</p>
                   <p className="mt-1">{selectedCandidate.phone_number || 'Not provided'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Employee Position</p>
+                  <p className="mt-1">{selectedCandidate.Employee_Info?.position || 'Not assigned yet'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Department ID</p>
+                  <p className="mt-1">{selectedCandidate.Employee_Info?.department_id || 'Not assigned yet'}</p>
                 </div>
               </div>
               {selectedCandidate.address && (

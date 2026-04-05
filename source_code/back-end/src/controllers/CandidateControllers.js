@@ -47,12 +47,18 @@ export const createCandidate = async (req, res) => {
 
         // Gửi email thông báo
         const userEmail = req.body.personal_email;
+        const appliedJobTitle = result?.data?.applied_job?.title;
+        const appliedDepartmentName = result?.data?.applied_job?.department_name;
+        const appliedJobText = appliedJobTitle
+            ? `${appliedJobTitle}${appliedDepartmentName ? ` - Phòng ban ${appliedDepartmentName}` : ''}`
+            : null;
 
         if (userEmail) {
             const subject = 'Xác nhận nộp CV thành công - Cảm ơn bạn đã ứng tuyển';
             const htmlContent = `
                 <h2>Xin chào ${req.body.full_name || 'Ứng viên'},</h2>
                 <p>Cảm ơn bạn đã nộp CV ứng tuyển qua hệ thống của chúng tôi.</p>
+                ${appliedJobText ? `<p><strong>Vị trí ứng tuyển:</strong> ${appliedJobText}</p>` : ''}
                 <p>Bộ phận nhân sự sẽ xem xét hồ sơ và liên hệ lại với bạn trong thời gian sớm nhất.</p>
                 <br/>
                 <p>Trân trọng,<br/>Phòng Nhân Sự</p>
@@ -69,7 +75,7 @@ export const createCandidate = async (req, res) => {
 
         return res.status(result.status).json({
             ...result.data,
-            message: "Nộp CV thành công! Vui lòng kiểm tra email để nhận xác nhận."
+            message: `Nộp CV thành công${appliedJobText ? ` cho vị trí ${appliedJobText}` : ''}! Vui lòng kiểm tra email để nhận xác nhận.`
         });
 
     } catch (error) {

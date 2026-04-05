@@ -12,6 +12,11 @@ interface JobDescription {
   job_id: number;
   title: string;
   department_id?: number;
+  department?: {
+    department_id: number;
+    name: string;
+    code: string;
+  } | null;
   location?: string;
   type_of_work?: string;
   employment_type: string;
@@ -175,7 +180,7 @@ export default function JobDetail() {
                 <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
                   <h3 className="font-medium text-blue-700 dark:text-blue-300">Phòng ban</h3>
                   <p className="mt-1 text-gray-700 dark:text-gray-300">
-                    {job.department_id ? `ID phòng ban: ${job.department_id}` : 'Không có thông tin phòng ban'}
+                    {job.department?.name || (job.department_id ? `Phòng ban #${job.department_id}` : 'Không có thông tin phòng ban')}
                   </p>
                 </div>
 
@@ -276,6 +281,12 @@ export default function JobDetail() {
                   <div>
                     <p className="text-sm font-medium text-gray-500">Vị trí công việc:</p>
                     <p className="text-gray-700 dark:text-gray-300">{job.title}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Phòng ban:</p>
+                    <p className="text-gray-700 dark:text-gray-300">
+                      {job.department?.name || (job.department_id ? `Phòng ban #${job.department_id}` : 'Không có thông tin')}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-500">Địa điểm:</p>

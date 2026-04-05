@@ -1,5 +1,6 @@
 import React from 'react';
 import { JobDescription } from '@/app/api/jobDescriptionApi';
+import { departmentApi, Department } from '@/app/api/departmentApi';
 
 interface JobDescriptionFormProps {
   initialData?: Partial<JobDescription>;
@@ -12,6 +13,9 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
   onSubmit,
   isLoading = false,
 }) => {
+  const [departments, setDepartments] = React.useState<Department[]>([]);
+  const [departmentLoading, setDepartmentLoading] = React.useState(false);
+
   const [formData, setFormData] = React.useState<Partial<JobDescription>>({
     title: '',
     description: '',
@@ -28,18 +32,73 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
     posting_date: new Date().toISOString().split('T')[0],
     closing_date: '',
     positions_count: 1,
+    department_id: undefined,
     ...initialData,
   });
 
+  React.useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        setDepartmentLoading(true);
+        const result = await departmentApi.getAll();
+        if (!result?.error && Array.isArray(result?.departments)) {
+          setDepartments(result.departments.filter((item: Department) => item.active !== false));
+        } else {
+          setDepartments([]);
+        }
+      } catch (error) {
+        console.error('Error fetching departments:', error);
+        setDepartments([]);
+      } finally {
+        setDepartmentLoading(false);
+      }
+    };
+
+    fetchDepartments();
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+
+    if (!formData.department_id) {
+      return;
+    }
+
+    const payload: Partial<JobDescription> = {
+      title: formData.title,
+      description: formData.description,
+      location: formData.location,
+      type_of_work: formData.type_of_work,
+      requirements: formData.requirements,
+      responsibilities: formData.responsibilities,
+      qualifications: formData.qualifications,
+      experience_level: formData.experience_level,
+      employment_type: formData.employment_type,
+      salary_range_min: formData.salary_range_min,
+      salary_range_max: formData.salary_range_max,
+      status: formData.status,
+      posting_date: formData.posting_date,
+      closing_date: formData.closing_date,
+      positions_count: formData.positions_count,
+      department_id: formData.department_id,
+    };
+
+    onSubmit(payload);
   };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
+
+    if (name === 'department_id') {
+      setFormData((prev) => ({
+        ...prev,
+        department_id: value ? Number(value) : undefined,
+      }));
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -145,7 +204,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
       </div>
 
       {/* Basic Information - Second Row */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
         <div>
           <label htmlFor="location" className="block text-sm font-medium text-gray-700">
             Location *
@@ -159,6 +218,27 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
             required
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           />
+        </div>
+
+        <div>
+          <label htmlFor="department_id" className="block text-sm font-medium text-gray-700">
+            Department *
+          </label>
+          <select
+            id="department_id"
+            name="department_id"
+            value={formData.department_id ?? ''}
+            onChange={handleChange}
+            required
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          >
+            <option value="">{departmentLoading ? 'Loading departments...' : 'Select department'}</option>
+            {departments.map((department) => (
+              <option key={department.department_id} value={department.department_id}>
+                {department.name} ({department.code})
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>

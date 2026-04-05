@@ -4,7 +4,9 @@ import morgan from "morgan";
 import cors from "cors";
 import helmet from "helmet";
 import path from "path";
+import http from "http";
 import sequelize from "./src/config/dbsetup.js";
+import { setupSocketServer } from "./src/utils/socket.js";
 
 // Import models here
 import "./src/models/associations.js"; 
@@ -33,6 +35,7 @@ import "./src/models/Project.js";
 import "./src/models/Task.js";
 import "./src/models/TaskComment.js";
 import "./src/models/TaskReview.js";
+import "./src/models/Notification.js";
 
 // Import routes here
 import UserRoutes from "./src/routes/UserRoutes.js";
@@ -54,10 +57,13 @@ import HRForecastRoutes from "./src/routes/HRForecastRoutes.js";
 import HRReportRoutes from "./src/routes/HRReportRoutes.js";
 import ProjectRoutes from "./src/routes/ProjectRoutes.js";
 import TaskRoutes from "./src/routes/TaskRoutes.js";
+import NotificationRoutes from "./src/routes/NotificationRoutes.js";
+import { startPerformanceReminderScheduler } from "./src/services/PerformancePeriodServices.js";
 
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.SERVER_PORT;
 
 app.use(express.json());    // Parse JSON request body
@@ -110,6 +116,9 @@ app.use("/api/hr-forecast", HRForecastRoutes);
 app.use("/api/report", HRReportRoutes);
 app.use("/api/project", ProjectRoutes);
 app.use("/api/task", TaskRoutes);
+app.use("/api/notification", NotificationRoutes);
+
+setupSocketServer(server);
 
 // Tạo bảng và chạy server
 (async () => {
@@ -118,9 +127,11 @@ app.use("/api/task", TaskRoutes);
         // await sequelize.sync({ alter: true }); // tạo bảng nếu chưa có và cập nhật bảng nếu có thay đổi trong model
         // await sequelize.sync({ force: true }); // xóa bảng và tạo lại - dùng khi cần làm mới cơ sở dữ liệu, sẽ bị mất dữ liệu
 
-        app.listen(PORT, () => {
+        server.listen(PORT, () => {
             console.log(`Truy cập local: http://localhost:${PORT}`);
         });
+
+        startPerformanceReminderScheduler();
         
     } catch (error) {
         console.error("Lỗi khởi động server", error);

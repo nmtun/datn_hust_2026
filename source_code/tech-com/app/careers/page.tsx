@@ -10,6 +10,11 @@ interface JobDescription {
   job_id: number;
   title: string;
   department_id?: number;
+  department?: {
+    department_id: number;
+    name: string;
+    code: string;
+  } | null;
   location?: string;
   type_of_work?: string;
   employment_type: string;
@@ -93,6 +98,9 @@ export default function Careers() {
                       className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow flex flex-col h-full"
                     >
                       <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 h-14 line-clamp-2">{job.title}</h3>
+                      <div className="mt-1 text-sm text-blue-700 dark:text-blue-300 font-medium truncate">
+                        {job.department?.name || (job.department_id ? `Phòng ban #${job.department_id}` : 'Chưa cập nhật phòng ban')}
+                      </div>
                       <div className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
                         <svg className="mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />

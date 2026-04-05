@@ -340,3 +340,21 @@ CREATE TABLE Task_Reviews (
   FOREIGN KEY (reviewed_user_id) REFERENCES Users(user_id)
 );
 
+CREATE TABLE Notifications (
+  notification_id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  actor_id INT,
+  type ENUM('task_assigned', 'task_reassigned', 'task_status_changed', 'task_commented', 'task_reviewed', 'task_updated', 'candidate_applied', 'performance_period_created', 'performance_review_reminder') NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  message TEXT NOT NULL,
+  entity_type VARCHAR(50),
+  entity_id INT,
+  metadata JSON,
+  is_read BOOLEAN NOT NULL DEFAULT FALSE,
+  read_at DATETIME,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME,
+  FOREIGN KEY (user_id) REFERENCES Users(user_id),
+  FOREIGN KEY (actor_id) REFERENCES Users(user_id)
+);
+

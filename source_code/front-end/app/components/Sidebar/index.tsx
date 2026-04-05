@@ -94,7 +94,6 @@ const roleLabels: Record<string, string> = {
   hr: 'hr',
   manager: 'manager',
   employee: 'employee',
-  candidate: 'candidate',
   department_head: 'truong phong',
   team_lead: 'truong nhom',
 };
@@ -155,7 +154,7 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
         {/* Toggle Button */}
         <button
           onClick={() => handleCollapse(!isCollapsed)}
-          className="absolute -right-3 top-6 bg-white rounded-full p-1 border shadow-md hover:bg-gray-50"
+          className="absolute -right-3 top-1/2 -translate-y-1/2 bg-white rounded-full p-1 border shadow-md hover:bg-gray-50"
         >
           {isCollapsed ? (
             <ChevronRight className="w-4 h-4 text-gray-600" />
