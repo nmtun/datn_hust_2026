@@ -2,11 +2,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "../../context/AuthContext";
-import { useRouter } from "next/navigation";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const { login, loading, error } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -19,10 +19,11 @@ export default function Login() {
     try {
       await login({ 
         company_email: email, 
-        password 
+        password,
+        remember_me: rememberMe,
       });
       // Redirect is handled in the AuthContext after successful login
-    } catch (error) {
+    } catch {
       // Error handling is done in AuthContext
     }
   };
@@ -78,6 +79,8 @@ export default function Login() {
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
                 className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
               />
               <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">

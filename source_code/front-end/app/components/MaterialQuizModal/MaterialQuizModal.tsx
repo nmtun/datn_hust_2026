@@ -149,7 +149,7 @@ export default function MaterialQuizModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50">
+    <div className="fixed inset-0 flex items-center justify-center z-50 bg-slate-900/30 backdrop-blur-sm">
       <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
@@ -189,7 +189,7 @@ export default function MaterialQuizModal({
             ) : (
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                 <p className="text-sm text-yellow-800">
-                  ⚠️ This material has no tags assigned. All quizzes can be attached, but it's recommended to add tags for better organization.
+                  ⚠️ This material has no tags assigned. All quizzes can be attached, but it is recommended to add tags for better organization.
                 </p>
               </div>
             )}
@@ -267,7 +267,6 @@ export default function MaterialQuizModal({
                 ) : (
                   sortedQuizzes.map((quiz) => {
                     const isAttached = isQuizAttached(quiz.quiz_id);
-                    const hasSharedTags = hasCommonTags(quiz);
 
                     return (
                       <div

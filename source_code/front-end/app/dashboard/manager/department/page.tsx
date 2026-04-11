@@ -12,6 +12,12 @@ import { withAuth } from "@/app/middleware/withAuth";
 
 const emptyForm = { name: "", code: "", description: "", manager_id: "", parent_department_id: "" };
 
+const getEmployeeDepartmentId = (employee: EmployeeProfile): number | null => {
+  if (employee.Employee_Info?.department_id) return employee.Employee_Info.department_id;
+  if (employee.Employee_Info?.department?.department_id) return employee.Employee_Info.department.department_id;
+  return null;
+};
+
 function DepartmentPage() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [allEmployees, setAllEmployees] = useState<EmployeeProfile[]>([]);
@@ -241,7 +247,12 @@ function DepartmentPage() {
                                   const teamData = teamDetails[expandedTeam];
                                   const members: any[] = teamData?.members || [];
                                   const memberIds = new Set(members.map((m: any) => m.user_id));
-                                  const available = allEmployees.filter(e => !memberIds.has(e.user_id));
+                                  const currentDepartmentId = teamData?.department_id || expandedDept;
+                                  const available = allEmployees.filter(e => (
+                                    !memberIds.has(e.user_id)
+                                    && currentDepartmentId !== null
+                                    && getEmployeeDepartmentId(e) === currentDepartmentId
+                                  ));
                                   return (
                                     <div>
                                       <p className="text-sm font-semibold text-gray-800 mb-3">

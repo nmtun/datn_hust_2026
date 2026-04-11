@@ -5,6 +5,7 @@ import apiClient from '../../api/axios';
 interface LoginCredentials {
   company_email: string;
   password: string;
+  remember_me?: boolean;
 }
 
 interface User {
@@ -22,16 +23,44 @@ interface AuthResponse {
 }
 
 const isBrowser = typeof window !== 'undefined';
+const TOKEN_KEY = 'token';
+const USER_KEY = 'user';
+
+const clearStoredAuth = () => {
+  if (!isBrowser) return;
+
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  sessionStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(USER_KEY);
+};
+
+const getStoredItem = (key: string): string | null => {
+  if (!isBrowser) return null;
+
+  return localStorage.getItem(key) ?? sessionStorage.getItem(key);
+};
+
+const saveAuthByPreference = (token: string, user: User, rememberMe: boolean) => {
+  if (!isBrowser) return;
+
+  const preferredStorage = rememberMe ? localStorage : sessionStorage;
+  const fallbackStorage = rememberMe ? sessionStorage : localStorage;
+
+  preferredStorage.setItem(TOKEN_KEY, token);
+  preferredStorage.setItem(USER_KEY, JSON.stringify(user));
+
+  fallbackStorage.removeItem(TOKEN_KEY);
+  fallbackStorage.removeItem(USER_KEY);
+};
 
 export const login = async (credentials: LoginCredentials): Promise<User> => {
   try {
-    const response = await apiClient.post<AuthResponse>('/api/user/login', credentials);
+    const { remember_me = false, ...loginPayload } = credentials;
+    const response = await apiClient.post<AuthResponse>('/api/user/login', loginPayload);
     const { token, user } = response.data;
     
-    if (isBrowser) {
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-    }
+    saveAuthByPreference(token, user, remember_me);
     
     return user;
   } catch (error: any) {
@@ -45,8 +74,7 @@ export const login = async (credentials: LoginCredentials): Promise<User> => {
 
 export const logout = (): void => {
   if (isBrowser) {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    clearStoredAuth();
     window.location.href = '/auth/login';
   }
 };
@@ -54,7 +82,7 @@ export const logout = (): void => {
 export const getCurrentUser = (): User | null => {
   if (!isBrowser) return null;
   
-  const userStr = localStorage.getItem('user');
+  const userStr = getStoredItem(USER_KEY);
   if (!userStr) return null;
   
   try {
@@ -67,7 +95,7 @@ export const getCurrentUser = (): User | null => {
 export const isAuthenticated = (): boolean => {
   if (!isBrowser) return false;
   
-  const token = localStorage.getItem('token');
+  const token = getStoredItem(TOKEN_KEY);
   if (!token) return false;
   
   try {
@@ -88,5 +116,5 @@ export const isAuthenticated = (): boolean => {
 
 export const getToken = (): string | null => {
   if (!isBrowser) return null;
-  return localStorage.getItem('token');
+  return getStoredItem(TOKEN_KEY);
 };

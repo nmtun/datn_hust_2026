@@ -14,10 +14,10 @@ const Modal = ({ isOpen, onClose, title, children, showEditButton, onEdit }: Mod
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Backdrop - Transparent */}
+      <div className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm" aria-hidden="true" />
 
       {/* Modal */}
-      <div className="flex items-center justify-center min-h-screen p-4">
+      <div className="relative flex items-center justify-center min-h-screen p-4">
         <div className="relative bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
           {/* Header - Fixed */}
           <div className="flex items-center justify-between p-4 border-b bg-white sticky top-0 z-10">

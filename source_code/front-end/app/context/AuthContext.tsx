@@ -15,6 +15,7 @@ interface User {
 interface LoginCredentials {
   company_email: string;
   password: string;
+  remember_me?: boolean;
 }
 
 interface AuthContextType {
