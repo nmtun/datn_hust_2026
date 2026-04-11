@@ -7,6 +7,7 @@ import { use } from 'react';
 import { useAuth } from '@/app/context/AuthContext';
 import { jobDescriptionApi, JobDescription } from '@/app/api/jobDescriptionApi';
 import JobDescriptionForm from '@/app/components/JobDescriptionForm';
+import { getToken } from '@/app/auth/lib/auth';
 
 interface PageParams {
   id: string;
@@ -76,7 +77,7 @@ function EditJobDescriptionPage({ params }: PageProps) {
       setError(null);
       console.log('Updating job description with ID:', jobId);
       console.log('Update data:', data);
-      const token = localStorage.getItem('token');
+      const token = getToken();
       console.log('Auth token exists:', !!token);
       const result = await jobDescriptionApi.update(Number(jobId), data);
       

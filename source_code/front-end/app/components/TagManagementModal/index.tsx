@@ -128,7 +128,7 @@ const TagManagementModal: React.FC<TagManagementModalProps> = ({ isOpen, onClose
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 flex items-center justify-center p-4 z-50 bg-slate-900/30 backdrop-blur-sm">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
@@ -221,7 +221,7 @@ const TagManagementModal: React.FC<TagManagementModalProps> = ({ isOpen, onClose
 
       {/* Create Tag Modal */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center p-4 z-60">
+        <div className="fixed inset-0 flex items-center justify-center p-4 z-60 bg-slate-900/30 backdrop-blur-sm">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Tag</h3>
@@ -265,7 +265,7 @@ const TagManagementModal: React.FC<TagManagementModalProps> = ({ isOpen, onClose
 
       {/* Edit Tag Modal */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center p-4 z-60">
+        <div className="fixed inset-0 flex items-center justify-center p-4 z-60 bg-slate-900/30 backdrop-blur-sm">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Tag</h3>
@@ -310,7 +310,7 @@ const TagManagementModal: React.FC<TagManagementModalProps> = ({ isOpen, onClose
 
       {/* Delete Tag Confirmation Modal */}
       {tagToDelete && (
-        <div className="fixed inset-0 flex items-center justify-center p-4 z-60">
+        <div className="fixed inset-0 flex items-center justify-center p-4 z-60 bg-slate-900/30 backdrop-blur-sm">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-sm">
             <div className="p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Delete Tag</h3>

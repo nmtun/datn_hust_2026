@@ -7,6 +7,7 @@ import { quizResultApi, QuizResult } from "@/app/api/quizApi";
 import { ArrowLeft, Clock, User, FileText, Download, Play, History, ChevronDown, ChevronUp, CheckCircle, XCircle } from "lucide-react";
 import { showToast } from "@/app/utils/toast";
 import { withAuth } from "@/app/middleware/withAuth";
+import { getToken } from "@/app/auth/lib/auth";
 
 function TrainingMaterialDetailPage() {
   const params = useParams();
@@ -113,7 +114,7 @@ function TrainingMaterialDetailPage() {
     return fileName.replace(/_\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}_\d+/, '');
   };
   const getFileUrlWithToken = (filename: string) => {
-    const token = localStorage.getItem("token");
+    const token = getToken();
     return `${process.env.NEXT_PUBLIC_API_URL}/api/training-material/download/${filename}?token=${token}`;
   };
   const getFileExtension = (path: string) => {
