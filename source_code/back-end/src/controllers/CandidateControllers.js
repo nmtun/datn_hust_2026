@@ -6,8 +6,10 @@ import { sendEmail } from '../utils/sendEmail.js';
 
 export const createCandidate = async (req, res) => {
     try {
+        const isHrCreated = req.user?.role === 'hr';
         const candidateData = {
             ...req.body,
+            created_by_hr: isHrCreated,
             cv_file_path: undefined
         };
 
@@ -45,37 +47,42 @@ export const createCandidate = async (req, res) => {
             }
         }
 
-        // Gửi email thông báo
-        const userEmail = req.body.personal_email;
         const appliedJobTitle = result?.data?.applied_job?.title;
         const appliedDepartmentName = result?.data?.applied_job?.department_name;
         const appliedJobText = appliedJobTitle
             ? `${appliedJobTitle}${appliedDepartmentName ? ` - Phòng ban ${appliedDepartmentName}` : ''}`
             : null;
 
-        if (userEmail) {
-            const subject = 'Xác nhận nộp CV thành công - Cảm ơn bạn đã ứng tuyển';
-            const htmlContent = `
-                <h2>Xin chào ${req.body.full_name || 'Ứng viên'},</h2>
-                <p>Cảm ơn bạn đã nộp CV ứng tuyển qua hệ thống của chúng tôi.</p>
-                ${appliedJobText ? `<p><strong>Vị trí ứng tuyển:</strong> ${appliedJobText}</p>` : ''}
-                <p>Bộ phận nhân sự sẽ xem xét hồ sơ và liên hệ lại với bạn trong thời gian sớm nhất.</p>
-                <br/>
-                <p>Trân trọng,<br/>Phòng Nhân Sự</p>
-            `;
-            try {
-                await sendEmail(userEmail, subject, htmlContent);
-            } catch (error) {
-                console.error('Failed to send email:', error);
-                // Không trả về lỗi cho client, chỉ log lỗi
+        // HR tạo ứng viên thủ công thì không gửi email xác nhận ứng tuyển.
+        if (!isHrCreated) {
+            const userEmail = req.body.personal_email;
+
+            if (userEmail) {
+                const subject = 'Xác nhận nộp CV thành công - Cảm ơn bạn đã ứng tuyển';
+                const htmlContent = `
+                    <h2>Xin chào ${req.body.full_name || 'Ứng viên'},</h2>
+                    <p>Cảm ơn bạn đã nộp CV ứng tuyển qua hệ thống của chúng tôi.</p>
+                    ${appliedJobText ? `<p><strong>Vị trí ứng tuyển:</strong> ${appliedJobText}</p>` : ''}
+                    <p>Bộ phận nhân sự sẽ xem xét hồ sơ và liên hệ lại với bạn trong thời gian sớm nhất.</p>
+                    <br/>
+                    <p>Trân trọng,<br/>Phòng Nhân Sự</p>
+                `;
+                try {
+                    await sendEmail(userEmail, subject, htmlContent);
+                } catch (error) {
+                    console.error('Failed to send email:', error);
+                    // Không trả về lỗi cho client, chỉ log lỗi
+                }
+            } else {
+                console.log('No email address provided, skipping email notification');
             }
-        } else {
-            console.log('No email address provided, skipping email notification');
         }
 
         return res.status(result.status).json({
             ...result.data,
-            message: `Nộp CV thành công${appliedJobText ? ` cho vị trí ${appliedJobText}` : ''}! Vui lòng kiểm tra email để nhận xác nhận.`
+            message: isHrCreated
+                ? `Tạo ứng viên thành công${appliedJobText ? ` cho vị trí ${appliedJobText}` : ''}.`
+                : `Nộp CV thành công${appliedJobText ? ` cho vị trí ${appliedJobText}` : ''}! Vui lòng kiểm tra email để nhận xác nhận.`
         });
 
     } catch (error) {
