@@ -29,6 +29,35 @@ const resolveEmployeePositionFromJob = (job) => {
     return basePosition;
 };
 
+const normalizeTextForComparison = (value = '') => value
+    .toString()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+
+const isHrDepartment = (department) => {
+    if (!department) return false;
+
+    const normalizedCode = normalizeTextForComparison(department.code).replace(/[^a-z0-9]/g, '');
+    const normalizedName = normalizeTextForComparison(department.name).replace(/\s+/g, ' ').trim();
+
+    if (['hr', 'humanresource', 'humanresources', 'nhansu'].includes(normalizedCode)) {
+        return true;
+    }
+
+    return normalizedName.includes('nhan su') || normalizedName.includes('human resource');
+};
+
+const isTruthyFlag = (value) => {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value === 1;
+    if (typeof value === 'string') {
+        return ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase());
+    }
+    return false;
+};
+
 const getEmployeeInfoInclude = () => ({
     model: Employee,
     as: 'Employee_Info',
@@ -129,6 +158,7 @@ export const createCandidateService = async (candidateData) => {
     } = candidateData;
 
     const processedCoverLetter = Array.isArray(cover_letter) ? cover_letter.join('\n') : cover_letter;
+    const isHrCreated = isTruthyFlag(candidateData?.created_by_hr);
 
     // Validate
     if (!personal_email) return { status: 400, data: { error: true, message: "Email is required" } };
@@ -215,11 +245,13 @@ export const createCandidateService = async (candidateData) => {
                 cover_letter: processedCoverLetter
             });
 
-            await sendHrNotificationForNewApplication({
-                candidate: newCandidate,
-                candidateUser: existingUser,
-                candidateData
-            });
+            if (!isHrCreated) {
+                await sendHrNotificationForNewApplication({
+                    candidate: newCandidate,
+                    candidateUser: existingUser,
+                    candidateData
+                });
+            }
 
             return {
                 status: 201,
@@ -258,18 +290,20 @@ export const createCandidateService = async (candidateData) => {
             user_id: newUser.user_id,
             cv_file_path,
             candidate_status,
-            source: "website",
+            source,
             apply_date,
             evaluation,
             job_id: normalizedJobId,
             cover_letter: processedCoverLetter
         });
 
-        await sendHrNotificationForNewApplication({
-            candidate: newCandidate,
-            candidateUser: newUser,
-            candidateData
-        });
+        if (!isHrCreated) {
+            await sendHrNotificationForNewApplication({
+                candidate: newCandidate,
+                candidateUser: newUser,
+                candidateData
+            });
+        }
 
         return {
             status: 201,
@@ -831,7 +865,15 @@ export const createCompanyEmailService = async (candidateId, companyEmail, passw
                     include: [
                         {
                             model: JobDescription,
-                            attributes: ['job_id', 'title', 'experience_level', 'employment_type', 'department_id']
+                            attributes: ['job_id', 'title', 'experience_level', 'employment_type', 'department_id'],
+                            include: [
+                                {
+                                    model: Department,
+                                    as: 'department',
+                                    attributes: ['department_id', 'name', 'code'],
+                                    required: false
+                                }
+                            ]
                         }
                     ]
                 }
@@ -882,6 +924,18 @@ export const createCompanyEmailService = async (candidateId, companyEmail, passw
             };
         }
 
+        const hiredCandidateInfos = candidate.Candidate_Infos || [];
+        const hiredJobs = hiredCandidateInfos
+            .map((info) => info?.Job_Description)
+            .filter(Boolean);
+
+        const targetRole = hiredJobs.some((job) => isHrDepartment(job.department))
+            ? 'hr'
+            : 'employee';
+
+        const hiredCandidateInfo = hiredCandidateInfos.find((info) => info?.Job_Description) || null;
+        const hiredJob = hiredCandidateInfo?.Job_Description;
+
         // Chỉ cập nhật thông tin đăng nhập khi candidate chưa có company_email
         if (!candidate.company_email) {
             const saltRounds = 10;
@@ -890,10 +944,10 @@ export const createCompanyEmailService = async (candidateId, companyEmail, passw
             await candidate.update({
                 company_email: companyEmail,
                 password: hashedPassword,
-                role: 'employee'
+                role: targetRole
             }, { transaction });
-        } else if (candidate.role !== 'employee') {
-            await candidate.update({ role: 'employee' }, { transaction });
+        } else if (candidate.role !== targetRole) {
+            await candidate.update({ role: targetRole }, { transaction });
         }
 
         // Đảm bảo có bản ghi Employee_Info tương ứng (idempotent)
@@ -903,8 +957,6 @@ export const createCompanyEmailService = async (candidateId, companyEmail, passw
         });
 
         if (!existingEmployeeInfo) {
-            const hiredCandidateInfo = candidate.Candidate_Infos?.[0];
-            const hiredJob = hiredCandidateInfo?.Job_Description;
             const resolvedPosition = resolveEmployeePositionFromJob(hiredJob);
 
             await Employee.create({
@@ -914,8 +966,6 @@ export const createCompanyEmailService = async (candidateId, companyEmail, passw
                 department_id: hiredJob?.department_id || null
             }, { transaction });
         } else {
-            const hiredCandidateInfo = candidate.Candidate_Infos?.[0];
-            const hiredJob = hiredCandidateInfo?.Job_Description;
             const resolvedPosition = resolveEmployeePositionFromJob(hiredJob);
             const resolvedDepartmentId = hiredJob?.department_id || null;
 

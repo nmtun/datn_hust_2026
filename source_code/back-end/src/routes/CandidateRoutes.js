@@ -1,14 +1,14 @@
 import express from 'express';
 import * as candidateController from '../controllers/CandidateControllers.js';
 import multer from 'multer';
-import { authenticate, authorize } from '../middleware/auth.js';
+import { authenticate, authenticateOptional, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-router.post('/create', upload.single('cv'), candidateController.createCandidate);
+router.post('/create', authenticateOptional, upload.single('cv'), candidateController.createCandidate);
 router.get('/get-all', authenticate, authorize("hr"), candidateController.getAllCandidates);
 router.get('/get/:id', authenticate, authorize("hr"), candidateController.getCandidateById);
 router.put('/update/:id', authenticate, authorize("hr"), candidateController.updateCandidate);

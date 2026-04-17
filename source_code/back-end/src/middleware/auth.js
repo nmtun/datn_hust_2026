@@ -23,6 +23,25 @@ export const authenticate = (req, res, next) => {
     }
 };
 
+// Optional auth: decode token when present, but still allow anonymous requests.
+export const authenticateOptional = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return next();
+    }
+
+    const token = authHeader.split(" ")[1];
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded; // { user_id, role }
+    } catch (err) {
+        // Ignore invalid optional token and continue as unauthenticated.
+        req.user = null;
+    }
+
+    next();
+};
+
 export const authorize = (...roles) => {
     return (req, res, next) => {
         if (!roles.includes(req.user.role)) {
