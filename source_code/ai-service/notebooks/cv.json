@@ -1,0 +1,50 @@
+{
+  "name": "BÙI LAN HƯƠNG ANH",
+  "self-description": "Với một tinh thần nhiệt huyết và ham học hỏi, tôi luôn cố gắng, nỗ lực hoàn thành tốt những công việc được giao. Tốt nghiệp chuyên ngành ngôn ngữ Hàn cùng kinh nghiệm hơn 3 năm làm việc tại các công ty Hàn Quốc và Việt Nam, tôi tin rằng sẽ mình đảm nhiệm tốt công việc tại quý công ty, tiến xa hơn trong công việc.",
+  "skills": {
+    "core": [
+      "biên dịch tài liệu kỹ thuật",
+      "phiên dịch tiếng hàn - việt, việt - hàn",
+      "tin học văn phòng"
+    ],
+    "soft": [
+      "kỹ năng giải quyết vấn đề",
+      "kỹ năng làm việc nhóm",
+      "kỹ năng giao tiếp"
+    ]
+  },
+  "experience": [
+    {
+      "title": "Phiên dịch tiếng Hàn",
+      "company": "Công ty TNHH Samsung Electronics VN Thái Nguyên",
+      "duration": "Tháng 06/2022 - tháng 03/2024",
+      "description": "Phiên dịch tiếng Hàn - Việt, Việt - Hàn trong bộ phận sản xuất. Biên dịch tài liệu kỹ thuật chuyên ngành. Các công việc hành chính khác theo yêu cầu của cấp trên."
+    },
+    {
+      "title": "Thực tập phiên dịch tiếng Hàn",
+      "company": "Công ty TNHH LG Display Việt Nam",
+      "duration": "Tháng 01 - tháng 04/2022",
+      "description": "Thực hành phiên dịch tiếng Hàn - Việt, Việt - Hàn. Biên dịch tài liệu, báo cáo,... phục vụ cho công việc của bộ phận."
+    },
+    {
+      "title": "Thực tập phiên dịch tiếng Hàn",
+      "company": "Công ty TNHH Samsung Display Việt Nam",
+      "duration": "Tháng 07 - tháng 09/2021",
+      "description": "Thực hành phiên dịch tiếng Hàn - Việt, Việt - Hàn. Biên dịch tài liệu, báo cáo,... phục vụ cho công việc của bộ phận."
+    },
+    {
+      "title": "IT Comtor tiếng Hàn",
+      "company": "Công ty TNHH Phần mềm FPT",
+      "duration": "Tháng 05/2024 - 12/2025",
+      "description": "Phiên dịch trong các cuộc họp giữa team Dev và khách hàng. Biên dịch tài liệu kỹ thuật liên quan đến dự án. Hỗ trợ phiên dịch cho khách hàng sang Việt Nam công tác. Hỗ trợ quản lý dự án."
+    }
+  ],
+  "education": [
+    "Cử nhân Ngôn ngữ Hàn (2018 - 2022), Khoa Ngôn ngữ và Văn hóa Hàn Quốc, trường Đại học Ngoại Ngữ - Đại học Quốc gia Hà Nội, Xếp loại: Giỏi (GPA 3.28)"
+  ],
+  "certifications": [
+    "Chứng chỉ tiếng Hàn Topik: Bậc 6",
+    "Chứng chỉ tiếng Anh Aptis: C1"
+  ],
+  "experience_years": 3.5
+}
