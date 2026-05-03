@@ -18,6 +18,8 @@ function CandidatePage() {
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [selectedCandidateInfo, setSelectedCandidateInfo] = useState<CandidateInfo | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
+  const [evaluationCandidateInfo, setEvaluationCandidateInfo] = useState<CandidateInfo | null>(null);
 
   const useDebounce = (value: string, delay: number) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
@@ -166,6 +168,78 @@ function CandidatePage() {
     router.push("/dashboard/hr/candidate/create");
   };
 
+  const handleOpenEvaluationComment = (candidateInfo: CandidateInfo) => {
+    setEvaluationCandidateInfo(candidateInfo);
+    setIsEvaluationModalOpen(true);
+  };
+
+  const getEvaluationCommentText = (candidateInfo?: CandidateInfo | null) => {
+    const evaluationComment = candidateInfo?.evaluation_comment;
+    if (!evaluationComment) return '';
+    return typeof evaluationComment === 'string'
+      ? evaluationComment
+      : evaluationComment.comment || '';
+  };
+
+  const getEvaluationCommentName = (candidateInfo?: CandidateInfo | null) => {
+    const evaluationComment = candidateInfo?.evaluation_comment;
+    if (!evaluationComment || typeof evaluationComment === 'string') return '';
+    return evaluationComment.name || '';
+  };
+
+  const formatEvaluationComment = (value?: string) => {
+    if (!value) return '';
+    const normalized = value.replace(/\r\n/g, '\n').trim();
+    const parts = normalized.split(/(Diem manh:|Diem yeu:|Phan tich yeu cau:|Kinh nghiem)/g);
+    const output: string[] = [];
+
+    if (parts[0]?.trim()) {
+      output.push(parts[0].trim());
+    }
+
+    for (let i = 1; i < parts.length; i += 2) {
+      const marker = parts[i];
+      const content = (parts[i + 1] || '').trim();
+
+      if (!marker) continue;
+
+      if (marker === 'Diem manh:' || marker === 'Diem yeu:') {
+        const items = content
+          .split(';')
+          .map((item) => item.replace(/^[-•\s]+/, '').replace(/[.\s]+$/g, '').trim())
+          .filter(Boolean);
+
+        if (items.length > 0) {
+          output.push(`${marker}\n- ${items.join('\n- ')}`);
+        } else {
+          output.push(marker);
+        }
+        continue;
+      }
+
+      if (marker === 'Phan tich yeu cau:') {
+        const items = content
+          .split(' | ')
+          .map((item) => item.trim())
+          .filter(Boolean);
+
+        if (items.length > 0) {
+          output.push(`${marker}\n- ${items.join('\n- ')}`);
+        } else {
+          output.push(marker);
+        }
+        continue;
+      }
+
+      const line = `${marker} ${content}`.trim();
+      if (line) {
+        output.push(line);
+      }
+    }
+
+    return output.join('\n\n');
+  };
+
   const handleViewCV = (cvPath: string) => {
     if (cvPath) {
       // Lấy tên file từ đường dẫn (xử lý cả đường dẫn Windows và Linux)
@@ -193,6 +267,17 @@ function CandidatePage() {
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+
+  const getEvaluationTag = (score?: number | null) => {
+    if (score == null) return null;
+    if (score <= 50) {
+      return { label: "Không phù hợp", className: "bg-red-100 text-red-800" };
+    }
+    if (score <= 80) {
+      return { label: "Phù hợp", className: "bg-amber-100 text-amber-800" };
+    }
+    return { label: "Rất phù hợp", className: "bg-emerald-100 text-emerald-800" };
   };
 
   // Define interface for grouped candidate data
@@ -331,32 +416,41 @@ function CandidatePage() {
                   <td className="px-6 py-4">
                     {candidate.candidateInfos.length > 0 ? (
                       <div className="space-y-2">
-                        {candidate.candidateInfos.map((candidateInfo, infoIndex) => (
-                          <div key={candidateInfo.candidate_info_id} className="border-l-2 border-gray-200 pl-3 py-1 min-h-[28px] flex flex-col justify-center">
-                            {candidateInfo.Job_Description ? (
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <div className="text-sm font-medium text-gray-900 leading-tight">
-                                    {candidateInfo.Job_Description.title}
+                        {candidate.candidateInfos.map((candidateInfo, infoIndex) => {
+                          const evaluationTag = getEvaluationTag(candidateInfo.evaluation);
+
+                          return (
+                            <div key={candidateInfo.candidate_info_id} className="border-l-2 border-gray-200 pl-3 py-1 min-h-[28px] flex flex-col justify-center">
+                              {candidateInfo.Job_Description ? (
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <div className="text-sm font-medium text-gray-900 leading-tight flex items-center">
+                                      {candidateInfo.Job_Description.title}
+                                      {evaluationTag && (
+                                        <span className={`ml-2 px-2 py-0.5 text-xs font-semibold rounded-full ${evaluationTag.className}`}>
+                                          {evaluationTag.label}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-sm text-gray-500 leading-tight">
+                                      {candidateInfo.Job_Description.experience_level} · {candidateInfo.Job_Description.employment_type}
+                                    </div>
                                   </div>
-                                  <div className="text-sm text-gray-500 leading-tight">
-                                    {candidateInfo.Job_Description.experience_level} · {candidateInfo.Job_Description.employment_type}
-                                  </div>
+                                  {candidateInfo.cv_file_path && (
+                                    <button
+                                      onClick={() => handleViewCV(candidateInfo.cv_file_path!)}
+                                      className="ml-2 text-green-400 hover:text-green-500 flex-shrink-0"
+                                      title="View CV for this job">
+                                      <FileText className="w-6 h-6" />
+                                    </button>
+                                  )}
                                 </div>
-                                {candidateInfo.cv_file_path && (
-                                  <button
-                                    onClick={() => handleViewCV(candidateInfo.cv_file_path!)}
-                                    className="ml-2 text-green-400 hover:text-green-500 flex-shrink-0"
-                                    title="View CV for this job">
-                                    <FileText className="w-6 h-6" />
-                                  </button>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-sm text-gray-400">No job title</span>
-                            )}
-                          </div>
-                        ))}
+                              ) : (
+                                <span className="text-sm text-gray-400">No job title</span>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     ) : (
                       <span className="text-sm text-gray-400">No job applications</span>
@@ -533,32 +627,53 @@ function CandidatePage() {
                   Job Applications ({selectedCandidate.Candidate_Infos.length})
                 </h3>
                 <div className="space-y-4">
-                  {selectedCandidate.Candidate_Infos.map((candidateInfo, index) => (
-                    <div key={candidateInfo.candidate_info_id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                      <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Application Status</p>
-                          <p className="mt-1">
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(candidateInfo.candidate_status)}`}>
-                              {candidateInfo.candidate_status.charAt(0).toUpperCase() + candidateInfo.candidate_status.slice(1)}
-                            </span>
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Apply Date</p>
-                          <p className="mt-1">{new Date(candidateInfo.apply_date).toLocaleDateString()}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Source</p>
-                          <p className="mt-1">{candidateInfo.source || 'Not specified'}</p>
-                        </div>
-                        {candidateInfo.evaluation && (
+                  {selectedCandidate.Candidate_Infos.map((candidateInfo, index) => {
+                    const evaluationTag = getEvaluationTag(candidateInfo.evaluation);
+
+                    return (
+                      <div key={candidateInfo.candidate_info_id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                        <div className="grid grid-cols-2 gap-4 mb-4">
                           <div>
-                            <p className="text-sm font-medium text-gray-500">Evaluation Score</p>
-                            <p className="mt-1">{candidateInfo.evaluation}/10</p>
+                            <p className="text-sm font-medium text-gray-500">Application Status</p>
+                            <p className="mt-1">
+                              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(candidateInfo.candidate_status)}`}>
+                                {candidateInfo.candidate_status.charAt(0).toUpperCase() + candidateInfo.candidate_status.slice(1)}
+                              </span>
+                            </p>
                           </div>
-                        )}
-                      </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">Apply Date</p>
+                            <p className="mt-1">{new Date(candidateInfo.apply_date).toLocaleDateString()}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">Source</p>
+                            <p className="mt-1">{candidateInfo.source || 'Not specified'}</p>
+                          </div>
+                          {candidateInfo.evaluation != null && (
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Evaluation Score</p>
+                              <p className="mt-1 flex flex-wrap items-center gap-2">
+                                <span>{candidateInfo.evaluation}/100</span>
+                                {evaluationTag && (
+                                  <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${evaluationTag.className}`}>
+                                    {evaluationTag.label}
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">Evaluation Comment</p>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEvaluationComment(candidateInfo)}
+                              className="mt-1 inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              View Comment
+                            </button>
+                          </div>
+                        </div>
 
                       {/* Applied Job */}
                       {candidateInfo.Job_Description && (
@@ -589,22 +704,60 @@ function CandidatePage() {
                         </div>
                       )}
 
-                      {/* Cover Letter */}
-                      {candidateInfo.cover_letter && (
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Cover Letter</p>
-                          <div className="mt-1 p-3 bg-white rounded-md border">
-                            <p className="text-sm text-gray-700 whitespace-pre-wrap">{candidateInfo.cover_letter}</p>
+                        {/* Cover Letter */}
+                        {candidateInfo.cover_letter && (
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">Cover Letter</p>
+                            <div className="mt-1 p-3 bg-white rounded-md border">
+                              <p className="text-sm text-gray-700 whitespace-pre-wrap">{candidateInfo.cover_letter}</p>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
           </div>
         )}
+      </Modal>
+
+      {/* Evaluation Comment Modal */}
+      <Modal
+        isOpen={isEvaluationModalOpen}
+        onClose={() => {
+          setIsEvaluationModalOpen(false);
+          setEvaluationCandidateInfo(null);
+        }}
+        title="Evaluation Comment"
+      >
+        <div className="space-y-4">
+          {(getEvaluationCommentName(evaluationCandidateInfo) || evaluationCandidateInfo?.evaluation) && (
+            <div className="grid grid-cols-2 gap-4">
+              {getEvaluationCommentName(evaluationCandidateInfo) && (
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Candidate</p>
+                  <p className="mt-1">{getEvaluationCommentName(evaluationCandidateInfo)}</p>
+                </div>
+              )}
+              {evaluationCandidateInfo?.evaluation != null && (
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Evaluation Score</p>
+                  <p className="mt-1">{evaluationCandidateInfo.evaluation}/100</p>
+                </div>
+              )}
+            </div>
+          )}
+          <div>
+            <p className="text-sm font-medium text-gray-500">Comment</p>
+            <div className="mt-2 p-4 bg-gray-50 rounded-md border border-gray-200">
+              <p className="text-sm text-gray-700 whitespace-pre-wrap leading-6">
+                {formatEvaluationComment(getEvaluationCommentText(evaluationCandidateInfo)) || 'No evaluation comment yet'}
+              </p>
+            </div>
+          </div>
+        </div>
       </Modal>
     </div>
   );

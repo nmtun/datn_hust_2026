@@ -22,6 +22,7 @@ CREATE TABLE Candidate_Info (
   source VARCHAR(100),
   apply_date DATE NOT NULL,
   evaluation INT,
+  evaluation_comment JSON,
   job_id INT,
   notes TEXT,
   FOREIGN KEY (user_id) REFERENCES Users(user_id),

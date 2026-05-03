@@ -37,6 +37,10 @@ const Candidate = sequelize.define("Candidate_Info", {
         type: DataTypes.INTEGER,
         allowNull: true,
     },
+    evaluation_comment: {
+        type: DataTypes.JSON,
+        allowNull: true,
+    },
     job_id: {
         type: DataTypes.INTEGER,
         allowNull: true,

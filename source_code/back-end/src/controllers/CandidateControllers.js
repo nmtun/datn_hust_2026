@@ -2,7 +2,9 @@ import * as candidateService from '../services/CandidateServices.js';
 import fs from 'fs/promises';
 import path from 'path';
 import Candidate from '../models/Candidate.js';
+import JobDescription from '../models/JobDescription.js';
 import { sendEmail } from '../utils/sendEmail.js';
+import { evaluateCandidatePdf } from '../services/CandidateEvaluationService.js';
 
 export const createCandidate = async (req, res) => {
     try {
@@ -18,6 +20,8 @@ export const createCandidate = async (req, res) => {
         if (result.status !== 201) {
             return res.status(result.status).json(result.data);
         }
+
+        let evaluationPending = false;
 
         // Lưu CV    
         if (req.file && req.file.buffer) {
@@ -44,6 +48,75 @@ export const createCandidate = async (req, res) => {
                 result.data.candidate.cv_file_path = filePath;
             } catch (error) {
                 console.error('Lỗi lưu CV:', error);
+            }
+        }
+
+        if (req.file?.buffer && result?.data?.candidate?.job_id) {
+            const isPdf = req.file.mimetype === 'application/pdf'
+                || path.extname(req.file.originalname || '').toLowerCase() === '.pdf';
+
+            if (isPdf) {
+                evaluationPending = true;
+
+                const candidateInfoId = result.data.candidate.candidate_info_id;
+                const jobId = Number(result.data.candidate.job_id);
+                const cvBuffer = Buffer.from(req.file.buffer);
+
+                setImmediate(async () => {
+                    try {
+                        const job = await JobDescription.findOne({
+                            where: {
+                                job_id: jobId,
+                                is_deleted: false
+                            },
+                            attributes: [
+                                'job_id',
+                                'title',
+                                'description',
+                                'requirements',
+                                'responsibilities',
+                                'qualifications',
+                                'experience_level'
+                            ]
+                        });
+
+                        if (!job) return;
+
+                        const jobInfo = {
+                            job_id: job.job_id,
+                            title: job.title,
+                            description: job.description,
+                            requirements: job.requirements,
+                            responsibilities: job.responsibilities,
+                            qualifications: job.qualifications,
+                            experience_level: job.experience_level
+                        };
+
+                        const evaluationResult = await evaluateCandidatePdf({
+                            cvBuffer,
+                            jobInfo
+                        });
+
+                        const evaluationUpdate = {};
+                        if (evaluationResult?.score_total != null) {
+                            evaluationUpdate.evaluation = evaluationResult.score_total;
+                        }
+                        if (evaluationResult?.comment_detail || evaluationResult?.cv_schema?.name) {
+                            evaluationUpdate.evaluation_comment = {
+                                name: evaluationResult?.cv_schema?.name || '',
+                                comment: evaluationResult?.comment_detail || ''
+                            };
+                        }
+
+                        if (Object.keys(evaluationUpdate).length > 0) {
+                            await Candidate.update(evaluationUpdate, {
+                                where: { candidate_info_id: candidateInfoId }
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Candidate evaluation failed:', error);
+                    }
+                });
             }
         }
 
@@ -80,6 +153,7 @@ export const createCandidate = async (req, res) => {
 
         return res.status(result.status).json({
             ...result.data,
+            evaluation_pending: evaluationPending,
             message: isHrCreated
                 ? `Tạo ứng viên thành công${appliedJobText ? ` cho vị trí ${appliedJobText}` : ''}.`
                 : `Nộp CV thành công${appliedJobText ? ` cho vị trí ${appliedJobText}` : ''}! Vui lòng kiểm tra email để nhận xác nhận.`

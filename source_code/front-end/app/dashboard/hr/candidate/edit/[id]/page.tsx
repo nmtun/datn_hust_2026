@@ -25,6 +25,7 @@ function EditCandidatePage() {
   const [saving, setSaving] = useState(false);
   const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [jobDescriptions, setJobDescriptions] = useState<JobDescription[]>([]);
+  const [expandedComments, setExpandedComments] = useState<Record<number, boolean>>({});
 
   // Form data state
   const [formData, setFormData] = useState({
@@ -187,6 +188,66 @@ function EditCandidatePage() {
     router.push('/dashboard/hr/candidate');
   };
 
+  const toggleComment = (key: number) => {
+    setExpandedComments((prev) => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  const formatEvaluationComment = (value?: string) => {
+    if (!value) return '';
+    const normalized = value.replace(/\r\n/g, '\n').trim();
+    const parts = normalized.split(/(Diem manh:|Diem yeu:|Phan tich yeu cau:|Kinh nghiem)/g);
+    const output: string[] = [];
+
+    if (parts[0]?.trim()) {
+      output.push(parts[0].trim());
+    }
+
+    for (let i = 1; i < parts.length; i += 2) {
+      const marker = parts[i];
+      const content = (parts[i + 1] || '').trim();
+
+      if (!marker) continue;
+
+      if (marker === 'Diem manh:' || marker === 'Diem yeu:') {
+        const items = content
+          .split(';')
+          .map((item) => item.replace(/^[-•\s]+/, '').replace(/[.\s]+$/g, '').trim())
+          .filter(Boolean);
+
+        if (items.length > 0) {
+          output.push(`${marker}\n- ${items.join('\n- ')}`);
+        } else {
+          output.push(marker);
+        }
+        continue;
+      }
+
+      if (marker === 'Phan tich yeu cau:') {
+        const items = content
+          .split(' | ')
+          .map((item) => item.trim())
+          .filter(Boolean);
+
+        if (items.length > 0) {
+          output.push(`${marker}\n- ${items.join('\n- ')}`);
+        } else {
+          output.push(marker);
+        }
+        continue;
+      }
+
+      const line = `${marker} ${content}`.trim();
+      if (line) {
+        output.push(line);
+      }
+    }
+
+    return output.join('\n\n');
+  };
+
   const getStatusColor = (status: CandidateInfo["candidate_status"]) => {
     switch (status) {
       case "new":
@@ -322,7 +383,20 @@ function EditCandidatePage() {
               Job Applications ({applications.length})
             </h2>
             <div className="space-y-4">
-              {applications.map((application, index) => (
+              {applications.map((application, index) => {
+                const evaluationComment = application.evaluation_comment;
+                const evaluationCommentText = typeof evaluationComment === "string"
+                  ? evaluationComment
+                  : evaluationComment?.comment;
+                const evaluationCommentName = typeof evaluationComment === "string"
+                  ? ""
+                  : evaluationComment?.name;
+                const commentKey = application.candidate_info_id || index;
+                const isExpanded = Boolean(expandedComments[commentKey]);
+                const formattedComment = formatEvaluationComment(evaluationCommentText);
+                const hasLongComment = formattedComment.length > 260;
+
+                return (
                 <div key={application.candidate_info_id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -367,9 +441,10 @@ function EditCandidatePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Evaluation Score (1-10)
+                        Evaluation Score
                       </label>
                       <input
+                        disabled
                         type="number"
                         min="1"
                         max="10"
@@ -377,6 +452,40 @@ function EditCandidatePage() {
                         onChange={(e) => handleApplicationChange(index, 'evaluation', Number(e.target.value))}
                         className="w-full px-3 py-2 border-2 border-indigo-300 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       />
+                    </div>
+                  </div>
+
+                  {/* Evaluation Comment */}
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Evaluation Comment
+                    </label>
+                    <div className="p-4 bg-white rounded-md border border-gray-300 min-h-[80px]">
+                      {evaluationCommentName && (
+                        <p className="text-xs text-gray-500 mb-2">
+                          Ung vien: {evaluationCommentName}
+                        </p>
+                      )}
+                      <p
+                        className="text-sm text-gray-700 whitespace-pre-wrap leading-6"
+                        style={!isExpanded ? {
+                          display: "-webkit-box",
+                          WebkitLineClamp: 4,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden"
+                        } : undefined}
+                      >
+                        {formattedComment || 'No evaluation comment yet'}
+                      </p>
+                      {hasLongComment && (
+                        <button
+                          type="button"
+                          onClick={() => toggleComment(commentKey)}
+                          className="mt-2 text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                        >
+                          {isExpanded ? 'Thu gon' : 'Xem them'}
+                        </button>
+                      )}
                     </div>
                   </div>
                   
@@ -413,7 +522,8 @@ function EditCandidatePage() {
                     </button> 
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
