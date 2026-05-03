@@ -71,7 +71,6 @@ function MyCompensationPage() {
         <p className="text-sm text-gray-500 mt-1">Xem thông tin lương và thưởng của bạn theo từng thời kỳ</p>
       </div>
 
-      {/* Summary Cards */}
       {latestComp && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <div className="bg-white shadow rounded-lg p-5 flex items-center space-x-4">
@@ -115,7 +114,6 @@ function MyCompensationPage() {
         </div>
       )}
 
-      {/* Compensation History Table */}
       {compensations.length === 0 ? (
         <div className="bg-white shadow rounded-lg py-16 text-center">
           <DollarSign className="mx-auto h-12 w-12 text-gray-300" />
@@ -172,13 +170,27 @@ function MyCompensationPage() {
                         <div className="flex items-center space-x-2">
                           <p className="text-sm font-semibold text-gray-900">{formatCurrency(comp.salary)}</p>
                           {salaryChange != null && (
-                            <span className={`flex items-center text-xs font-medium ${salaryChange > 0 ? "text-green-600" : salaryChange < 0 ? "text-red-600" : "text-gray-400"}`}>
+                            <span
+                              className={`flex items-center text-xs font-medium ${
+                                salaryChange > 0
+                                  ? "text-green-600"
+                                  : salaryChange < 0
+                                  ? "text-red-600"
+                                  : "text-gray-400"
+                              }`}
+                            >
                               {salaryChange > 0 ? (
-                                <><TrendingUp className="w-3 h-3 mr-0.5" />+{formatCurrency(salaryChange)}</>
+                                <>
+                                  <TrendingUp className="w-3 h-3 mr-0.5" />+{formatCurrency(salaryChange)}
+                                </>
                               ) : salaryChange < 0 ? (
-                                <><TrendingDown className="w-3 h-3 mr-0.5" />{formatCurrency(salaryChange)}</>
+                                <>
+                                  <TrendingDown className="w-3 h-3 mr-0.5" />{formatCurrency(salaryChange)}
+                                </>
                               ) : (
-                                <><Minus className="w-3 h-3 mr-0.5" />Không đổi</>
+                                <>
+                                  <Minus className="w-3 h-3 mr-0.5" />Không đổi
+                                </>
                               )}
                             </span>
                           )}

@@ -6,7 +6,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon index.js",
     "dev": "nodemon index.js",
-    "seed:employees": "node seed-data/import-employees.js"
+    "seed:employees": "node seed-data/import-employees.js",
+    "seed:compensations": "node seed-data/import-compensations.js"
   },
   "keywords": [],
   "author": "",

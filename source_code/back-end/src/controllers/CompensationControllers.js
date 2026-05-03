@@ -49,3 +49,30 @@ export const getMyCompensation = async (req, res) => {
         return res.status(500).json({ error: true, message: "Internal server error" });
     }
 };
+
+export const getCompensationRecommendations = async (req, res) => {
+    try {
+        const result = await compensationService.getCompensationRecommendationsService({
+            year: req.body?.year,
+            requestingUser: req.user
+        });
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error getting compensation recommendations:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
+
+export const saveCompensationRecommendations = async (req, res) => {
+    try {
+        const result = await compensationService.saveCompensationRecommendationsService({
+            year: req.body?.year,
+            recommendations: req.body?.recommendations,
+            requestingUser: req.user
+        });
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error saving compensation recommendations:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};

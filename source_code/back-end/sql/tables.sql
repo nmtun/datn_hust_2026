@@ -254,11 +254,14 @@ CREATE TABLE Compensation (
   bonus DECIMAL(18,2) DEFAULT 0,
   effective_date DATE NOT NULL,
   reason TEXT,
+  comment TEXT,
+  evaluated_by INT,
   approved_by INT NOT NULL,
   approved_at DATETIME NOT NULL,
   created_at DATETIME NOT NULL,
   updated_at DATETIME,
   FOREIGN KEY (user_id) REFERENCES Users(user_id),
+  FOREIGN KEY (evaluated_by) REFERENCES Users(user_id),
   FOREIGN KEY (approved_by) REFERENCES Users(user_id)
 );
 

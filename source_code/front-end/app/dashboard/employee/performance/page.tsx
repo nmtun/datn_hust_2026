@@ -43,7 +43,7 @@ function MyPerformancePage() {
     if (rating >= 4.5) return "Xuất sắc";
     if (rating >= 3.5) return "Tốt";
     if (rating >= 2.5) return "Trung bình";
-    return "Yếu";
+    return "Kém";
   };
 
   const getRatingBg = (rating: number) => {
@@ -103,7 +103,10 @@ function MyPerformancePage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {performances.map((perf) => (
+          {performances.map((perf) => {
+            const period = perf.period ?? perf.Period;
+
+            return (
             <div key={perf.perf_id} className="bg-white shadow rounded-lg overflow-hidden">
               {/* Card Header */}
               <div
@@ -113,18 +116,18 @@ function MyPerformancePage() {
                 <div className="flex items-center space-x-4">
                   <div>
                     <p className="text-sm font-semibold text-gray-900">
-                      {perf.Period?.period_name || `Đánh giá #${perf.perf_id}`}
+                      {period?.period_name || `Đánh giá #${perf.perf_id}`}
                     </p>
-                    {perf.Period && (
+                    {period && (
                       <p className="text-xs text-gray-500 mt-0.5">
-                        {new Date(perf.Period.start_date).toLocaleDateString("vi-VN")} -{" "}
-                        {new Date(perf.Period.end_date).toLocaleDateString("vi-VN")}
+                        {new Date(period.start_date).toLocaleDateString("vi-VN")} -{" "}
+                        {new Date(period.end_date).toLocaleDateString("vi-VN")}
                       </p>
                     )}
                   </div>
-                  {perf.Period && (
-                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getPeriodStatusColor(perf.Period.status)}`}>
-                      {getPeriodStatusLabel(perf.Period.status)}
+                  {period && (
+                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getPeriodStatusColor(period.status)}`}>
+                      {getPeriodStatusLabel(period.status)}
                     </span>
                   )}
                 </div>
@@ -210,7 +213,8 @@ function MyPerformancePage() {
                 </div>
               )}
             </div>
-          ))}
+          );
+          })}
         </div>
       )}
     </div>
