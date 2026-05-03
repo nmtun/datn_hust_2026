@@ -9,7 +9,8 @@ export type NotificationType =
   | 'task_updated'
   | 'candidate_applied'
   | 'performance_period_created'
-  | 'performance_review_reminder';
+  | 'performance_review_reminder'
+  | 'compensation_recommendation';
 
 export interface NotificationActor {
   user_id: number;

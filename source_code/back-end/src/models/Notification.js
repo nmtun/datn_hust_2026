@@ -33,7 +33,8 @@ const Notification = sequelize.define("Notification", {
             'task_updated',
             'candidate_applied',
             'performance_period_created',
-            'performance_review_reminder'
+            'performance_review_reminder',
+            'compensation_recommendation'
         ),
         allowNull: false
     },

@@ -30,6 +30,17 @@ const Compensation = sequelize.define("Compensation", {
     reason: {
         type: DataTypes.TEXT
     },
+    comment: {
+        type: DataTypes.TEXT
+    },
+    evaluated_by: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+            model: "Users",
+            key: "user_id"
+        }
+    },
     approved_by: {
         type: DataTypes.INTEGER,
         allowNull: false,
