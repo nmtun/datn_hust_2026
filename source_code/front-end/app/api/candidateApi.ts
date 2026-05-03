@@ -7,6 +7,10 @@ export interface CandidateInfo {
   source?: string;
   apply_date: string;
   evaluation?: number;
+  evaluation_comment?: {
+    name?: string;
+    comment?: string;
+  } | string;
   cover_letter?: string;
   job_id?: number;
   Job_Description?: {

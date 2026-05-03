@@ -152,6 +152,7 @@ export const createCandidateService = async (candidateData) => {
         source = "website",
         apply_date = new Date(), 
         evaluation,
+            evaluation_comment,
         job_id,
         cover_letter,
         status = "active"
@@ -241,6 +242,7 @@ export const createCandidateService = async (candidateData) => {
                 source,
                 apply_date,
                 evaluation,
+                    evaluation_comment,
                 job_id: normalizedJobId,
                 cover_letter: processedCoverLetter
             });
@@ -293,6 +295,7 @@ export const createCandidateService = async (candidateData) => {
             source,
             apply_date,
             evaluation,
+                evaluation_comment,
             job_id: normalizedJobId,
             cover_letter: processedCoverLetter
         });
@@ -332,7 +335,7 @@ export const getAllCandidatesService = async () => {
                 {
                     model: Candidate,
                     required: false, // LEFT JOIN - bao gồm cả users không có candidate info
-                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'cover_letter', 'job_id'],
+                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id'],
                     include: [
                         {
                             model: JobDescription,
@@ -377,7 +380,7 @@ export const getCandidateByIdService = async (userId) => {
             include: [
                 {
                     model: Candidate,
-                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'cover_letter', 'job_id'],
+                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id'],
                     include: [
                         {
                             model: JobDescription,
@@ -452,7 +455,7 @@ export const updateCandidateService = async (userId, updateData) => {
 
         // Phân tách dữ liệu cho User và Candidate
         const userFields = ['personal_email', 'company_email', 'full_name', 'phone_number', 'address', 'status', 'password'];
-        const candidateFields = ['cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'job_id', 'cover_letter'];
+        const candidateFields = ['cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'job_id', 'cover_letter'];
 
         const userUpdateData = {};
         const candidateUpdateData = {};
@@ -495,7 +498,7 @@ export const updateCandidateService = async (userId, updateData) => {
             include: [
                 {
                     model: Candidate,
-                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'cover_letter', 'job_id'],
+                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id'],
                     include: [
                         {
                             model: JobDescription,
@@ -577,7 +580,7 @@ export const getDeletedCandidatesService = async () => {
             include: [
                 {
                     model: Candidate,
-                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'cover_letter', 'job_id'],
+                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id'],
                     include: [
                         {
                             model: JobDescription,
@@ -683,7 +686,7 @@ export const searchCandidatesService = async (query = {}) => {
                 {
                     model: Candidate,
                     where: Object.keys(candidateWhere).length > 0 ? candidateWhere : undefined,
-                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'cover_letter', 'job_id'],
+                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id'],
                     include: [
                         {
                             model: JobDescription,
@@ -752,7 +755,7 @@ export const searchDeletedCandidatesService = async (query = {}) => {
                 {
                     model: Candidate,
                     where: Object.keys(candidateWhere).length > 0 ? candidateWhere : undefined,
-                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'cover_letter', 'job_id'],
+                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id'],
                     include: [
                         {
                             model: JobDescription,
