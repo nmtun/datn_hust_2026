@@ -16,66 +16,45 @@ const DEPARTMENT_SEEDS = [
         description: 'Quản lý nhân sự, tuyển dụng và đào tạo'
     },
     {
+        code: 'RESEARCH',
+        name: 'Phòng Nghiên cứu',
+        description: 'Nghiên cứu và phát triển'
+    },
+    {
         code: 'TECH',
         name: 'Phòng Kỹ thuật',
         description: 'Phát triển và vận hành sản phẩm kỹ thuật'
-    },
-    {
-        code: 'BIZ',
-        name: 'Phòng Kinh doanh',
-        description: 'Kinh doanh, tư vấn và chăm sóc khách hàng'
     }
 ];
 
 const TEAM_SEEDS = [
     {
         code: 'HR-1',
-        name: 'Nhóm Nhân sự 1',
+        name: 'Nhóm Nhân sự',
         department_code: 'HR',
-        leader_email: 'hr_lead1@company.com',
-        description: 'Nhóm tuyển dụng và vận hành nhân sự'
+        leader_email: 'tn1@company.com',
+        description: 'Nhóm tuyển dụng, C&B và đào tạo'
     },
     {
-        code: 'HR-2',
-        name: 'Nhóm Nhân sự 2',
-        department_code: 'HR',
-        leader_email: 'hr_lead2@company.com',
-        description: 'Nhóm C&B và đào tạo'
+        code: 'RESEARCH-1',
+        name: 'Nhóm Nghiên cứu',
+        department_code: 'RESEARCH',
+        leader_email: 'tn2@company.com',
+        description: 'Nhóm phát triển và nghiên cứu'
     },
     {
         code: 'TECH-1',
-        name: 'Nhóm Kỹ thuật 1',
+        name: 'Nhóm Kỹ thuật',
         department_code: 'TECH',
-        leader_email: 'tech_lead1@company.com',
-        description: 'Nhóm phát triển sản phẩm 1'
-    },
-    {
-        code: 'TECH-2',
-        name: 'Nhóm Kỹ thuật 2',
-        department_code: 'TECH',
-        leader_email: 'tech_lead2@company.com',
-        description: 'Nhóm phát triển sản phẩm 2'
-    },
-    {
-        code: 'BIZ-1',
-        name: 'Nhóm Kinh doanh 1',
-        department_code: 'BIZ',
-        leader_email: 'biz_lead1@company.com',
-        description: 'Nhóm bán hàng và tư vấn 1'
-    },
-    {
-        code: 'BIZ-2',
-        name: 'Nhóm Kinh doanh 2',
-        department_code: 'BIZ',
-        leader_email: 'biz_lead2@company.com',
-        description: 'Nhóm bán hàng và tư vấn 2'
+        leader_email: 'tn3@company.com',
+        description: 'Nhóm phát triển sản phẩm kỹ thuật'
     }
 ];
 
 const DEPARTMENT_MANAGER_EMAIL_BY_CODE = {
-    HR: 'hr_head@company.com',
-    TECH: 'tech_head@company.com',
-    BIZ: 'biz_head@company.com'
+    HR: 'tp1@company.com',
+    RESEARCH: 'tp2@company.com',
+    TECH: 'tp3@company.com'
 };
 
 const buildUserPayload = (employeeData, password) => ({

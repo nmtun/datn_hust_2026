@@ -18,7 +18,7 @@ const safeString = (value) => {
     return String(value).trim();
 };
 
-const clipText = (value, limit = 500) => {
+const clipText = (value, limit = 50000) => {
     const text = safeString(value);
     if (!text) return "";
     return text.length > limit ? `${text.slice(0, limit)}...` : text;
@@ -112,9 +112,9 @@ const buildPerformanceCommentPrompt = ({ employeeName, year, averageRating, revi
 
         return [
             `${periodName}${reviewDate ? ` (${reviewDate})` : ""}`,
-            `KPI: ${clipText(review.kpi_goals, 400) || "Khong co"}`,
-            `Ket qua: ${clipText(review.achievement, 400) || "Khong co"}`,
-            `Nhan xet: ${clipText(review.feedback, 400) || "Khong co"}`,
+            `KPI: ${clipText(review.kpi_goals, 50000) || "Khong co"}`,
+            `Ket qua: ${clipText(review.achievement, 50000) || "Khong co"}`,
+            `Nhan xet: ${clipText(review.feedback, 50000) || "Khong co"}`,
             `Diem: ${review.rating ?? "Khong co"}`
         ].join(" | ");
     });
