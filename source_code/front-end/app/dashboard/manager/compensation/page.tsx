@@ -9,7 +9,7 @@ import { showToast } from "@/app/utils/toast";
 import Modal from "@/app/components/Modal";
 import { withAuth } from "@/app/middleware/withAuth";
 
-const emptyForm = { user_id: "", salary: "", bonus: "", effective_date: "", reason: "" };
+const emptyForm = { user_id: "", salary: "", bonus: "", effective_date: "", reason: "", comment: "" };
 
 function CompensationPage() {
   const [records, setRecords] = useState<Compensation[]>([]);
@@ -28,6 +28,9 @@ function CompensationPage() {
   const [recommendLoading, setRecommendLoading] = useState(false);
   const [recommendError, setRecommendError] = useState<string | null>(null);
   const [recommendSaving, setRecommendSaving] = useState(false);
+  const [commentModalOpen, setCommentModalOpen] = useState(false);
+  const [commentDraft, setCommentDraft] = useState("");
+  const [commentTarget, setCommentTarget] = useState<CompensationRecommendation | null>(null);
 
   const yearOptions = useMemo(() => {
     const currentYear = new Date().getFullYear();
@@ -58,6 +61,7 @@ function CompensationPage() {
       bonus: r.bonus ?? "",
       effective_date: r.effective_date?.slice(0, 10) || "",
       reason: r.reason || "",
+      comment: r.comment || "",
     });
     setModalOpen(true);
   };
@@ -76,6 +80,7 @@ function CompensationPage() {
       if (form.salary !== "") data.salary = Number(form.salary);
       if (form.bonus !== "") data.bonus = Number(form.bonus);
       if (form.reason) data.reason = form.reason;
+      if (form.comment) data.comment = form.comment;
 
       const result = editing
         ? await compensationApi.update(editing.comp_id, data)
@@ -181,7 +186,7 @@ function CompensationPage() {
 
   const handleSaveRecommendations = async () => {
     if (recommendations.length === 0) {
-      showToast.error("Chua co du lieu de luu");
+      showToast.error("Chưa có đủ dữ liệu để lưu");
       return;
     }
 
@@ -193,18 +198,38 @@ function CompensationPage() {
       });
 
       if (result.error) {
-        showToast.error(result.message || "Khong the luu de xuat");
+        showToast.error(result.message || "Không thể lưu đề xuất");
         return;
       }
 
-      showToast.success("Da luu de xuat va gui thong bao");
+      showToast.success("Đã lưu đề xuất và gửi thông báo");
       setRecommendModalOpen(false);
       fetchAll();
     } catch {
-      showToast.error("Khong the luu de xuat");
+      showToast.error("Không thể lưu đề xuất");
     } finally {
       setRecommendSaving(false);
     }
+  };
+
+  const openCommentEditor = (item: CompensationRecommendation) => {
+    setCommentTarget(item);
+    setCommentDraft(item.comment ?? item.ai_comment ?? "");
+    setCommentModalOpen(true);
+  };
+
+  const handleCommentSave = () => {
+    if (!commentTarget) return;
+    const nextComment = commentDraft.trim();
+    setRecommendations((prev) =>
+      prev.map((item) =>
+        item.user_id === commentTarget.user_id
+          ? { ...item, comment: nextComment || undefined }
+          : item
+      )
+    );
+    setCommentModalOpen(false);
+    setCommentTarget(null);
   };
 
   return (
@@ -310,12 +335,14 @@ function CompensationPage() {
                       </td>
                       <td className="px-5 py-3 text-sm text-gray-600 max-w-[200px]">
                         {latest.reason || latest.comment ? (
-                          <div className="min-w-0">
+                          <div className="min-w-0 w-full">
                             {latest.reason && (
                               <p className="text-sm text-gray-600 truncate">{latest.reason}</p>
                             )}
                             {latest.comment && (
-                              <p className="text-xs text-emerald-700 truncate">AI: {latest.comment}</p>
+                              <p className="text-xs text-emerald-700 line-clamp-1">
+                                AI: {latest.comment}
+                              </p>
                             )}
                           </div>
                         ) : (
@@ -371,7 +398,9 @@ function CompensationPage() {
                                   <p className="text-sm text-gray-600 truncate">{record.reason}</p>
                                 )}
                                 {record.comment && (
-                                  <p className="text-xs text-emerald-700 truncate">AI: {record.comment}</p>
+                                  <p className="text-xs text-emerald-700 whitespace-pre-wrap break-words">
+                                    AI: {record.comment}
+                                  </p>
                                 )}
                               </div>
                             ) : (
@@ -520,7 +549,7 @@ function CompensationPage() {
                       "Tăng lương",
                       "Lương đề xuất",
                       "Thưởng",
-                      "Nhận xét AI"
+                      "Nhận xét"
                     ].map((heading) => (
                       <th
                         key={heading}
@@ -562,7 +591,24 @@ function CompensationPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600 max-w-[320px]">
-                          {item.ai_comment || "—"}
+                          <div className="flex items-start gap-2">
+                            <div className="min-w-0">
+                              <p className="text-sm text-gray-600 whitespace-pre-wrap break-words">
+                                {item.comment ?? item.ai_comment ?? "—"}
+                              </p>
+                              {item.comment && (
+                                <p className="text-[10px] text-emerald-600 mt-1">Đã sửa</p>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => openCommentEditor(item)}
+                              className="text-gray-400 hover:text-indigo-600"
+                              aria-label="Sua nhan xet"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -587,6 +633,47 @@ function CompensationPage() {
               ) : (
                 <span>Lưu kết quả</span>
               )}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={commentModalOpen}
+        onClose={() => {
+          setCommentModalOpen(false);
+          setCommentTarget(null);
+        }}
+        title="Chỉnh sửa nhận xét"
+      >
+        <div className="p-1 space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Nhận xét</label>
+            <textarea
+              value={commentDraft}
+              onChange={(e) => setCommentDraft(e.target.value)}
+              rows={4}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Nội dung sẽ được lưu khi bấm "Lưu kết quả".
+            </p>
+          </div>
+          <div className="flex justify-end gap-3 pt-1">
+            <button
+              onClick={() => {
+                setCommentModalOpen(false);
+                setCommentTarget(null);
+              }}
+              className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+            >
+              <X className="w-4 h-4 inline mr-1" />Hủy
+            </button>
+            <button
+              onClick={handleCommentSave}
+              className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
+            >
+              <Save className="w-4 h-4 inline mr-1" />Cập nhật
             </button>
           </div>
         </div>
@@ -652,6 +739,15 @@ function CompensationPage() {
               value={form.reason}
               onChange={(e) => setForm({ ...form, reason: e.target.value })}
               rows={2}
+              className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Nhận xét</label>
+            <textarea
+              value={form.comment}
+              onChange={(e) => setForm({ ...form, comment: e.target.value })}
+              rows={3}
               className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
             />
           </div>

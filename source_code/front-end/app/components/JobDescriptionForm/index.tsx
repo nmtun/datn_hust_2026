@@ -132,7 +132,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
       {/* Title */}
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-          Job Title *
+          Tiêu đề công việc *
         </label>
         <input
           type="text"
@@ -149,7 +149,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <div>
           <label htmlFor="employment_type" className="block text-sm font-medium text-gray-700">
-            Employment Type *
+            Loại hình làm việc *
           </label>
           <select
             id="employment_type"
@@ -166,7 +166,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
 
         <div>
           <label htmlFor="type_of_work" className="block text-sm font-medium text-gray-700">
-            Work Type *
+            Loại công việc *
           </label>
           <select
             id="type_of_work"
@@ -184,7 +184,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
 
         <div>
           <label htmlFor="experience_level" className="block text-sm font-medium text-gray-700">
-            Experience Level *
+            Trình độ *
           </label>
           <select
             id="experience_level"
@@ -207,7 +207,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
       <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
         <div>
           <label htmlFor="location" className="block text-sm font-medium text-gray-700">
-            Location *
+            Địa điểm *
           </label>
           <input
             type="text"
@@ -222,7 +222,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
 
         <div>
           <label htmlFor="department_id" className="block text-sm font-medium text-gray-700">
-            Department *
+            Phòng ban *
           </label>
           <select
             id="department_id"
@@ -243,7 +243,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
 
         <div>
           <label htmlFor="positions_count" className="block text-sm font-medium text-gray-700">
-            Number of Positions *
+            Số lượng tuyển dụng *
           </label>
           <input
             type="number"
@@ -259,7 +259,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
 
         <div>
           <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-            Status *
+            Trạng thái *
           </label>
           <select
             id="status"
@@ -281,7 +281,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div>
           <label htmlFor="salary_range_min" className="block text-sm font-medium text-gray-700">
-            Minimum Salary (VND) *
+            Lương tối thiểu (VND) *
           </label>
           <div className="mt-1 relative rounded-md shadow-sm">
             <input
@@ -302,7 +302,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
 
         <div>
           <label htmlFor="salary_range_max" className="block text-sm font-medium text-gray-700">
-            Maximum Salary (VND) *
+            Lương tối đa (VND) *
           </label>
           <div className="mt-1 relative rounded-md shadow-sm">
             <input
@@ -323,7 +323,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
            typeof formData.salary_range_min === 'number' && 
            formData.salary_range_max < formData.salary_range_min && (
             <p className="mt-1 text-sm text-red-600">
-              Maximum salary must be greater than minimum salary
+              Lương tối đa phải lớn hơn hoặc bằng lương tối thiểu.
             </p>
           )}
         </div>
@@ -333,7 +333,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div>
           <label htmlFor="posting_date" className="block text-sm font-medium text-gray-700">
-            Posting Date *
+            Ngày đăng *
           </label>
           <input
             type="date"
@@ -348,7 +348,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
 
         <div>
           <label htmlFor="closing_date" className="block text-sm font-medium text-gray-700">
-            Closing Date
+            Ngày đóng
           </label>
           <input
             type="date"
@@ -364,7 +364,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
       {/* Description */}
       <div>
         <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-          Job Description *
+          Mô tả công việc *
         </label>
         <textarea
           id="description"
@@ -380,7 +380,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
       {/* Requirements */}
       <div>
         <label htmlFor="requirements" className="block text-sm font-medium text-gray-700">
-          Requirements *
+          Yêu cầu công việc *
         </label>
         <textarea
           id="requirements"
@@ -396,7 +396,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
       {/* Responsibilities */}
       <div>
         <label htmlFor="responsibilities" className="block text-sm font-medium text-gray-700">
-          Responsibilities *
+          Trách nhiệm công việc *
         </label>
         <textarea
           id="responsibilities"
@@ -412,7 +412,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
       {/* Qualifications */}
       <div>
         <label htmlFor="qualifications" className="block text-sm font-medium text-gray-700">
-          Qualifications *
+          Bằng cấp *
         </label>
         <textarea
           id="qualifications"

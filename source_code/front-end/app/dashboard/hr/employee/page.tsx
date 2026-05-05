@@ -177,7 +177,9 @@ function HREmployeePage() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-900">{e.full_name}</p>
-                        {emp(e)?.employee_code && <p className="text-xs text-gray-400">{emp(e)!.employee_code}</p>}
+                        {emp(e)?.employee_id_number && (
+                          <p className="text-xs text-gray-400">{emp(e)!.employee_id_number}</p>
+                        )}
                       </div>
                     </div>
                   </td>

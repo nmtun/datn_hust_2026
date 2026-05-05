@@ -110,7 +110,7 @@ const MaterialTagModal: React.FC<MaterialTagModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Manage Tags</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Quản lý Tags</h2>
             <p className="text-sm text-gray-600 mt-1">{materialTitle}</p>
           </div>
           <button
@@ -131,10 +131,10 @@ const MaterialTagModal: React.FC<MaterialTagModalProps> = ({
             <div className="space-y-6">
               {/* Assigned Tags */}
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-3">Assigned Tags</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Tags đã gán</h3>
                 {assignedTags.length === 0 ? (
                   <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
-                    No tags assigned to this material
+                    Không có tags nào được gán cho tài liệu này
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -161,12 +161,12 @@ const MaterialTagModal: React.FC<MaterialTagModalProps> = ({
 
               {/* Available Tags */}
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-3">Available Tags</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Tags có sẵn</h3>
                 {getUnassignedTags().length === 0 ? (
                   <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
                     {availableTags.length === 0 
-                      ? 'No tags available. Create some tags first.'
-                      : 'All available tags have been assigned'
+                      ? 'Không có tags nào có sẵn. Tạo một số tags trước.'
+                      : 'Tất cả các tag có sẵn đã được gán'
                     }
                   </div>
                 ) : (
@@ -201,7 +201,7 @@ const MaterialTagModal: React.FC<MaterialTagModalProps> = ({
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
           >
-            Cancel
+            Hủy
           </button>
           <button
             onClick={handleSave}
@@ -210,7 +210,7 @@ const MaterialTagModal: React.FC<MaterialTagModalProps> = ({
               submitting ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
-            {submitting ? 'Saving...' : 'Save Changes'}
+            {submitting ? 'Đang lưu...' : 'Lưu Thay Đổi'}
           </button>
         </div>
       </div>

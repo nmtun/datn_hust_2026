@@ -131,7 +131,7 @@ function EditJobDescriptionPage({ params }: PageProps) {
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Error</h3>
+              <h3 className="text-sm font-medium text-red-800">Lỗi</h3>
               <p className="text-sm text-red-700 mt-1">{error}</p>
             </div>
           </div>
@@ -141,7 +141,7 @@ function EditJobDescriptionPage({ params }: PageProps) {
               className="inline-flex items-center text-sm text-red-600 hover:text-red-500"
             >
               <ArrowLeft className="w-4 h-4 mr-1" />
-              Go Back
+              Quay lại
             </button>
           </div>
         </div>
@@ -160,8 +160,8 @@ function EditJobDescriptionPage({ params }: PageProps) {
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-yellow-800">Job Description Not Found</h3>
-              <p className="text-sm text-yellow-700 mt-1">The requested job description could not be found.</p>
+              <h3 className="text-sm font-medium text-yellow-800">Mô tả công việc không tìm thấy</h3>
+              <p className="text-sm text-yellow-700 mt-1">Không thể tìm thấy mô tả công việc được yêu cầu.</p>
             </div>
           </div>
           <div className="mt-4">
@@ -170,7 +170,7 @@ function EditJobDescriptionPage({ params }: PageProps) {
               className="inline-flex items-center text-sm text-yellow-600 hover:text-yellow-500"
             >
               <ArrowLeft className="w-4 h-4 mr-1" />
-              Go Back
+              Quay lại
             </button>
           </div>
         </div>
@@ -190,9 +190,9 @@ function EditJobDescriptionPage({ params }: PageProps) {
             className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Back to Job Descriptions
+            Quay lại
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Edit Job Description</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Chỉnh sửa Mô tả Công việc</h1>
         </div>
 
         {/* Form */}

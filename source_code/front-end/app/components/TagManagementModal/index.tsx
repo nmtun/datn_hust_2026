@@ -132,7 +132,7 @@ const TagManagementModal: React.FC<TagManagementModalProps> = ({ isOpen, onClose
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">Tag Management</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Quản lý Tags</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-500"
@@ -160,7 +160,7 @@ const TagManagementModal: React.FC<TagManagementModalProps> = ({ isOpen, onClose
               className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Create Tag
+              Tạo Tag
             </button>
           </div>
 
@@ -183,7 +183,7 @@ const TagManagementModal: React.FC<TagManagementModalProps> = ({ isOpen, onClose
                         <div className="flex-1">
                           <h3 className="text-sm font-medium text-gray-900">{tag.name}</h3>
                           <p className="text-xs text-gray-500 mt-1">
-                            {tag.trainingMaterials?.length || 0} materials • Created {new Date(tag.created_at).toLocaleDateString()}
+                            {tag.trainingMaterials?.length || 0} tài liệu • Đã tạo {new Date(tag.created_at).toLocaleDateString()}
                           </p>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -224,10 +224,10 @@ const TagManagementModal: React.FC<TagManagementModalProps> = ({ isOpen, onClose
         <div className="fixed inset-0 flex items-center justify-center p-4 z-60 bg-slate-900/30 backdrop-blur-sm">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Tag</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Tạo Tag Mới</h3>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tag Name
+                  Tên Tag
                 </label>
                 <input
                   type="text"
@@ -246,7 +246,7 @@ const TagManagementModal: React.FC<TagManagementModalProps> = ({ isOpen, onClose
                   }}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
                 >
-                  Cancel
+                  Hủy
                 </button>
                 <button
                   onClick={handleCreateTag}
@@ -255,7 +255,7 @@ const TagManagementModal: React.FC<TagManagementModalProps> = ({ isOpen, onClose
                     (submitting || !tagName.trim()) ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                 >
-                  {submitting ? 'Creating...' : 'Create'}
+                  {submitting ? 'Đang tạo...' : 'Tạo'}
                 </button>
               </div>
             </div>
@@ -271,7 +271,7 @@ const TagManagementModal: React.FC<TagManagementModalProps> = ({ isOpen, onClose
               <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Tag</h3>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tag Name
+                  Tên Tag
                 </label>
                 <input
                   type="text"
@@ -291,7 +291,7 @@ const TagManagementModal: React.FC<TagManagementModalProps> = ({ isOpen, onClose
                   }}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
                 >
-                  Cancel
+                  Hủy
                 </button>
                 <button
                   onClick={handleEditTag}
@@ -300,7 +300,7 @@ const TagManagementModal: React.FC<TagManagementModalProps> = ({ isOpen, onClose
                     (submitting || !tagName.trim()) ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                 >
-                  {submitting ? 'Updating...' : 'Update'}
+                  {submitting ? 'Đang cập nhật...' : 'Cập Nhật'}
                 </button>
               </div>
             </div>
@@ -313,9 +313,9 @@ const TagManagementModal: React.FC<TagManagementModalProps> = ({ isOpen, onClose
         <div className="fixed inset-0 flex items-center justify-center p-4 z-60 bg-slate-900/30 backdrop-blur-sm">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-sm">
             <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Delete Tag</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Xóa Tag</h3>
               <p className="mb-6 text-sm text-gray-700">
-                Are you sure you want to delete the tag "<b>{tagToDelete.name}</b>"?
+                Bạn có chắc chắn muốn xóa tag "<b>{tagToDelete.name}</b>"?
               </p>
               {deleteError && (
                 <div className="mb-4 text-xs text-red-600 font-semibold">
@@ -330,7 +330,7 @@ const TagManagementModal: React.FC<TagManagementModalProps> = ({ isOpen, onClose
                   }}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
                 >
-                  Cancel
+                  Hủy
                 </button>
                 <button
                   onClick={async () => {

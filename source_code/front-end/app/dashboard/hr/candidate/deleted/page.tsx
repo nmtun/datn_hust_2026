@@ -203,7 +203,7 @@ function DeletedCandidatesPage() {
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Deleted Candidates</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Xóa Ứng viên</h1>
         </div>
       </div>
 
@@ -260,22 +260,22 @@ function DeletedCandidatesPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Candidate
+                  Ứng viên
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Contact
+                  Liên hệ
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Applied Job
+                  Vị trí ứng tuyển
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  Trạng thái
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Apply Date
+                  Ngày ứng tuyển
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  Hành động
                 </th>
               </tr>
             </thead>
@@ -313,13 +313,13 @@ function DeletedCandidatesPage() {
                                 </div>
                               </div>
                             ) : (
-                              <span className="text-sm text-gray-400">No job title</span>
+                              <span className="text-sm text-gray-400">Không có vị trí ứng tuyển</span>
                             )}
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <span className="text-sm text-gray-400">No job applications</span>
+                      <span className="text-sm text-gray-400">Không có công việc ứng tuyển</span>
                     )}
                   </td>
                   <td className="px-6 py-4">
@@ -385,8 +385,8 @@ function DeletedCandidatesPage() {
         {!loading && groupedCandidates.length === 0 && (
           <div className="text-center py-8">
             <User className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No deleted candidates found</h3>
-            <p className="mt-1 text-sm text-gray-500">All candidates are currently active.</p>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">Không tìm thấy Ứng viên nào đã xóa</h3>
+            <p className="mt-1 text-sm text-gray-500">Tất cả Ứng viên đều đang hoạt động.</p>
           </div>
         )}
       </div>
@@ -398,10 +398,10 @@ function DeletedCandidatesPage() {
           setShowRestoreConfirm(false);
           setCandidateToRestore(null);
         }}
-        title="Confirm Restore"
+        title="Xác nhận khôi phục"
       >
         <div className="p-6">
-          <p className="mb-4">Are you sure you want to restore this candidate?</p>
+          <p className="mb-4">Bạn có chắc chắn muốn khôi phục Ứng viên này không?</p>
           <p className="mb-6 font-medium text-gray-700">{candidateToRestore?.full_name}</p>
           <div className="flex justify-end space-x-4">
             <button
@@ -420,7 +420,7 @@ function DeletedCandidatesPage() {
                 restoreLoading !== null ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
-              {restoreLoading !== null ? 'Restoring...' : 'Restore'}
+              {restoreLoading !== null ? 'Đang khôi phục...' : 'Khôi phục'}
             </button>
           </div>
         </div>
@@ -436,10 +436,10 @@ function DeletedCandidatesPage() {
           <div className="space-y-6">
             {/* Personal Information */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Personal Information</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Thông tin cá nhân</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Full Name</p>
+                  <p className="text-sm font-medium text-gray-500">Họ và tên</p>
                   <p className="mt-1">{selectedCandidate.full_name}</p>
                 </div>
                 <div>
@@ -447,21 +447,21 @@ function DeletedCandidatesPage() {
                   <p className="mt-1">{selectedCandidate.personal_email}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Phone</p>
+                  <p className="text-sm font-medium text-gray-500">Số điện thoại</p>
                   <p className="mt-1">{selectedCandidate.phone_number || 'Not provided'}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Status</p>
                   <p className="mt-1">
                     <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                      Deleted
+                      Xóa
                     </span>
                   </p>
                 </div>
               </div>
               {selectedCandidate.address && (
                 <div className="mt-4">
-                  <p className="text-sm font-medium text-gray-500">Address</p>
+                  <p className="text-sm font-medium text-gray-500">Địa chỉ</p>
                   <p className="mt-1">{selectedCandidate.address}</p>
                 </div>
               )}
@@ -471,14 +471,14 @@ function DeletedCandidatesPage() {
             {selectedCandidate.Candidate_Infos && selectedCandidate.Candidate_Infos.length > 0 && (
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  Job Applications ({selectedCandidate.Candidate_Infos.length})
+                  Các đơn ứng tuyển ({selectedCandidate.Candidate_Infos.length})
                 </h3>
                 <div className="space-y-4">
                   {selectedCandidate.Candidate_Infos.map((candidateInfo, index) => (
                     <div key={candidateInfo.candidate_info_id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                       <div className="grid grid-cols-2 gap-4 mb-4">
                         <div>
-                          <p className="text-sm font-medium text-gray-500">Application Status</p>
+                          <p className="text-sm font-medium text-gray-500">Trạng thái đơn ứng tuyển</p>
                           <p className="mt-1">
                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(candidateInfo.candidate_status)}`}>
                               {candidateInfo.candidate_status.charAt(0).toUpperCase() + candidateInfo.candidate_status.slice(1)}
@@ -486,16 +486,16 @@ function DeletedCandidatesPage() {
                           </p>
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-500">Apply Date</p>
+                          <p className="text-sm font-medium text-gray-500">Ngày ứng tuyển</p>
                           <p className="mt-1">{new Date(candidateInfo.apply_date).toLocaleDateString()}</p>
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-500">Source</p>
+                          <p className="text-sm font-medium text-gray-500">Nguồn ứng tuyển</p>
                           <p className="mt-1">{candidateInfo.source || 'Not specified'}</p>
                         </div>
                         {candidateInfo.evaluation && (
                           <div>
-                            <p className="text-sm font-medium text-gray-500">Evaluation Score</p>
+                            <p className="text-sm font-medium text-gray-500">Điểm đánh giá</p>
                             <p className="mt-1">{candidateInfo.evaluation}/10</p>
                           </div>
                         )}
@@ -504,7 +504,7 @@ function DeletedCandidatesPage() {
                       {/* Applied Job */}
                       {candidateInfo.Job_Description && (
                         <div className="mb-4">
-                          <p className="text-sm font-medium text-gray-500">Applied Position</p>
+                          <p className="text-sm font-medium text-gray-500">Vị trí ứng tuyển</p>
                           <div className="mt-1 p-3 bg-white rounded-md border">
                             <p className="font-medium">{candidateInfo.Job_Description.title}</p>
                             <p className="text-sm text-gray-600">
@@ -517,7 +517,7 @@ function DeletedCandidatesPage() {
                       {/* Cover Letter */}
                       {candidateInfo.cover_letter && (
                         <div>
-                          <p className="text-sm font-medium text-gray-500">Cover Letter</p>
+                          <p className="text-sm font-medium text-gray-500">Thư xin ứng tuyển</p>
                           <div className="mt-1 p-3 bg-white rounded-md border">
                             <p className="text-sm text-gray-700 whitespace-pre-wrap">{candidateInfo.cover_letter}</p>
                           </div>

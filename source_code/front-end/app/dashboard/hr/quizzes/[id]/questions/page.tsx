@@ -170,14 +170,14 @@ function QuizQuestionsPage() {
           className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Quizzes
+          Quay lại
         </button>
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Questions for: {quiz.title}</h1>
             <p className="text-gray-600 mt-1">
-              Duration: {quiz.duration} minutes | Passing Score: {quiz.passing_score}% | 
-              Total Questions: {questions.length}
+              Thời gian: {quiz.duration} phút | Điểm qua bài: {quiz.passing_score}% | 
+              Tổng số câu hỏi: {questions.length}
             </p>
           </div>
         </div>
@@ -191,14 +191,14 @@ function QuizQuestionsPage() {
       ) : questions.length === 0 ? (
         <div className="text-center py-12">
           <div className="mx-auto h-12 w-12 text-gray-400 mb-4">❓</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No questions yet</h3>
-          <p className="text-gray-500 mb-4">This quiz doesn't have any questions yet.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có câu hỏi nào</h3>
+          <p className="text-gray-500 mb-4">Bài kiểm tra này chưa có câu hỏi nào.</p>
           <button
             onClick={handleCreateNew}
             className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Add First Question
+            Thêm Câu hỏi Đầu tiên
           </button>
         </div>
       ) : (
@@ -208,11 +208,11 @@ function QuizQuestionsPage() {
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
-                    <span className="text-sm font-medium text-gray-500">Question {index + 1}</span>
+                    <span className="text-sm font-medium text-gray-500">Câu hỏi {index + 1}</span>
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getQuestionTypeColor(question.question_type)}`}>
                       {getQuestionTypeLabel(question.question_type)}
                     </span>
-                    <span className="text-sm text-gray-500">{question.points} points</span>
+                    <span className="text-sm text-gray-500">{question.points} điểm</span>
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-3">
                     {question.question_text}
@@ -222,14 +222,14 @@ function QuizQuestionsPage() {
                   <button
                     onClick={() => handleView(question.question_id)}
                     className="text-gray-400 hover:text-gray-500 p-2 rounded-lg hover:bg-gray-50"
-                    title="View"
+                    title="Xem chi tiết"
                   >
                     <Eye className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleEdit(question.question_id)}
                     className="text-blue-400 hover:text-blue-500 p-2 rounded-lg hover:bg-blue-50"
-                    title="Edit"
+                    title="Chỉnh sửa"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
@@ -237,7 +237,7 @@ function QuizQuestionsPage() {
                     onClick={() => handleDeleteClick(question)}
                     disabled={deleteLoading === question.question_id}
                     className="text-red-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 disabled:opacity-50"
-                    title="Delete"
+                    title="Xóa"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -285,26 +285,26 @@ function QuizQuestionsPage() {
         >
           <div className="space-y-4">
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Question Text</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">Nội dung Câu hỏi</h3>
               <p className="text-gray-700">{selectedQuestion.question_text}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Type</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">Loại Câu hỏi</h3>
                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getQuestionTypeColor(selectedQuestion.question_type)}`}>
                   {getQuestionTypeLabel(selectedQuestion.question_type)}
                 </span>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Points</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">Điểm</h3>
                 <p className="text-gray-700">{selectedQuestion.points}</p>
               </div>
             </div>
 
             {selectedQuestion.options && (
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Options</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">Lựa chọn</h3>
                 <ul className="space-y-2">
                   {parseOptions(selectedQuestion.options).map((option: string, index: number) => (
                     <li key={index} className="flex items-center space-x-2">
@@ -323,7 +323,7 @@ function QuizQuestionsPage() {
             )}
 
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Correct Answer</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">Đáp án đúng</h3>
               <p className="text-green-700 font-medium">{selectedQuestion.correct_answer}</p>
             </div>
           </div>
@@ -335,14 +335,14 @@ function QuizQuestionsPage() {
         <Modal
           isOpen={showDeleteConfirm}
           onClose={() => setShowDeleteConfirm(false)}
-          title="Remove Question from Quiz"
+          title="Xóa Câu hỏi khỏi Bài kiểm tra"
         >
           <div className="space-y-4">
             <p className="text-gray-700">
-              Are you sure you want to remove this question from the quiz? The question will remain in the question bank and can be added to other quizzes.
+              Bạn có chắc chắn muốn xóa câu hỏi này khỏi bài kiểm tra? Câu hỏi sẽ vẫn còn trong ngân hàng câu hỏi và có thể được thêm vào các bài kiểm tra khác.
             </p>
             <div className="bg-gray-50 p-3 rounded-lg">
-              <p className="text-sm font-medium text-gray-900">Question:</p>
+              <p className="text-sm font-medium text-gray-900">Câu hỏi:</p>
               <p className="text-sm text-gray-700 mt-1">{questionToDelete.question_text}</p>
             </div>
             <div className="flex space-x-3 justify-end">
@@ -350,14 +350,14 @@ function QuizQuestionsPage() {
                 onClick={() => setShowDeleteConfirm(false)}
                 className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
-                Cancel
+                Hủy
               </button>
               <button
                 onClick={handleConfirmDelete}
                 disabled={deleteLoading !== null}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
               >
-                {deleteLoading !== null ? 'Removing...' : 'Remove from Quiz'}
+                {deleteLoading !== null ? 'Đang xóa...' : 'Xóa khỏi Bài kiểm tra'}
               </button>
             </div>
           </div>

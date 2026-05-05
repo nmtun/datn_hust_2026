@@ -23,7 +23,7 @@ function CreateTrainingMaterialPage() {
         throw new Error(result.message || 'Error creating training material');
       }
 
-      showToast.success('Training material created successfully');
+      showToast.success('Tài liệu đào tạo đã được tạo thành công');
       router.push('/dashboard/hr/training-material');
     } catch (error: any) {
       console.error('Error creating training material:', error);
@@ -45,7 +45,7 @@ function CreateTrainingMaterialPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Create New Training Material</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Tạo Tài Liệu Đào Tạo Mới</h1>
           </div>
         </div>
       </div>

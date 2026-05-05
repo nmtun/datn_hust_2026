@@ -94,10 +94,10 @@ const normalizeYear = (value) => {
 };
 
 const getRatingRule = (averageRating) => {
-    if (averageRating >= 4.5) return { label: 'xuat sac', percent: 15, bonusMonths: 2 };
-    if (averageRating >= 3.5) return { label: 'tot', percent: 10, bonusMonths: 1.5 };
-    if (averageRating >= 2.5) return { label: 'trung binh', percent: 5, bonusMonths: 1 };
-    return { label: 'kem', percent: 0, bonusMonths: 0 };
+    if (averageRating >= 4.5) return { label: 'xuất sắc', percent: 15, bonusMonths: 2 };
+    if (averageRating >= 3.5) return { label: 'tốt', percent: 10, bonusMonths: 1.5 };
+    if (averageRating >= 2.5) return { label: 'trung bình', percent: 5, bonusMonths: 1 };
+    return { label: 'kém', percent: 0, bonusMonths: 0 };
 };
 
 const roundMoney = (value) => {
@@ -107,15 +107,15 @@ const roundMoney = (value) => {
 
 const buildPerformanceCommentPrompt = ({ employeeName, year, averageRating, reviews }) => {
     const reviewLines = reviews.map((review, index) => {
-        const periodName = safeString(review.period?.period_name) || `Danh gia ${index + 1}`;
+        const periodName = safeString(review.period?.period_name) || `Đánh giá ${index + 1}`;
         const reviewDate = safeString(review.review_date) || "";
 
         return [
             `${periodName}${reviewDate ? ` (${reviewDate})` : ""}`,
-            `KPI: ${clipText(review.kpi_goals, 50000) || "Khong co"}`,
-            `Ket qua: ${clipText(review.achievement, 50000) || "Khong co"}`,
-            `Nhan xet: ${clipText(review.feedback, 50000) || "Khong co"}`,
-            `Diem: ${review.rating ?? "Khong co"}`
+            `KPI: ${clipText(review.kpi_goals, 50000) || "Không có"}`,
+            `Kết quả: ${clipText(review.achievement, 50000) || "Không có"}`,
+            `Nhận xét: ${clipText(review.feedback, 50000) || "Không có"}`,
+            `Điểm: ${review.rating ?? "Không có"}`
         ].join(" | ");
     });
 
@@ -139,31 +139,23 @@ const buildPerformanceCommentPrompt = ({ employeeName, year, averageRating, revi
 
 const buildFallbackComment = ({ averageRating, ratingCount }) => {
     if (!ratingCount) {
-        return "Chua co du lieu danh gia trong nam duoc chon.";
+        return "Chưa có dữ liệu đánh giá trong năm được chọn.";
     }
 
     if (averageRating >= 4.5) {
-        return "Hieu suat xuat sac, hoan thanh vuot muc muc tieu va dong gop ro net.";
+        return "Hiệu suất xuất sắc, vượt trội so với mục tiêu KPI và duy trì chất lượng công việc ở mức cao nhất.";
     }
     if (averageRating >= 3.5) {
-        return "Hieu suat tot, dap ung muc tieu KPI va duy tri chat luong cong viec.";
+        return "Hiệu suất tốt, đáp ứng và đôi khi vượt mục tiêu KPI, với kết quả công việc ổn định và đáng tin cậy.";
     }
     if (averageRating >= 2.5) {
-        return "Hieu suat trung binh, can cai thien on dinh ve KPI va ket qua.";
+        return "Hiệu suất trung bình, cần cải thiện ổn định về KPI và kết quả.";
     }
-    return "Hieu suat kem, can ke hoach cai thien ro rang va ho tro sat sao.";
+    return "Hiệu suất kém, cần kế hoạch cải thiện rõ ràng và hỗ trợ sát sao.";
 };
 
-const buildRecommendationReason = ({ year, recommendedSalary, recommendedBonus }) => {
-    const salaryValue = Number.isFinite(recommendedSalary) ? roundMoney(recommendedSalary) : null;
-    const bonusValue = Number.isFinite(recommendedBonus) ? roundMoney(recommendedBonus) : null;
-
-    const parts = [];
-    if (salaryValue != null) parts.push(`Luong de xuat: ${salaryValue}`);
-    if (bonusValue != null) parts.push(`Thuong de xuat: ${bonusValue}`);
-    parts.push(`Nam danh gia: ${year}`);
-
-    return parts.join(' | ');
+const buildRecommendationReason = ({ year }) => {
+    return `Kỳ đánh giá lương&thưởng năm ${year}`;
 };
 
 export const createCompensationService = async (data, approverId) => {
@@ -468,6 +460,8 @@ export const saveCompensationRecommendationsService = async ({ year, recommendat
 
             const bonusValue = Number(item?.recommended_bonus ?? 0);
             const aiComment = safeString(item?.ai_comment);
+            const managerComment = safeString(item?.comment);
+            const finalComment = managerComment || aiComment;
             const reason = buildRecommendationReason({
                 year: targetYear,
                 recommendedSalary: salaryValue,
@@ -481,7 +475,7 @@ export const saveCompensationRecommendationsService = async ({ year, recommendat
                     bonus: roundMoney(Number.isFinite(bonusValue) ? bonusValue : 0),
                     effective_date: effectiveDate,
                     reason,
-                    comment: aiComment || null,
+                    comment: finalComment || null,
                     evaluated_by: requestingUser?.user_id ?? null,
                     approved_by: requestingUser?.user_id,
                     approved_at: now,
@@ -497,7 +491,7 @@ export const saveCompensationRecommendationsService = async ({ year, recommendat
                         actorId: requestingUser?.user_id ?? null,
                         type: COMPENSATION_NOTIFICATION_TYPE,
                         title: COMPENSATION_NOTIFICATION_TITLE,
-                        message: `De xuat luong/thuong nam ${targetYear} da duoc cap nhat. Vui long xem chi tiet trong muc luong thuong.`,
+                        message: `Đề xuất lương/thưởng năm ${targetYear} đã được cập nhật. Vui lòng xem chi tiết trong mục lương thưởng.`,
                         entityType: 'compensation',
                         entityId: created?.comp_id ?? null,
                         metadata: {

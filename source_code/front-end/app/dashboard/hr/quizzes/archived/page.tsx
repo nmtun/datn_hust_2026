@@ -190,7 +190,7 @@ function ArchivedQuizzesPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Archived Quizzes</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Bài kiểm tra đã lưu trữ</h1>
           </div>
         </div>
       </div>
@@ -202,7 +202,7 @@ function ArchivedQuizzesPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search archived quizzes by title..."
+              placeholder="Tìm kiếm theo tiêu đề..."
               value={searchTitle}
               onChange={(e) => setSearchTitle(e.target.value)}
               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -212,7 +212,7 @@ function ArchivedQuizzesPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search archived quizzes by creator..."
+              placeholder="Tìm kiếm theo người tạo..."
               value={searchCreator}
               onChange={(e) => setSearchCreator(e.target.value)}
               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -229,8 +229,8 @@ function ArchivedQuizzesPage() {
       ) : archivedQuizzes.length === 0 ? (
         <div className="text-center py-12">
           <div className="mx-auto h-12 w-12 text-gray-400 mb-4">📁</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No archived quizzes</h3>
-          <p className="text-gray-500">There are no archived quizzes at the moment.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Không có bài kiểm tra nào đã lưu trữ</h3>
+          <p className="text-gray-500">Hiện tại không có bài kiểm tra nào đã lưu trữ.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -242,7 +242,7 @@ function ArchivedQuizzesPage() {
                     {quiz.title}
                   </h3>
                   <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
-                    archived
+                    đã lưu trữ
                   </span>
                 </div>
 
@@ -266,7 +266,7 @@ function ArchivedQuizzesPage() {
                 <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
                   <div className="flex items-center">
                     <FileQuestionMark className="w-4 h-4 mr-1" />
-                    <span>{quiz.questionAssignments?.length || 0} questions</span>
+                    <span>{quiz.questionAssignments?.length || 0} câu hỏi</span>
                   </div>
                   <span className="text-xs">
                     {new Date(quiz.creation_date).toLocaleDateString('vi-VN')}
@@ -275,7 +275,7 @@ function ArchivedQuizzesPage() {
 
                 {quiz.creator && (
                   <p className="text-xs text-gray-500 mb-4">
-                    Created by: {quiz.creator.full_name}
+                    Tạo bởi: {quiz.creator.full_name}
                   </p>
                 )}
 
@@ -285,7 +285,7 @@ function ArchivedQuizzesPage() {
                     className="flex-1 flex items-center justify-center px-3 py-2 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
                   >
                     <Eye className="w-4 h-4 mr-1" />
-                    View
+                    Xem
                   </button>
                   <button
                     onClick={() => handleRestoreClick(quiz)}
@@ -293,13 +293,13 @@ function ArchivedQuizzesPage() {
                     className="flex-1 flex items-center justify-center px-3 py-2 text-sm bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors disabled:opacity-50"
                   >
                     <Undo2 className="w-4 h-4 mr-1" />
-                    {restoreLoading === quiz.quiz_id ? 'Restoring...' : 'Restore'}
+                    {restoreLoading === quiz.quiz_id ? 'Đang khôi phục...' : 'Khôi phục'}
                   </button>
                   <button
                     onClick={() => handleDeleteClick(quiz)}
                     disabled={deleteLoading === quiz.quiz_id}
                     className="flex items-center justify-center px-3 py-2 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
-                    title="Delete permanently"
+                    title="Xóa vĩnh viễn"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -315,28 +315,28 @@ function ArchivedQuizzesPage() {
         <Modal
           isOpen={isViewModalOpen}
           onClose={() => setIsViewModalOpen(false)}
-          title="Archived Quiz Details"
+          title="Chi tiết Bài kiểm tra đã lưu trữ"
         >
           <div className="space-y-4">
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Title</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">Tiêu đề</h3>
               <p className="text-gray-700">{selectedQuiz.title}</p>
             </div>
 
             {selectedQuiz.description && (
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">Mô tả</h3>
                 <p className="text-gray-700">{selectedQuiz.description}</p>
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Duration</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">Thời lượng</h3>
                 <p className="text-gray-700">{formatDuration(selectedQuiz.duration)}</p>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Passing Score</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">Điểm qua</h3>
                 <p className="text-gray-700">{selectedQuiz.passing_score}%</p>
               </div>
             </div>
@@ -344,24 +344,24 @@ function ArchivedQuizzesPage() {
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Status</h3>
               <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
-                archived
+                đã lưu trữ
               </span>
             </div>
 
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Questions</h3>
-              <p className="text-gray-700">{selectedQuiz.questions?.length || 0} questions</p>
+              <h3 className="font-semibold text-gray-900 mb-2">Câu hỏi</h3>
+              <p className="text-gray-700">{selectedQuiz.questions?.length || 0} câu hỏi</p>
             </div>
 
             {selectedQuiz.creator && (
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Created by</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">Tạo bởi</h3>
                 <p className="text-gray-700">{selectedQuiz.creator.full_name}</p>
               </div>
             )}
 
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Created on</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">Tạo lúc</h3>
               <p className="text-gray-700">{new Date(selectedQuiz.creation_date).toLocaleDateString('vi-VN')}</p>
             </div>
           </div>
@@ -377,22 +377,22 @@ function ArchivedQuizzesPage() {
         >
           <div className="space-y-4">
             <p className="text-gray-700">
-              Are you sure you want to restore the quiz "{quizToRestore.title}"? 
-              This action will make it active again.
+              Bạn có chắc chắn muốn khôi phục bài kiểm tra "{quizToRestore.title}"? 
+              Hành động này sẽ làm cho nó hoạt động trở lại.
             </p>
             <div className="flex space-x-3 justify-end">
               <button
                 onClick={() => setShowRestoreConfirm(false)}
                 className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
-                Cancel
+                Hủy
               </button>
               <button
                 onClick={handleConfirmRestore}
                 disabled={restoreLoading !== null}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
               >
-                {restoreLoading !== null ? 'Restoring...' : 'Restore Quiz'}
+                {restoreLoading !== null ? 'Đang khôi phục...' : 'Khôi phục Bài kiểm tra'}
               </button>
             </div>
           </div>
@@ -404,14 +404,14 @@ function ArchivedQuizzesPage() {
         <Modal
           isOpen={showDeleteConfirm}
           onClose={() => setShowDeleteConfirm(false)}
-          title="Confirm Permanent Deletion"
+          title="Xác nhận Xóa Vĩnh viễn"
         >
           <div className="space-y-4">
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-800 font-semibold mb-2">Warning: This action cannot be undone!</p>
+              <p className="text-red-800 font-semibold mb-2">Cảnh báo: Hành động này không thể hoàn tác!</p>
               <p className="text-red-700 text-sm">
-                You are about to permanently delete the quiz "{quizToDelete.title}". 
-                All associated data will be lost forever.
+                Bạn đang chuẩn bị xóa vĩnh viễn bài kiểm tra "{quizToDelete.title}". 
+                Tất cả dữ liệu liên quan sẽ bị mất mãi mãi.
               </p>
             </div>
             <div className="flex space-x-3 justify-end">
@@ -419,14 +419,14 @@ function ArchivedQuizzesPage() {
                 onClick={() => setShowDeleteConfirm(false)}
                 className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
-                Cancel
+                Hủy
               </button>
               <button
                 onClick={handleConfirmDelete}
                 disabled={deleteLoading !== null}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
               >
-                {deleteLoading !== null ? 'Deleting...' : 'Delete Permanently'}
+                {deleteLoading !== null ? 'Đang xóa...' : 'Xóa Vĩnh viễn'}
               </button>
             </div>
           </div>

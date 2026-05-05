@@ -212,21 +212,21 @@ function QuestionsPage() {
     <div>
       <div>
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold text-gray-900">Question Management</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Quản lý Câu hỏi</h1>
           <div className="flex space-x-4">
             <button
               onClick={() => router.push('/dashboard/hr/quizzes')}
               className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 text-sm font-medium rounded-md hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               <BookOpen className="w-5 h-5 mr-2" />
-              Manage Quizzes
+              Quản lý Quizzes
             </button>
             <button
               onClick={handleCreateNew}
               className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               <Plus className="w-5 h-5 mr-2" />
-              Create Question
+              Tạo Câu hỏi mới
             </button>
           </div>
         </div>
@@ -237,7 +237,7 @@ function QuestionsPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search question text..."
+              placeholder="Tìm kiếm nội dung câu hỏi..."
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -249,7 +249,7 @@ function QuestionsPage() {
               onChange={(e) => setSearchType(e.target.value)}
               className="pl-4 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none"
             >
-              <option value="">All Types</option>
+              <option value="">Tất cả các loại</option>
               <option value="multiple_choice">Multiple Choice</option>
               <option value="multiple_response">Multiple Response</option>
               <option value="true_false">True/False</option>
@@ -266,8 +266,8 @@ function QuestionsPage() {
       ) : questions.length === 0 ? (
         <div className="text-center py-12">
           <BookOpen className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No questions found</h3>
-          <p className="text-gray-500">Get started by creating your first question.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy câu hỏi</h3>
+          <p className="text-gray-500">Bắt đầu bằng cách tạo câu hỏi đầu tiên của bạn.</p>
         </div>
       ) : (
         <div className="bg-white shadow rounded-lg overflow-hidden">
@@ -275,7 +275,7 @@ function QuestionsPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Question
+                    Câu hỏi
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Quiz
@@ -284,13 +284,13 @@ function QuestionsPage() {
                     Tags
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
+                    Loại
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Points
+                    Điểm
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    Hành động
                   </th>
                 </tr>
               </thead>
@@ -306,7 +306,7 @@ function QuestionsPage() {
                       <div className="text-sm text-gray-900">
                         {question.quizAssignments && question.quizAssignments.length > 0 
                           ? `${question.quizAssignments.length} quiz(s)` 
-                          : 'Question Bank'}
+                          : 'Ngân hàng câu hỏi'}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -321,7 +321,7 @@ function QuestionsPage() {
                             </span>
                           ))
                         ) : (
-                          <span className="text-xs text-gray-400 italic">No tags</span>
+                          <span className="text-xs text-gray-400 italic">Không có tags</span>
                         )}
                       </div>
                     </td>
@@ -338,14 +338,14 @@ function QuestionsPage() {
                         <button
                           onClick={() => handleView(question.question_id)}
                           className="text-gray-400 hover:text-gray-500 p-1"
-                          title="View"
+                          title="Xem chi tiết"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleEdit(question.question_id)}
                           className="text-blue-400 hover:text-blue-500 p-1"
-                          title="Edit"
+                          title="Chỉnh sửa"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
@@ -353,7 +353,7 @@ function QuestionsPage() {
                           onClick={() => handleDeleteClick(question)}
                           disabled={deleteLoading === question.question_id}
                           className="text-red-400 hover:text-red-500 p-1 disabled:opacity-50"
-                          title="Delete"
+                          title="Xóa"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -375,12 +375,12 @@ function QuestionsPage() {
         >
           <div className="space-y-4">
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Question Text</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">Nội dung Câu hỏi</h3>
               <p className="text-gray-700">{selectedQuestion.question_text}</p>
             </div>
 
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Used in Quizzes</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">Được sử dụng trong các Bài kiểm tra</h3>
               {selectedQuestion.quizAssignments && selectedQuestion.quizAssignments.length > 0 ? (
                 <div className="space-y-1">
                   {selectedQuestion.quizAssignments.map((assignment) => (
@@ -391,7 +391,7 @@ function QuestionsPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500">Available in question bank</p>
+                <p className="text-gray-500">Câu hỏi có sẵn</p>
               )}
             </div>
 
@@ -408,27 +408,27 @@ function QuestionsPage() {
                     </span>
                   ))
                 ) : (
-                  <span className="text-sm text-gray-500 italic">No tags assigned</span>
+                  <span className="text-sm text-gray-500 italic">Không có tags được gán</span>
                 )}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Type</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">Loại</h3>
                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getQuestionTypeColor(selectedQuestion.question_type)}`}>
                   {getQuestionTypeLabel(selectedQuestion.question_type)}
                 </span>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Points</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">Điểm</h3>
                 <p className="text-gray-700">{selectedQuestion.points}</p>
               </div>
             </div>
 
             {selectedQuestion.options && (
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Options</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">Lựa chọn</h3>
                 <ul className="space-y-2">
                   {parseOptions(selectedQuestion.options).map((option: string, index: number) => (
                     <li key={index} className="flex items-center space-x-2">
@@ -447,7 +447,7 @@ function QuestionsPage() {
             )}
 
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Correct Answer</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">Đáp án đúng</h3>
               <p className="text-green-700 font-medium">{selectedQuestion.correct_answer}</p>
             </div>
           </div>
@@ -459,14 +459,14 @@ function QuestionsPage() {
         <Modal
           isOpen={showDeleteConfirm}
           onClose={() => setShowDeleteConfirm(false)}
-          title="Confirm Delete"
+          title="Xác nhận Xóa"
         >
           <div className="space-y-4">
             <p className="text-gray-700">
-              Are you sure you want to delete this question? This action cannot be undone.
+              Bạn có chắc chắn muốn xóa câu hỏi này? Hành động này không thể hoàn tác.
             </p>
             <div className="bg-gray-50 p-3 rounded-lg">
-              <p className="text-sm font-medium text-gray-900">Question:</p>
+              <p className="text-sm font-medium text-gray-900">Câu hỏi:</p>
               <p className="text-sm text-gray-700 mt-1">{questionToDelete.question_text}</p>
             </div>
             <div className="flex space-x-3 justify-end">
@@ -474,14 +474,14 @@ function QuestionsPage() {
                 onClick={() => setShowDeleteConfirm(false)}
                 className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
-                Cancel
+                Hủy
               </button>
               <button
                 onClick={handleConfirmDelete}
                 disabled={deleteLoading !== null}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
               >
-                {deleteLoading !== null ? 'Deleting...' : 'Delete Question'}
+                {deleteLoading !== null ? 'Đang xóa...' : 'Xóa Câu hỏi'}
               </button>
             </div>
           </div>

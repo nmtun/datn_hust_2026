@@ -152,12 +152,12 @@ function EditQuizPage() {
     return (
       <div className="p-6">
         <div className="text-center py-12">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Quiz not found</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Quiz không tồn tại</h3>
           <button
             onClick={() => router.push('/dashboard/hr/quizzes')}
             className="text-blue-600 hover:text-blue-700"
           >
-            Back to Quizzes
+            Quay lại
           </button>
         </div>
       </div>
@@ -176,7 +176,7 @@ function EditQuizPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Edit Quiz</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Chỉnh sửa Quiz</h1>
           </div>
         </div>
       </div>
@@ -187,7 +187,7 @@ function EditQuizPage() {
           <div className="space-y-6">
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                Quiz Title *
+                Tiêu đề Quiz *
               </label>
               <input
                 type="text"
@@ -203,7 +203,7 @@ function EditQuizPage() {
 
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                Description
+                Mô tả
               </label>
               <textarea
                 id="description"
@@ -219,7 +219,7 @@ function EditQuizPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-2">
-                  Duration (minutes) *
+                  Thời lượng (phút) *
                 </label>
                 <input
                   type="number"
@@ -236,7 +236,7 @@ function EditQuizPage() {
 
               <div>
                 <label htmlFor="passing_score" className="block text-sm font-medium text-gray-700 mb-2">
-                  Passing Score (%) *
+                  Điểm qua bài (%) *
                 </label>
                 <input
                   type="number"
@@ -259,7 +259,7 @@ function EditQuizPage() {
               </label>
               <div className="border border-gray-300 rounded-lg p-4 max-h-40 overflow-y-auto">
                 {tags.length === 0 ? (
-                  <p className="text-gray-500 text-sm">No tags available</p>
+                  <p className="text-gray-500 text-sm">Không có tags nào khả dụng</p>
                 ) : (
                   <div className="space-y-2">
                     {tags.map((tag) => (
@@ -281,7 +281,7 @@ function EditQuizPage() {
               </div>
               {selectedTags.length > 0 && (
                 <div className="mt-2">
-                  <p className="text-xs text-gray-500 mb-2">Selected tags:</p>
+                  <p className="text-xs text-gray-500 mb-2">Tags đã chọn:</p>
                   <div className="flex flex-wrap gap-2">
                     {selectedTags.map(tagId => {
                       const tag = tags.find(t => t.tag_id === tagId);
@@ -330,7 +330,7 @@ function EditQuizPage() {
               onClick={() => router.push('/dashboard/hr/quizzes')}
               className="px-6 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-colors"
             >
-              Cancel
+              Hủy
             </button>
             <button
               type="submit"
@@ -338,7 +338,7 @@ function EditQuizPage() {
               className="flex items-center px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors"
             >
               <Save className="w-4 h-4 mr-2" />
-              {loading ? 'Updating...' : 'Update Quiz'}
+              {loading ? 'Đang cập nhật...' : 'Cập nhật Quiz'}
             </button>
           </div>
         </form>

@@ -210,21 +210,21 @@ function JobDescriptionPage() {
     <div>
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Job Descriptions Management</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Quản lý Mô tả Công việc</h1>
         <div className="flex space-x-4">
           <button
             onClick={() => router.push("/dashboard/hr/job-description/deleted")}
             className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
           >
             <Trash2 className="w-5 h-5 mr-2" />
-            Deleted JDs
+           JDs Đã Xóa
           </button>
           <button
             onClick={handleCreateNew}
             className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             <Plus className="w-5 h-5 mr-2" />
-            Create New JD
+            Tạo Mới
           </button>
         </div>
       </div>
@@ -236,7 +236,7 @@ function JobDescriptionPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search by title..."
+              placeholder="Tìm theo tiêu đề..."
               value={searchTitle}
               onChange={(e) => setSearchTitle(e.target.value)}
               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -246,7 +246,7 @@ function JobDescriptionPage() {
             <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search by location..."
+              placeholder="Tìm theo vị trí..."
               value={searchLocation}
               onChange={(e) => setSearchLocation(e.target.value)}
               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -256,7 +256,7 @@ function JobDescriptionPage() {
             <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search by level..."
+              placeholder="Tìm theo cấp bậc..."
               value={searchLevel}
               onChange={(e) => setSearchLevel(e.target.value)}
               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -276,22 +276,22 @@ function JobDescriptionPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Title
+                  Tiêu đề
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Level
+                  Cấp bậc
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Location
+                  Vị trí
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  Trạng thái
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created At
+                  Tạo lúc
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  Hành động
                 </th>
               </tr>
             </thead>
@@ -323,13 +323,13 @@ function JobDescriptionPage() {
                     <button 
                       onClick={() => handleView(jd.job_id)}
                       className="text-gray-400 hover:text-gray-500"
-                      title="View details">
+                      title="Xem chi tiết">
                       <Eye className="w-5 h-5" />
                     </button>
                     <button 
                       onClick={() => handleEdit(jd.job_id)}
                       className="text-blue-400 hover:text-blue-500"
-                      title="Edit job description">
+                      title="Chỉnh sửa mô tả công việc">
                       <Edit2 className="w-5 h-5" />
                     </button>
                     <button 
@@ -338,7 +338,7 @@ function JobDescriptionPage() {
                         deleteLoading === jd.job_id ? 'opacity-50 cursor-not-allowed' : ''
                       }`}
                       disabled={deleteLoading === jd.job_id}
-                      title="Delete job description">
+                      title="Xóa mô tả công việc">
                       {deleteLoading === jd.job_id ? (
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-400" />
                       ) : (
@@ -361,7 +361,7 @@ function JobDescriptionPage() {
           setShowDeleteConfirm(false);
           setJobToDelete(null);
         }}
-        title="Confirm Delete"
+        title="Xác nhận Xóa"
       >
         <div className="p-6">
           <p className="mb-4">Bạn có chắc chắn muốn xóa mô tả công việc này?</p>
@@ -374,7 +374,7 @@ function JobDescriptionPage() {
               }}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
             >
-              Cancel
+              Hủy
             </button>
             <button
               onClick={handleConfirmDelete}
@@ -404,26 +404,26 @@ function JobDescriptionPage() {
           <div className="space-y-6">
             {/* Basic Information */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Thông tin cơ bản</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Employment Type</p>
+                  <p className="text-sm font-medium text-gray-500">Loại hình làm việc</p>
                   <p className="mt-1">{selectedJob.employment_type}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Work Type</p>
+                  <p className="text-sm font-medium text-gray-500">Loại công việc</p>
                   <p className="mt-1">{selectedJob.type_of_work}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Location</p>
+                  <p className="text-sm font-medium text-gray-500">Vị trí</p>
                   <p className="mt-1">{selectedJob.location}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Experience Level</p>
+                  <p className="text-sm font-medium text-gray-500">Cấp bậc</p>
                   <p className="mt-1">{selectedJob.experience_level}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Positions Available</p>
+                  <p className="text-sm font-medium text-gray-500">Số lượng vị trí</p>
                   <p className="mt-1">{selectedJob.positions_count}</p>
                 </div>
                 <div>
@@ -439,31 +439,31 @@ function JobDescriptionPage() {
 
             {/* Description */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Description</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Mô tả công việc</h3>
               <p className="text-gray-600 whitespace-pre-wrap">{selectedJob.description}</p>
             </div>
 
             {/* Requirements */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Requirements</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Yêu cầu</h3>
               <p className="text-gray-600 whitespace-pre-wrap">{selectedJob.requirements}</p>
             </div>
 
             {/* Responsibilities */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Responsibilities</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Trách nhiệm</h3>
               <p className="text-gray-600 whitespace-pre-wrap">{selectedJob.responsibilities}</p>
             </div>
 
             {/* Qualifications */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Qualifications</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Bằng cấp</h3>
               <p className="text-gray-600 whitespace-pre-wrap">{selectedJob.qualifications}</p>
             </div>
 
             {/* Salary Range */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Salary Range</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Khoảng lương</h3>
               <p className="text-gray-600">
                 {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' })
                   .format(selectedJob.salary_range_min)} - {' '}
@@ -477,11 +477,11 @@ function JobDescriptionPage() {
               <h3 className="text-lg font-medium text-gray-900 mb-2">Timeline</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Posting Date</p>
+                  <p className="text-sm font-medium text-gray-500">Ngày đăng tuyển</p>
                   <p className="mt-1">{selectedJob.posting_date}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Closing Date</p>
+                  <p className="text-sm font-medium text-gray-500">Ngày đóng tuyển</p>
                   <p className="mt-1">{selectedJob.closing_date || 'Not specified'}</p>
                 </div>
               </div>

@@ -212,7 +212,7 @@ function DeletedJobDescriptionsPage() {
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Deleted Job Descriptions</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Mô Tả Công Việc Đã Xóa</h1>
         </div>
       </div>
 
@@ -263,19 +263,19 @@ function DeletedJobDescriptionsPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Title
+                  Tiêu đề
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Level
+                  Trình độ
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Location
+                  Vị trí
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Deleted At
+                  Đã xóa vào
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  Hành động
                 </th>
               </tr>
             </thead>
@@ -327,8 +327,8 @@ function DeletedJobDescriptionsPage() {
         {!loading && jobDescriptions.length === 0 && (
           <div className="text-center py-8">
             <FileText className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No deleted job descriptions found</h3>
-            <p className="mt-1 text-sm text-gray-500">All job descriptions are currently active.</p>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">Không tìm thấy mô tả công việc nào đã xóa</h3>
+            <p className="mt-1 text-sm text-gray-500">Tất cả mô tả công việc đều đang hoạt động.</p>
           </div>  
         )}
       </div>
@@ -340,10 +340,10 @@ function DeletedJobDescriptionsPage() {
           setShowRestoreConfirm(false);
           setJobToRestore(null);
         }}
-        title="Confirm Restore"
+        title="Xác nhận Khôi phục"
       >
         <div className="p-6">
-          <p className="mb-4">Are you sure you want to restore this job description?</p>
+          <p className="mb-4">Bạn có chắc chắn muốn khôi phục mô tả công việc này không?</p>
           <p className="mb-6 font-medium text-gray-700">{jobToRestore?.title}</p>
           <div className="flex justify-end space-x-4">
             <button
@@ -378,26 +378,26 @@ function DeletedJobDescriptionsPage() {
           <div className="space-y-6">
             {/* Basic Information */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Thông tin cơ bản</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Employment Type</p>
+                  <p className="text-sm font-medium text-gray-500">Loại hình làm việc</p>
                   <p className="mt-1">{selectedJob.employment_type}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Work Type</p>
+                  <p className="text-sm font-medium text-gray-500">Loại công việc</p>
                   <p className="mt-1">{selectedJob.type_of_work}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Location</p>
+                  <p className="text-sm font-medium text-gray-500">Vị trí</p>
                   <p className="mt-1">{selectedJob.location}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Experience Level</p>
+                  <p className="text-sm font-medium text-gray-500">Trình độ</p>
                   <p className="mt-1">{selectedJob.experience_level}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Positions Available</p>
+                  <p className="text-sm font-medium text-gray-500">Vị trí có sẵn</p>
                   <p className="mt-1">{selectedJob.positions_count}</p>
                 </div>
                 <div>
@@ -413,31 +413,31 @@ function DeletedJobDescriptionsPage() {
 
             {/* Description */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Description</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Mô tả</h3>
               <p className="text-gray-600 whitespace-pre-wrap">{selectedJob.description}</p>
             </div>
 
             {/* Requirements */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Requirements</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Yêu cầu</h3>
               <p className="text-gray-600 whitespace-pre-wrap">{selectedJob.requirements}</p>
             </div>
 
             {/* Responsibilities */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Responsibilities</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Trách nhiệm</h3>
               <p className="text-gray-600 whitespace-pre-wrap">{selectedJob.responsibilities}</p>
             </div>
 
             {/* Qualifications */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Qualifications</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Bằng cấp</h3>
               <p className="text-gray-600 whitespace-pre-wrap">{selectedJob.qualifications}</p>
             </div>
 
             {/* Salary Range */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Salary Range</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Khoảng lương</h3>
               <p className="text-gray-600">
                 {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' })
                   .format(selectedJob.salary_range_min)} - {' '}
@@ -451,11 +451,11 @@ function DeletedJobDescriptionsPage() {
               <h3 className="text-lg font-medium text-gray-900 mb-2">Timeline</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Posting Date</p>
+                  <p className="text-sm font-medium text-gray-500">Ngày đăng</p>
                   <p className="mt-1">{selectedJob.posting_date}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Closing Date</p>
+                  <p className="text-sm font-medium text-gray-500">Ngày đóng</p>
                   <p className="mt-1">{selectedJob.closing_date || 'Not specified'}</p>
                 </div>
               </div>

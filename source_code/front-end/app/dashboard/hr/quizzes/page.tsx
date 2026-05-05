@@ -194,28 +194,28 @@ function QuizPage() {
     <div>
       <div>
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold text-gray-900">Quiz Management</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Quản lý Quiz</h1>
           <div className="flex space-x-4">
             <button
               onClick={() => router.push('/dashboard/hr/quizzes/archived')}
               className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
             >
               <Archive className="w-5 h-5 mr-2" />
-              View Archived
+                Xem Quiz đã lưu trữ
             </button>
             <button
               onClick={() => router.push('/dashboard/hr/questions')}
               className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 text-sm font-medium rounded-md hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               <BookOpen className="w-5 h-5 mr-2" />
-              Manage Questions
+              Quản lý Câu hỏi
             </button>
             <button
               onClick={handleCreateNew}
               className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               <Plus className="w-5 h-5 mr-2" />
-              Create Quiz
+              Tạo Quiz
             </button>
           </div>
         </div>
@@ -226,7 +226,7 @@ function QuizPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search quiz by title or description..."
+              placeholder="Tìm kiếm quiz theo tiêu đề hoặc mô tả..."
               value={searchTitle}
               onChange={(e) => setSearchTitle(e.target.value)}
               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -254,8 +254,8 @@ function QuizPage() {
       ) : quizzes.length === 0 ? (
         <div className="text-center py-12">
           <BookOpen className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No quizzes found</h3>
-          <p className="text-gray-500">Get started by creating your first quiz.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy quiz nào</h3>
+          <p className="text-gray-500">Bắt đầu bằng cách tạo quiz đầu tiên của bạn.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -291,7 +291,7 @@ function QuizPage() {
                 <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
                   <div className="flex items-center">
                     <FileQuestionMark className="w-4 h-4 mr-1" />
-                    <span>{quiz.questionAssignments?.length || quiz.questions?.length || 0} questions</span>
+                    <span>{quiz.questionAssignments?.length || quiz.questions?.length || 0} câu hỏi</span>
                   </div>
                   <span className="text-xs">
                     {new Date(quiz.creation_date).toLocaleDateString('vi-VN')}
@@ -325,21 +325,21 @@ function QuizPage() {
                     className="flex-1 flex items-center justify-center px-3 py-2 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
                   >
                     <Eye className="w-4 h-4 mr-1" />
-                    View
+                    Xem
                   </button>
                   <button
                     onClick={() => handleManageQuestions(quiz.quiz_id)}
                     className="flex-1 flex items-center justify-center px-3 py-2 text-sm bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"
                   >
                     <Play className="w-4 h-4 mr-1" />
-                    Questions
+                    Câu hỏi
                   </button>
                   <button
                     onClick={() => handleEdit(quiz.quiz_id)}
                     className="flex-1 flex items-center justify-center px-3 py-2 text-sm bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition-colors"
                   >
                     <Edit2 className="w-4 h-4 mr-1" />
-                    Edit
+                    Chỉnh sửa
                   </button>
                   <button
                     onClick={() => handleDeleteClick(quiz)}
@@ -347,7 +347,7 @@ function QuizPage() {
                     className="flex-1 flex items-center justify-center px-3 py-2 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
                   >
                     <Trash2 className="w-4 h-4 mr-1" />
-                    {deleteLoading === quiz.quiz_id ? 'Deleting...' : 'Delete'}
+                    {deleteLoading === quiz.quiz_id ? 'Đang xóa...' : 'Xóa'}
                   </button>
                 </div>
               </div>
@@ -365,24 +365,24 @@ function QuizPage() {
         >
           <div className="space-y-4">
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Title</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">Tiêu đề</h3>
               <p className="text-gray-700">{selectedQuiz.title}</p>
             </div>
 
             {selectedQuiz.description && (
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">Mô tả</h3>
                 <p className="text-gray-700">{selectedQuiz.description}</p>
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Duration</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">Thời lượng</h3>
                 <p className="text-gray-700">{formatDuration(selectedQuiz.duration)}</p>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Passing Score</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">Điểm vượt qua</h3>
                 <p className="text-gray-700">{selectedQuiz.passing_score}%</p>
               </div>
             </div>
@@ -395,8 +395,8 @@ function QuizPage() {
             </div>
 
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Questions</h3>
-              <p className="text-gray-700">{selectedQuiz.questionAssignments?.length || selectedQuiz.questions?.length || 0} questions</p>
+              <h3 className="font-semibold text-gray-900 mb-2">Câu hỏi</h3>
+              <p className="text-gray-700">{selectedQuiz.questionAssignments?.length || selectedQuiz.questions?.length || 0} câu hỏi</p>
             </div>
 
             {selectedQuiz.tags && selectedQuiz.tags.length > 0 && (
@@ -417,13 +417,13 @@ function QuizPage() {
 
             {selectedQuiz.creator && (
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Created by</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">Tạo bởi</h3>
                 <p className="text-gray-700">{selectedQuiz.creator.full_name}</p>
               </div>
             )}
 
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Created on</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">Ngày tạo</h3>
               <p className="text-gray-700">{new Date(selectedQuiz.creation_date).toLocaleDateString('vi-VN')}</p>
             </div>
           </div>
@@ -435,26 +435,26 @@ function QuizPage() {
         <Modal
           isOpen={showDeleteConfirm}
           onClose={() => setShowDeleteConfirm(false)}
-          title="Confirm Delete"
+          title="Xác nhận xóa"
         >
           <div className="space-y-4">
             <p className="text-gray-700">
-              Are you sure you want to archive the quiz &ldquo;{quizToDelete.title}&rdquo;? 
-              This action will move it to the archived section.
+              Bạn có chắc chắn muốn lưu trữ quiz &ldquo;{quizToDelete.title}&rdquo;? 
+              Hành động này sẽ di chuyển nó đến phần đã lưu trữ.
             </p>
             <div className="flex space-x-3 justify-end">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
-                Cancel
+                Hủy
               </button>
               <button
                 onClick={handleConfirmDelete}
                 disabled={deleteLoading !== null}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
               >
-                {deleteLoading !== null ? 'Archiving...' : 'Archive Quiz'}
+                {deleteLoading !== null ? 'Đang lưu trữ...' : 'Lưu trữ Quiz'}
               </button>
             </div>
           </div>

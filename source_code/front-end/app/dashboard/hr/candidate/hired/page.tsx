@@ -287,7 +287,7 @@ function HiredCandidatesPage() {
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Hired Candidates</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Ứng viên đã tuyển</h1>
         </div>
       </div>
 
@@ -328,19 +328,19 @@ function HiredCandidatesPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Candidate
+                  Ứng viên
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Contact Info
+                  Thông tin liên hệ
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Hired Position
+                  Vị trí đã tuyển
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Company Email
+                  Email Công Ty
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  Hành Động
                 </th>
               </tr>
             </thead>
@@ -383,7 +383,7 @@ function HiredCandidatesPage() {
                                 {hiredJob.Job_Description.experience_level} · {hiredJob.Job_Description.employment_type}
                               </div>
                               <span className={`mt-1 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(hiredJob.candidate_status)}`}>
-                                Hired
+                                Đã tuyển
                               </span>
                             </div>
                             {hiredJob.cv_file_path && (
@@ -397,7 +397,7 @@ function HiredCandidatesPage() {
                           </div>
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-400">No job information</span>
+                        <span className="text-sm text-gray-400">Không có thông tin công việc</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -407,7 +407,7 @@ function HiredCandidatesPage() {
                           <span className="text-sm text-gray-900">{candidate.company_email}</span>
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-400 italic">Not created</span>
+                        <span className="text-sm text-gray-400 italic">Chưa tạo</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -438,8 +438,8 @@ function HiredCandidatesPage() {
         {!loading && hiredCandidates.length === 0 && (
           <div className="text-center py-8">
             <Building2 className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No hired candidates found</h3>
-            <p className="mt-1 text-sm text-gray-500">There are currently no candidates with hired status.</p>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">Không tìm thấy ứng viên nào đã tuyển</h3>
+            <p className="mt-1 text-sm text-gray-500">Hiện tại không có ứng viên nào có trạng thái đã tuyển.</p>
           </div>
         )}
       </div>
@@ -454,36 +454,36 @@ function HiredCandidatesPage() {
           <div className="space-y-6">
             {/* Personal Information */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Personal Information</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Thông Tin Cá Nhân</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Full Name</p>
+                  <p className="text-sm font-medium text-gray-500">Họ và tên</p>
                   <p className="mt-1">{selectedCandidate.full_name}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Personal Email</p>
+                  <p className="text-sm font-medium text-gray-500">Email Cá Nhân</p>
                   <p className="mt-1">{selectedCandidate.personal_email}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Company Email</p>
-                  <p className="mt-1">{selectedCandidate.company_email || 'Not created'}</p>
+                  <p className="text-sm font-medium text-gray-500">Email Công Ty</p>
+                  <p className="mt-1">{selectedCandidate.company_email || 'Chưa tạo'}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Phone</p>
-                  <p className="mt-1">{selectedCandidate.phone_number || 'Not provided'}</p>
+                  <p className="text-sm font-medium text-gray-500">Số điện thoại</p>
+                  <p className="mt-1">{selectedCandidate.phone_number || 'Chưa cung cấp'}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Employee Position</p>
-                  <p className="mt-1">{selectedCandidate.Employee_Info?.position || 'Not assigned yet'}</p>
+                  <p className="text-sm font-medium text-gray-500">Vị trí công việc</p>
+                  <p className="mt-1">{selectedCandidate.Employee_Info?.position || 'Chưa được phân công'}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Department ID</p>
-                  <p className="mt-1">{selectedCandidate.Employee_Info?.department_id || 'Not assigned yet'}</p>
+                  <p className="text-sm font-medium text-gray-500">Phòng ban</p>
+                  <p className="mt-1">{selectedCandidate.Employee_Info?.department_id || 'Chưa được phân công'}</p>
                 </div>
               </div>
               {selectedCandidate.address && (
                 <div className="mt-4">
-                  <p className="text-sm font-medium text-gray-500">Address</p>
+                  <p className="text-sm font-medium text-gray-500">Địa chỉ</p>
                   <p className="mt-1">{selectedCandidate.address}</p>
                 </div>
               )}
@@ -493,7 +493,7 @@ function HiredCandidatesPage() {
             {selectedCandidate.Candidate_Infos && selectedCandidate.Candidate_Infos.length > 0 && (
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  Hired Positions
+                  Vị trí đã tuyển
                 </h3>
                 <div className="space-y-4">
                   {selectedCandidate.Candidate_Infos
@@ -505,12 +505,12 @@ function HiredCandidatesPage() {
                           <p className="text-sm font-medium text-gray-500">Status</p>
                           <p className="mt-1">
                             <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800">
-                              Hired
+                              Đã tuyển
                             </span>
                           </p>
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-500">Apply Date</p>
+                          <p className="text-sm font-medium text-gray-500">Ngày ứng tuyển</p>
                           <p className="mt-1">{new Date(candidateInfo.apply_date).toLocaleDateString()}</p>
                         </div>
                       </div>
@@ -518,7 +518,7 @@ function HiredCandidatesPage() {
                       {/* Job Information */}
                       {candidateInfo.Job_Description && (
                         <div className="mb-4">
-                          <p className="text-sm font-medium text-gray-500">Position</p>
+                          <p className="text-sm font-medium text-gray-500">Vị trí</p>
                           <div className="mt-1 p-3 bg-white rounded-md border">
                             <p className="font-medium">{candidateInfo.Job_Description.title}</p>
                             <p className="text-sm text-gray-600">
@@ -538,7 +538,7 @@ function HiredCandidatesPage() {
                               className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                             >
                               <Eye className="w-4 h-4 mr-2" />
-                              View CV
+                              Xem CV
                             </button>
                           </div>
                         </div>
@@ -556,7 +556,7 @@ function HiredCandidatesPage() {
       <Modal
         isOpen={isCreateEmailModalOpen}
         onClose={() => setIsCreateEmailModalOpen(false)}
-        title={`Create Company Email - ${selectedCandidate?.full_name}`}
+        title={`Tạo Email Công Ty - ${selectedCandidate?.full_name}`}
       >
         <div className="space-y-4">
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -570,7 +570,7 @@ function HiredCandidatesPage() {
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Company Email *
+              Email công ty *
             </label>
             <input
               type="email"
@@ -585,7 +585,7 @@ function HiredCandidatesPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Password *
+              Mật khẩu *
             </label>
             <div className="relative">
               <input
@@ -618,7 +618,7 @@ function HiredCandidatesPage() {
                   }}
                   className="text-sm text-indigo-600 hover:text-indigo-500"
                 >
-                  Generate
+                  Tạo
                 </button>
               </div>
             </div>
@@ -626,7 +626,7 @@ function HiredCandidatesPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Confirm Password *
+              Xác nhận Mật khẩu *
             </label>
             <input
               type="text"
@@ -634,7 +634,7 @@ function HiredCandidatesPage() {
               value={emailFormData.confirmPassword}
               onChange={handleEmailFormChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder="Confirm password"
+              placeholder="Xác nhận mật khẩu"
               required
             />
           </div>
@@ -644,7 +644,7 @@ function HiredCandidatesPage() {
               onClick={() => setIsCreateEmailModalOpen(false)}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
             >
-              Cancel
+              Hủy
             </button>
             <button
               onClick={handleSubmitCompanyEmail}
@@ -656,12 +656,12 @@ function HiredCandidatesPage() {
               {createEmailLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block" />
-                  Creating & Sending...
+                  Đang tạo & Gửi...
                 </>
               ) : (
                 <>
                   <Send className="w-4 h-4 mr-2 inline-block" />
-                  Create & Send Email
+                  Tạo & Gửi Email
                 </>
               )}
             </button>

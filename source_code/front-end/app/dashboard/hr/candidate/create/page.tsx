@@ -176,7 +176,7 @@ function CreateCandidatePage() {
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Create New Candidate</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Tạo Ứng Viên Mới</h1>
         </div>
       </div>
 
@@ -185,7 +185,7 @@ function CreateCandidatePage() {
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
             <User className="w-5 h-5 mr-2" />
-            Personal Information
+            Thông tin cá nhân
           </h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -218,7 +218,7 @@ function CreateCandidatePage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phone Number
+                Số điện thoại
               </label>
               <input
                 type="tel"
@@ -231,7 +231,7 @@ function CreateCandidatePage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Source
+                Nguồn ứng tuyển
               </label>
               <select
                 name="source"
@@ -249,7 +249,7 @@ function CreateCandidatePage() {
           </div>
           <div className="mt-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Address
+              Địa chỉ
             </label>
             <textarea
               name="address"
@@ -266,17 +266,17 @@ function CreateCandidatePage() {
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
             <Building2 className="w-5 h-5 mr-2" />
-            Job Application Information
+            Thông tin đơn ứng tuyển
           </h2>
           {jobDescriptions.length === 0 && !loadingJobs && (
             <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              No active job descriptions found. Please create and activate a JD before creating candidate.
+              Không tìm thấy mô tả công việc nào. Vui lòng tạo và kích hoạt một JD trước khi tạo ứng viên.
             </div>
           )}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Applied Position *
+                Vị trí ứng tuyển *
               </label>
               <select
                 name="job_id"
@@ -295,7 +295,7 @@ function CreateCandidatePage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Application Status
+                Trạng thái đơn ứng tuyển
               </label>
               <select
                 name="candidate_status"
@@ -314,7 +314,7 @@ function CreateCandidatePage() {
 
           {selectedJob && (
             <div className="mt-4 rounded-md border border-indigo-100 bg-indigo-50 p-4">
-              <h3 className="text-sm font-semibold text-indigo-900 mb-2">Selected Job Summary</h3>
+              <h3 className="text-sm font-semibold text-indigo-900 mb-2">Chọn vị trí ứng tuyển</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-indigo-900">
                 <p><span className="font-medium">Position:</span> {selectedJob.title}</p>
                 <p><span className="font-medium">Department:</span> {selectedJob.department?.name || 'No department'}</p>
@@ -343,16 +343,16 @@ function CreateCandidatePage() {
                   htmlFor="cv-upload"
                   className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
-                  Choose File
+                  Chọn file CV
                 </label>
                 {cvFile && (
                   <p className="mt-2 text-sm text-gray-600">
-                    Selected: {cvFile.name}
+                    Đã chọn: {cvFile.name}
                   </p>
                 )}
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                Supported formats: PDF, DOC, DOCX (Max 10MB)
+                Định dạng được hỗ trợ: PDF (Tối đa 10MB)
               </p>
             </div>
           </div>
@@ -360,7 +360,7 @@ function CreateCandidatePage() {
           {/* Cover Letter */}
           <div className="mt-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Cover Letter
+              Thư xin ứng tuyển / Ghi chú thêm
             </label>
             <textarea
               name="cover_letter"
@@ -379,7 +379,7 @@ function CreateCandidatePage() {
             onClick={handleBack}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
           >
-            Cancel
+            Hủy
           </button>
           <button
             onClick={handleSave}
@@ -391,10 +391,10 @@ function CreateCandidatePage() {
             {saving ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block" />
-                Creating...
+                Đang tạo...
               </>
             ) : (
-              'Create Candidate'
+              'Tạo Ứng viên'
             )}
           </button>
         </div>

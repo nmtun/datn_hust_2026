@@ -82,7 +82,7 @@ function CreateJobDescriptionPage() {
   };
 
   return (
-    <div className="min-h-screen p-4 bg-gray-50">
+    <div className="min-h-screen p-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
@@ -91,9 +91,9 @@ function CreateJobDescriptionPage() {
             className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Back to Job Descriptions
+            Quay lại
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Create New Job Description</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Tạo Mới Mô Tả Công Việc</h1>
         </div>
 
         {/* Error Message */}
@@ -107,7 +107,7 @@ function CreateJobDescriptionPage() {
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">Error</h3>
+                  <h3 className="text-sm font-medium text-red-800">Lỗi</h3>
                   <p className="text-sm text-red-700 mt-1">{error}</p>
                 </div>
               </div>

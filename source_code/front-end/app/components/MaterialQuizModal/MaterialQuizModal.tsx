@@ -154,7 +154,7 @@ export default function MaterialQuizModal({
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
-              Manage Quizzes for: {materialTitle}
+              Quản lý quizzes cho: {materialTitle}
             </h2>
             <p className="text-sm text-gray-500 mt-1">
               {materialTags.length > 0
@@ -174,7 +174,7 @@ export default function MaterialQuizModal({
         <div className="p-6">
           {/* Material Tags Display */}
           <div className="mb-6">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">Material Tags:</h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Thẻ tài liệu:</h3>
             {materialTags.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {materialTags.map(tag => (
@@ -189,7 +189,7 @@ export default function MaterialQuizModal({
             ) : (
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                 <p className="text-sm text-yellow-800">
-                  ⚠️ This material has no tags assigned. All quizzes can be attached, but it is recommended to add tags for better organization.
+                  Tài liệu này không có thẻ nào. Tạo thẻ cho tài liệu sẽ giúp bạn dễ dàng tìm thấy các quiz liên quan để đính kèm hơn.
                 </p>
               </div>
             )}
@@ -212,7 +212,7 @@ export default function MaterialQuizModal({
           {/* Currently Attached Quizzes */}
           {attachedQuizzes.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Currently Attached Quizzes</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Các Quiz đã đính kèm</h3>
               <div className="space-y-3">
                 {attachedQuizzes.map((quiz) => (
                   <div key={quiz.quiz_id} className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
@@ -234,7 +234,7 @@ export default function MaterialQuizModal({
                       ) : (
                         <Trash2 className="w-4 h-4 mr-2" />
                       )}
-                      Detach
+                      Hủy đính kèm
                     </button>
                   </div>
                 ))}
@@ -244,7 +244,7 @@ export default function MaterialQuizModal({
 
           {/* Available Quizzes */}
           <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Available Quizzes</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Các Quiz có sẵn</h3>
             {loading ? (
               <div className="flex justify-center items-center p-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
@@ -255,13 +255,13 @@ export default function MaterialQuizModal({
                   <div className="text-center py-8">
                     {materialTags.length > 0 ? (
                       <div>
-                        <p className="text-gray-500 mb-2">No quizzes found with matching tags</p>
+                        <p className="text-gray-500 mb-2">Không tìm thấy quiz nào phù hợp với các thẻ</p>
                         <p className="text-sm text-gray-400">
-                          Create quizzes with tags: {materialTags.map(tag => tag.name).join(', ')}
+                          Tạo quiz với các thẻ: {materialTags.map(tag => tag.name).join(', ')}
                         </p>
                       </div>
                     ) : (
-                      <p className="text-gray-500">No quizzes found</p>
+                      <p className="text-gray-500">Không tìm thấy quiz nào</p>
                     )}
                   </div>
                 ) : (
@@ -296,7 +296,7 @@ export default function MaterialQuizModal({
                             </h4>
                             <p className="text-sm text-gray-500">{quiz.description}</p>
                             <p className="text-xs text-gray-400">
-                              Duration: {quiz.duration} mins • Passing Score: {quiz.passing_score}%
+                              Thời lượng: {quiz.duration} phút • Điểm qua bài: {quiz.passing_score}%
                             </p>
                           </div>
                         </div>
@@ -313,13 +313,13 @@ export default function MaterialQuizModal({
                             ) : (
                               <Plus className="w-4 h-4 mr-2" />
                             )}
-                            Attach
+                            Đính kèm
                           </button>
                         )}
 
                         {isAttached && (
                           <span className="px-4 py-2 text-sm font-medium text-green-600 bg-green-100 rounded-md">
-                            Already Attached
+                            Đã đính kèm
                           </span>
                         )}
                       </div>
@@ -336,7 +336,7 @@ export default function MaterialQuizModal({
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
           >
-            Close
+            Đóng
           </button>
         </div>
       </div>

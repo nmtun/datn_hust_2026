@@ -177,7 +177,7 @@ function ArchivedTrainingMaterialsPage() {
           </button>
           <div className="flex items-center">
             <Archive className="w-6 h-6 mr-2 text-gray-600" />
-            <h1 className="text-2xl font-bold text-gray-900">Archived Training Materials</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Tài liệu đào tạo đã lưu trữ</h1>
           </div>
         </div>
       </div>
@@ -189,7 +189,7 @@ function ArchivedTrainingMaterialsPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search archived materials by title..."
+              placeholder="Tìm kiếm tài theo tiêu đề..."
               value={searchTitle}
               onChange={(e) => setSearchTitle(e.target.value)}
               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -199,7 +199,7 @@ function ArchivedTrainingMaterialsPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search archived materials by creator..."
+              placeholder="Tìm kiếm theo người tạo..."
               value={searchCreator}
               onChange={(e) => setSearchCreator(e.target.value)}
               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -219,19 +219,19 @@ function ArchivedTrainingMaterialsPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Material
+                  Tài liệu đào tạo
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Type
+                  Loại
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created By
+                  Tạo bởi
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Archived At
+                  Ngày lưu trữ
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  Hành động
                 </th>
               </tr>
             </thead>
@@ -241,8 +241,8 @@ function ArchivedTrainingMaterialsPage() {
                   <td colSpan={5} className="px-6 py-4">
                     <div className="text-center py-8">
                       <Archive className="mx-auto h-12 w-12 text-gray-400" />
-                      <h3 className="mt-2 text-sm font-medium text-gray-900">No archived training materials found</h3>
-                      <p className="mt-1 text-sm text-gray-500">All training materials are currently active.</p>
+                      <h3 className="mt-2 text-sm font-medium text-gray-900">Không tìm thấy tài liệu đào tạo nào đã lưu trữ</h3>
+                      <p className="mt-1 text-sm text-gray-500">Tất cả tài liệu đào tạo đều đang hoạt động.</p>
                     </div>
                   </td>
                 </tr>
@@ -273,7 +273,7 @@ function ArchivedTrainingMaterialsPage() {
                         <button
                           onClick={() => handleView(material.material_id)}
                           className="text-gray-400 hover:text-gray-500"
-                          title="View details">
+                          title="Xem chi tiết">
                           <Eye className="w-5 h-5" />
                         </button>
                         <button
@@ -281,7 +281,7 @@ function ArchivedTrainingMaterialsPage() {
                           className={`text-green-400 hover:text-green-500 ${restoreLoading === material.material_id ? 'opacity-50 cursor-not-allowed' : ''
                             }`}
                           disabled={restoreLoading === material.material_id}
-                          title="Restore material">
+                          title="Khôi phục tài liệu">
                           {restoreLoading === material.material_id ? (
                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-400" />
                           ) : (
@@ -305,10 +305,10 @@ function ArchivedTrainingMaterialsPage() {
           setShowRestoreConfirm(false);
           setMaterialToRestore(null);
         }}
-        title="Confirm Restore"
+        title="Xác nhận khôi phục"
       >
         <div className="p-6">
-          <p className="mb-4">Are you sure you want to restore this training material?</p>
+          <p className="mb-4">Bạn có chắc chắn muốn khôi phục tài liệu đào tạo này không?</p>
           <p className="mb-6 font-medium text-gray-700">{materialToRestore?.title}</p>
           <div className="flex justify-end space-x-4">
             <button
@@ -318,7 +318,7 @@ function ArchivedTrainingMaterialsPage() {
               }}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
             >
-              Cancel
+              Hủy
             </button>
             <button
               onClick={handleConfirmRestore}
@@ -326,7 +326,7 @@ function ArchivedTrainingMaterialsPage() {
               className={`px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${restoreLoading !== null ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
             >
-              {restoreLoading !== null ? 'Restoring...' : 'Restore'}
+              {restoreLoading !== null ? 'Đang khôi phục...' : 'Khôi phục'}
             </button>
           </div>
         </div>
@@ -341,10 +341,10 @@ function ArchivedTrainingMaterialsPage() {
           <div className="space-y-6">
             {/* Basic Information */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Thông tin cơ bản</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Type</p>
+                  <p className="text-sm font-medium text-gray-500">Loại</p>
                   <p className="mt-1">
                     {getTypeDisplayName(selectedMaterial.type)}
                   </p>
@@ -353,12 +353,12 @@ function ArchivedTrainingMaterialsPage() {
                   <p className="text-sm font-medium text-gray-500">Status</p>
                   <p className="mt-1">
                     <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                      Archived
+                      Đã lưu trữ
                     </span>
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Created By</p>
+                  <p className="text-sm font-medium text-gray-500">Tạo bởi</p>
                   <p className="mt-1">
                     {selectedMaterial.creator ? (
                       <span className="text-gray-900 font-medium">{selectedMaterial.creator.full_name}</span>
@@ -368,11 +368,11 @@ function ArchivedTrainingMaterialsPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Created At</p>
+                  <p className="text-sm font-medium text-gray-500">Ngày tạo</p>
                   <p className="mt-1">{new Date(selectedMaterial.created_at).toLocaleString()}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Archived At</p>
+                  <p className="text-sm font-medium text-gray-500">Ngày lưu trữ</p>
                   <p className="mt-1">
                     {selectedMaterial.updated_at
                       ? new Date(selectedMaterial.updated_at).toLocaleString()
@@ -385,7 +385,7 @@ function ArchivedTrainingMaterialsPage() {
 
             {/* Description */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Description</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Mô tả</h3>
               <p className="text-gray-600 whitespace-pre-wrap">
                 {selectedMaterial.description || 'No description provided.'}
               </p>
@@ -393,7 +393,7 @@ function ArchivedTrainingMaterialsPage() {
 
             {/* Content Path */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Content File</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Tệp nội dung</h3>
               <div className="flex items-center space-x-4">
                 <div className="flex-1">
                   <p className="text-sm text-gray-600">

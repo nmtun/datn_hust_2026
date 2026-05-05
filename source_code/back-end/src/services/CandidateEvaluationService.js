@@ -251,17 +251,17 @@ const buildExperienceLevelNote = (experienceYears, level) => {
 
     if (level === "intern") {
         if (experienceYears > 0) {
-            return `Kinh nghiem ${experienceYears} nam chua tuong ung level intern (yeu cau 0 nam).`;
+            return `Kinh nghiệm ${experienceYears} năm chưa tương ứng level intern.`;
         }
         return "";
     }
 
     if (experienceYears < rule.min) {
-        return `Kinh nghiem ${experienceYears} nam thap hon yeu cau ${rule.min}-${rule.max ?? "+"} nam cho level ${level}.`;
+        return `Kinh nghiệm ${experienceYears} năm thấp hơn yêu cầu ${rule.min}-${rule.max ?? "+"} năm cho level ${level}.`;
     }
 
     if (rule.max != null && experienceYears > rule.max) {
-        return `Kinh nghiem ${experienceYears} nam cao hon yeu cau ${rule.min}-${rule.max} nam cho level ${level}.`;
+        return `Kinh nghiệm ${experienceYears} năm cao hơn yêu cầu ${rule.min}-${rule.max} năm cho level ${level}.`;
     }
 
     return "";
@@ -319,17 +319,17 @@ export const evaluateCandidatePdf = async ({ cvBuffer, jobInfo }) => {
 
     // const scoreSummary = `Diem ky nang ${scores.skills}/100, kinh nghiem ${experienceScore}/100, hoc van ${scores.education}/100, chung chi ${scores.certifications}/100. Diem tong ${totalScore}/100.`;
 
-    const strengthsText = strengths.length > 0 ? `Diem manh: ${strengths.join('; ')}.` : "";
-    // const gapsText = gaps.length > 0 ? `Diem yeu: ${gaps.join('; ')}.` : "";
+    const strengthsText = strengths.length > 0 ? `Điểm mạnh: ${strengths.join('; ')}.` : "";
+    // const gapsText = gaps.length > 0 ? `Điểm yếu: ${gaps.join('; ')}.` : "";
 
     const analysisText = analysis.length > 0
-        ? `Phan tich yeu cau: ${analysis.map((item, index) => {
+        ? `Phân tích yêu cầu: ${analysis.map((item, index) => {
             const parts = [
-                `(${index + 1}) ${item.requirement || 'Yeu cau khong ro'}`,
-                // item.match_score ? `Diem ${item.match_score}/100` : "",
+                `(${index + 1}) ${item.requirement || 'Yêu cầu không rõ'}`,
+                // item.match_score ? `Điểm ${item.match_score}/100` : "",
                 item.evidence_from_cv ? `Thông tin từ cv: ${item.evidence_from_cv}` : "",
                 item.reasoning ? `Kết luận: ${item.reasoning}` : "",
-                // item.gap ? `Thieu: ${item.gap}` : ""
+                // item.gap ? `Thiếu: ${item.gap}` : ""
             ].filter(Boolean);
             return parts.join(' - ');
         }).join(' | ')}`

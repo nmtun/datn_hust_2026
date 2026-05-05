@@ -28,6 +28,7 @@ export interface CompensationRecommendation {
   recommended_salary?: number | null;
   recommended_bonus?: number | null;
   ai_comment?: string;
+  comment?: string;
 }
 
 export interface SaveRecommendationPayload {

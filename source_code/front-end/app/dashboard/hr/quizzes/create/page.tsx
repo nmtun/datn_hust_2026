@@ -261,7 +261,7 @@ function CreateQuizPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Create New Quiz</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Tạo bài kiểm tra</h1>
           </div>
         </div>
       </div>
@@ -278,8 +278,8 @@ function CreateQuizPage() {
           </div>
         </div>
         <div className="flex justify-between mt-2">
-          <span className="text-sm font-medium text-gray-900">Quiz Information</span>
-          <span className="text-sm font-medium text-gray-900">Select Questions</span>
+          <span className="text-sm font-medium text-gray-900">Thông tin Bài kiểm tra</span>
+          <span className="text-sm font-medium text-gray-900">Chọn Câu hỏi</span>
         </div>
       </div>
 
@@ -289,7 +289,7 @@ function CreateQuizPage() {
           <div className="space-y-6">
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                Quiz Title *
+                Tiêu đề Bài kiểm tra *
               </label>
               <input
                 type="text"
@@ -305,7 +305,7 @@ function CreateQuizPage() {
 
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                Description
+                Mô tả
               </label>
               <textarea
                 id="description"
@@ -321,7 +321,7 @@ function CreateQuizPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-2">
-                  Duration (minutes) *
+                  Thời gian (phút) *
                 </label>
                 <input
                   type="number"
@@ -338,7 +338,7 @@ function CreateQuizPage() {
 
               <div>
                 <label htmlFor="passing_score" className="block text-sm font-medium text-gray-700 mb-2">
-                  Passing Score (%) *
+                  Điểm qua bài (%)
                 </label>
                 <input
                   type="number"
@@ -376,32 +376,32 @@ function CreateQuizPage() {
                 onClick={() => router.push('/dashboard/hr/quizzes')}
                 className="px-6 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-colors"
               >
-                Cancel
+                Hủy
               </button>
               <button
                 type="button"
                 onClick={handleNextStep}
                 className="flex items-center px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
               >
-                Next: Select Questions
+                Tiếp theo: Chọn Câu hỏi
               </button>
             </div>
           </div>
         ) : (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-medium text-gray-900">Configure Quiz Questions</h3>
+              <h3 className="text-lg font-medium text-gray-900">Cấu hình Câu hỏi Bài kiểm tra</h3>
             </div>
 
             {/* Tag Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Tags & Configure Questions *
+                Chọn Tags & Cấu hình Câu hỏi *
               </label>
               <div className="border border-gray-200 rounded-lg p-4">
                 {tags.length === 0 ? (
                   <div className="text-center py-4">
-                    <p className="text-gray-500">No tags available.</p>
+                    <p className="text-gray-500">Không có tags có sẵn.</p>
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2">
@@ -425,7 +425,7 @@ function CreateQuizPage() {
                 )}
               </div>
               <p className="text-sm text-gray-500 mt-2">
-                Selected {tagConfigs.length} tag{tagConfigs.length !== 1 ? 's' : ''}
+                Chọn {tagConfigs.length} tag{tagConfigs.length !== 1 ? 's' : ''}
               </p>
             </div>
 
@@ -433,7 +433,7 @@ function CreateQuizPage() {
             {tagConfigs.length > 0 && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Number of Questions per Tag *
+                  Số lượng Câu hỏi của Tag *
                 </label>
                 <div className="space-y-3">
                   {tagConfigs.map(config => {
@@ -461,7 +461,7 @@ function CreateQuizPage() {
                           </div>
                           <div className="flex items-center space-x-2">
                             <label htmlFor={`count-${config.tagId}`} className="text-sm text-gray-600">
-                              Questions:
+                              Câu hỏi:
                             </label>
                             <input
                               type="number"
@@ -487,7 +487,7 @@ function CreateQuizPage() {
                 </div>
                 <div className="mt-3 p-3 bg-blue-50 rounded-lg">
                   <p className="text-sm text-blue-800">
-                    <span className="font-semibold">Total questions:</span> {tagConfigs.reduce((sum, config) => sum + config.questionCount, 0)}
+                    <span className="font-semibold">Tổng số câu hỏi:</span> {tagConfigs.reduce((sum, config) => sum + config.questionCount, 0)}
                   </p>
                   {/* Cảnh báo nếu tổng số câu hỏi muốn chọn > availableQuestions.length */}
                   {tagConfigs.reduce((sum, config) => sum + config.questionCount, 0) > availableQuestions.length && (
@@ -522,7 +522,7 @@ function CreateQuizPage() {
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex justify-between items-center mb-3">
                   <h4 className="text-md font-medium text-gray-900 flex items-center">
-                    Available Questions ({availableQuestions.length})
+                    Câu hỏi Khả dụng ({availableQuestions.length})
                     {tagConfigs.length > 0 && (() => {
                       // Đếm số câu hỏi trùng tag
                       const questionTagCount: Record<number, number> = {};
@@ -552,7 +552,7 @@ function CreateQuizPage() {
                       className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
                     >
                       <Eye className="w-4 h-4 mr-1" />
-                      Preview Random Selection
+                      Xem Trước Lựa chọn Ngẫu nhiên
                     </button>
                   </div>
                 </div>
@@ -567,7 +567,7 @@ function CreateQuizPage() {
                   ))}
                   {availableQuestions.length > 6 && (
                     <div className="bg-white p-3 rounded border flex items-center justify-center">
-                      <p className="text-sm text-gray-500">+{availableQuestions.length - 6} more...</p>
+                      <p className="text-sm text-gray-500">+{availableQuestions.length - 6} xem thêm...</p>
                     </div>
                   )}
                 </div>
@@ -580,7 +580,7 @@ function CreateQuizPage() {
                 onClick={handlePrevStep}
                 className="px-6 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-colors"
               >
-                Previous
+                Trước đó
               </button>
               <div className="flex space-x-3">
                 <button
@@ -588,7 +588,7 @@ function CreateQuizPage() {
                   onClick={() => router.push('/dashboard/hr/quizzes')}
                   className="px-6 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-colors"
                 >
-                  Cancel
+                  Hủy
                 </button>
                 <button
                   type="button"
@@ -597,7 +597,7 @@ function CreateQuizPage() {
                   className="flex items-center px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors"
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  {loading ? 'Creating...' : 'Create Quiz'}
+                  {loading ? 'Đang tạo...' : 'Tạo Bài kiểm tra'}
                 </button>
               </div>
             </div>
@@ -610,11 +610,11 @@ function CreateQuizPage() {
         <Modal
           isOpen={isPreviewModalOpen}
           onClose={() => setIsPreviewModalOpen(false)}
-          title={`Preview: ${tagConfigs.reduce((sum, config) => sum + config.questionCount, 0)} Random Questions`}
+          title={`Xem Trước: ${tagConfigs.reduce((sum, config) => sum + config.questionCount, 0)} Câu hỏi Ngẫu nhiên`}
         >
           <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
             <p className="text-sm text-gray-600">
-              Showing {previewQuestions.length} randomly selected questions
+              Đang hiển thị {previewQuestions.length} câu hỏi được chọn ngẫu nhiên
             </p>
             {/* <button
               onClick={handleShufflePreview}
@@ -628,12 +628,12 @@ function CreateQuizPage() {
             {previewQuestions.map((question, index) => (
               <div key={question.question_id} className="border border-gray-200 rounded-lg p-4">
                 <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-medium text-gray-900">Question {index + 1}</h4>
+                  <h4 className="font-medium text-gray-900">Câu hỏi {index + 1}</h4>
                   <div className="flex items-center space-x-2">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getQuestionTypeColor(question.question_type)}`}>
                       {getQuestionTypeLabel(question.question_type)}
                     </span>
-                    <span className="text-xs text-gray-500">{question.points} pts</span>
+                    <span className="text-xs text-gray-500">{question.points} điểm</span>
                   </div>
                 </div>
                 <p className="text-gray-700 mb-3">{question.question_text}</p>

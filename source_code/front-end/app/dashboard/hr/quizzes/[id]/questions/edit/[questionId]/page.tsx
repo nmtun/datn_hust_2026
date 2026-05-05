@@ -217,12 +217,12 @@ function EditQuestionPage() {
     return (
       <div className="max-w-4xl mx-auto">
         <div className="text-center py-12">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Question not found</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Câu hỏi không tồn tại</h3>
           <button
             onClick={() => router.push(`/dashboard/hr/quizzes/${quizId}/questions`)}
             className="text-blue-600 hover:text-blue-700"
           >
-            Back to Questions
+            Quay lại
           </button>
         </div>
       </div>
@@ -241,8 +241,8 @@ function EditQuestionPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Edit Question</h1>
-            <span className="ml-3 text-sm text-gray-600">for "{quiz.title}"</span>
+            <h1 className="text-2xl font-bold text-gray-900">Chỉnh sửa Câu hỏi</h1>
+            <span className="ml-3 text-sm text-gray-600">dành cho "{quiz.title}"</span>
           </div>
         </div>
       </div>
@@ -252,7 +252,7 @@ function EditQuestionPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label htmlFor="question_text" className="block text-sm font-medium text-gray-700 mb-2">
-              Question Text *
+              Nội dung câu hỏi *
             </label>
             <textarea
               id="question_text"
@@ -268,7 +268,7 @@ function EditQuestionPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Question Type *
+              Loại Câu hỏi *
             </label>
             <div className="flex space-x-4">
               <label className="flex items-center">
@@ -280,7 +280,7 @@ function EditQuestionPage() {
                   onChange={() => handleQuestionTypeChange('multiple_choice')}
                   className="mr-2"
                 />
-                Multiple Choice (Single Answer)
+                Multiple Choice (1 đáp án)
               </label>
               <label className="flex items-center">
                 <input
@@ -291,7 +291,7 @@ function EditQuestionPage() {
                   onChange={() => handleQuestionTypeChange('multiple_response')}
                   className="mr-2"
                 />
-                Multiple Response (Multiple Answers)
+                Multiple Response (Nhiều đáp án)
               </label>
               <label className="flex items-center">
                 <input
@@ -302,7 +302,7 @@ function EditQuestionPage() {
                   onChange={() => handleQuestionTypeChange('true_false')}
                   className="mr-2"
                 />
-                True/False
+                Đúng/Sai
               </label>
             </div>
           </div>
@@ -311,7 +311,7 @@ function EditQuestionPage() {
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="text-sm font-medium text-gray-700">
-                  Options *
+                  Lựa chọn *
                 </label>
                 {formData.options.length < 6 && (
                   <button
@@ -320,7 +320,7 @@ function EditQuestionPage() {
                     className="flex items-center px-3 py-1 text-sm bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200"
                   >
                     <Plus className="w-4 h-4 mr-1" />
-                    Add Option
+                    Thêm lựa chọn
                   </button>
                 )}
               </div>
@@ -375,7 +375,7 @@ function EditQuestionPage() {
                         }}
                         className="mr-2"
                       />
-                      <span className="text-sm text-gray-600">Correct</span>
+                      <span className="text-sm text-gray-600">Đúng</span>
                     </label>
                     {formData.options.length > 2 && (
                       <button
@@ -395,7 +395,7 @@ function EditQuestionPage() {
           {formData.question_type === 'true_false' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Correct Answer *
+                Đáp án đúng *
               </label>
               <div className="flex space-x-4">
                 <label className="flex items-center">
@@ -407,7 +407,7 @@ function EditQuestionPage() {
                     onChange={handleInputChange}
                     className="mr-2"
                   />
-                  True
+                  Đúng
                 </label>
                 <label className="flex items-center">
                   <input
@@ -418,7 +418,7 @@ function EditQuestionPage() {
                     onChange={handleInputChange}
                     className="mr-2"
                   />
-                  False
+                  Sai
                 </label>
               </div>
             </div>
@@ -426,7 +426,7 @@ function EditQuestionPage() {
 
           <div>
             <label htmlFor="points" className="block text-sm font-medium text-gray-700 mb-2">
-              Points *
+              Điểm *
             </label>
             <input
               type="number"
@@ -448,7 +448,7 @@ function EditQuestionPage() {
               onClick={() => router.push(`/dashboard/hr/quizzes/${quizId}/questions`)}
               className="px-6 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-colors"
             >
-              Cancel
+              Hủy
             </button>
             <button
               type="submit"
@@ -456,7 +456,7 @@ function EditQuestionPage() {
               className="flex items-center px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors"
             >
               <Save className="w-4 h-4 mr-2" />
-              {loading ? 'Updating...' : 'Update Question'}
+              {loading ? 'Đang cập nhật...' : 'Cập nhật Câu hỏi'}
             </button>
           </div>
         </form>

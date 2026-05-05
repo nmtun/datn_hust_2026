@@ -190,7 +190,7 @@ function CandidatePage() {
   const formatEvaluationComment = (value?: string) => {
     if (!value) return '';
     const normalized = value.replace(/\r\n/g, '\n').trim();
-    const parts = normalized.split(/(Diem manh:|Diem yeu:|Phan tich yeu cau:|Kinh nghiem)/g);
+    const parts = normalized.split(/(Điểm mạnh:|Điểm yếu:|Phân tích yêu cầu:|Kinh nghiệm)/g);
     const output: string[] = [];
 
     if (parts[0]?.trim()) {
@@ -203,7 +203,7 @@ function CandidatePage() {
 
       if (!marker) continue;
 
-      if (marker === 'Diem manh:' || marker === 'Diem yeu:') {
+      if (marker === 'Điểm mạnh:' || marker === 'Điểm yếu:') {
         const items = content
           .split(';')
           .map((item) => item.replace(/^[-•\s]+/, '').replace(/[.\s]+$/g, '').trim())
@@ -217,7 +217,7 @@ function CandidatePage() {
         continue;
       }
 
-      if (marker === 'Phan tich yeu cau:') {
+      if (marker === 'Phân tích yêu cầu:') {
         const items = content
           .split(' | ')
           .map((item) => item.trim())
@@ -295,28 +295,28 @@ function CandidatePage() {
     <div>
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Candidates Management</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Quản lý Ứng viên</h1>
         <div className="flex space-x-4">
           <button
             onClick={() => router.push("/dashboard/hr/candidate/deleted")}
             className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
           >
             <Trash2 className="w-5 h-5 mr-2" />
-            Deleted Candidates
+            Ứng viên đã xóa
           </button>
           <button
             onClick={() => router.push("/dashboard/hr/candidate/hired")}
             className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
           >
             <Building2 className="w-5 h-5 mr-2" />
-            Hired Candidates
+            Ứng viên đã tuyển
           </button>
           <button
             onClick={handleCreateNew}
             className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             <Plus className="w-5 h-5 mr-2" />
-            Add New Candidate
+            Thêm ứng viên
           </button>
         </div>
       </div>
@@ -375,22 +375,22 @@ function CandidatePage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Candidate
+                  Ưng viên
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Contact
+                  Liên hệ
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Applied Job
+                  Công việc đã ứng tuyển
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Apply Date
+                  Ngày ứng tuyển
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  Hành động
                 </th>
               </tr>
             </thead>
@@ -446,14 +446,14 @@ function CandidatePage() {
                                   )}
                                 </div>
                               ) : (
-                                <span className="text-sm text-gray-400">No job title</span>
+                                <span className="text-sm text-gray-400">Không có tiêu đề công việc</span>
                               )}
                             </div>
                           );
                         })}
                       </div>
                     ) : (
-                      <span className="text-sm text-gray-400">No job applications</span>
+                      <span className="text-sm text-gray-400">Không có đơn ứng tuyển</span>
                     )}
                   </td>
                   <td className="px-6 py-4">
@@ -492,13 +492,13 @@ function CandidatePage() {
                       <button
                         onClick={() => handleView(candidate.user_id, candidate.candidateInfos[0])}
                         className="text-gray-400 hover:text-gray-500"
-                        title="View details">
+                        title="Xem chi tiết">
                         <Eye className="w-5 h-5" />
                       </button>
                       <button
                         onClick={() => handleEdit(candidate.user_id)}
                         className="text-blue-400 hover:text-blue-500"
-                        title="Edit candidate">
+                        title="Chỉnh sửa ứng viên">
                         <Edit2 className="w-5 h-5" />
                       </button>
                       <button
@@ -506,7 +506,7 @@ function CandidatePage() {
                         className={`text-red-400 hover:text-red-500 ${deleteLoading === candidate.user_id ? 'opacity-50 cursor-not-allowed' : ''
                           }`}
                         disabled={deleteLoading === candidate.user_id}
-                        title="Delete candidate">
+                        title="Xóa ứng viên">
                         {deleteLoading === candidate.user_id ? (
                           <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-400" />
                         ) : (
@@ -524,15 +524,15 @@ function CandidatePage() {
         {!loading && groupedCandidates.length === 0 && (
           <div className="text-center py-8">
             <User className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No candidates found</h3>
-            <p className="mt-1 text-sm text-gray-500">Get started by adding a new candidate.</p>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">Không tìm thấy ứng viên nào</h3>
+            <p className="mt-1 text-sm text-gray-500">Bắt đầu bằng cách thêm một ứng viên mới.</p>
             <div className="mt-6">
               <button
                 onClick={handleCreateNew}
                 className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 <Plus className="w-5 h-5 mr-2" />
-                Add New Candidate
+                Thêm Ứng viên Mới
               </button>
             </div>
           </div>
@@ -546,10 +546,10 @@ function CandidatePage() {
           setShowDeleteConfirm(false);
           setCandidateToDelete(null);
         }}
-        title="Confirm Delete"
+        title="Xác nhận Xóa"
       >
         <div className="p-6">
-          <p className="mb-4">Are you sure you want to delete this candidate?</p>
+          <p className="mb-4">Bạn có chắc chắn muốn xóa ứng viên này không?</p>
           <p className="mb-6 font-medium text-gray-700">{candidateToDelete?.full_name}</p>
           <div className="flex justify-end space-x-4">
             <button
@@ -559,7 +559,7 @@ function CandidatePage() {
               }}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
             >
-              Cancel
+              Hủy
             </button>
             <button
               onClick={handleConfirmDelete}
@@ -567,7 +567,7 @@ function CandidatePage() {
               className={`px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 ${deleteLoading !== null ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
             >
-              {deleteLoading !== null ? 'Deleting...' : 'Delete'}
+              {deleteLoading !== null ? 'Đang xóa...' : 'Xóa'}
             </button>
           </div>
         </div>
@@ -588,10 +588,10 @@ function CandidatePage() {
           <div className="space-y-6">
             {/* Personal Information */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Personal Information</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Thông tin cá nhân</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Full Name</p>
+                  <p className="text-sm font-medium text-gray-500">Họ và tên</p>
                   <p className="mt-1">{selectedCandidate.full_name}</p>
                 </div>
                 <div>
@@ -599,7 +599,7 @@ function CandidatePage() {
                   <p className="mt-1">{selectedCandidate.personal_email}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Phone</p>
+                  <p className="text-sm font-medium text-gray-500">Số điện thoại</p>
                   <p className="mt-1">{selectedCandidate.phone_number || 'Not provided'}</p>
                 </div>
                 <div>
@@ -614,7 +614,7 @@ function CandidatePage() {
               </div>
               {selectedCandidate.address && (
                 <div className="mt-4">
-                  <p className="text-sm font-medium text-gray-500">Address</p>
+                  <p className="text-sm font-medium text-gray-500">Địa chỉ</p>
                   <p className="mt-1">{selectedCandidate.address}</p>
                 </div>
               )}
@@ -624,7 +624,7 @@ function CandidatePage() {
             {selectedCandidate.Candidate_Infos && selectedCandidate.Candidate_Infos.length > 0 && (
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  Job Applications ({selectedCandidate.Candidate_Infos.length})
+                  Các đơn ứng tuyển ({selectedCandidate.Candidate_Infos.length})
                 </h3>
                 <div className="space-y-4">
                   {selectedCandidate.Candidate_Infos.map((candidateInfo, index) => {
@@ -634,7 +634,7 @@ function CandidatePage() {
                       <div key={candidateInfo.candidate_info_id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                         <div className="grid grid-cols-2 gap-4 mb-4">
                           <div>
-                            <p className="text-sm font-medium text-gray-500">Application Status</p>
+                            <p className="text-sm font-medium text-gray-500">Trạng thái đơn ứng tuyển</p>
                             <p className="mt-1">
                               <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(candidateInfo.candidate_status)}`}>
                                 {candidateInfo.candidate_status.charAt(0).toUpperCase() + candidateInfo.candidate_status.slice(1)}
@@ -642,16 +642,16 @@ function CandidatePage() {
                             </p>
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-500">Apply Date</p>
+                            <p className="text-sm font-medium text-gray-500">Ngày ứng tuyển</p>
                             <p className="mt-1">{new Date(candidateInfo.apply_date).toLocaleDateString()}</p>
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-500">Source</p>
+                            <p className="text-sm font-medium text-gray-500">Nguồn ứng tuyển</p>
                             <p className="mt-1">{candidateInfo.source || 'Not specified'}</p>
                           </div>
                           {candidateInfo.evaluation != null && (
                             <div>
-                              <p className="text-sm font-medium text-gray-500">Evaluation Score</p>
+                              <p className="text-sm font-medium text-gray-500">Điểm đánh giá</p>
                               <p className="mt-1 flex flex-wrap items-center gap-2">
                                 <span>{candidateInfo.evaluation}/100</span>
                                 {evaluationTag && (
@@ -663,14 +663,14 @@ function CandidatePage() {
                             </div>
                           )}
                           <div>
-                            <p className="text-sm font-medium text-gray-500">Evaluation Comment</p>
+                            <p className="text-sm font-medium text-gray-500">Bình luận đánh giá</p>
                             <button
                               type="button"
                               onClick={() => handleOpenEvaluationComment(candidateInfo)}
                               className="mt-1 inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                             >
                               <Eye className="w-4 h-4 mr-2" />
-                              View Comment
+                              Xem bình luận
                             </button>
                           </div>
                         </div>
@@ -678,7 +678,7 @@ function CandidatePage() {
                       {/* Applied Job */}
                       {candidateInfo.Job_Description && (
                         <div className="mb-4">
-                          <p className="text-sm font-medium text-gray-500">Applied Position</p>
+                          <p className="text-sm font-medium text-gray-500">Vị trí ứng tuyển</p>
                           <div className="mt-1 p-3 bg-white rounded-md border">
                             <p className="font-medium">{candidateInfo.Job_Description.title}</p>
                             <p className="text-sm text-gray-600">
@@ -698,7 +698,7 @@ function CandidatePage() {
                               className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                             >
                               <Eye className="w-4 h-4 mr-2" />
-                              View CV
+                              Xem CV
                             </button>
                           </div>
                         </div>
@@ -707,7 +707,7 @@ function CandidatePage() {
                         {/* Cover Letter */}
                         {candidateInfo.cover_letter && (
                           <div>
-                            <p className="text-sm font-medium text-gray-500">Cover Letter</p>
+                            <p className="text-sm font-medium text-gray-500">Thư động lực</p>
                             <div className="mt-1 p-3 bg-white rounded-md border">
                               <p className="text-sm text-gray-700 whitespace-pre-wrap">{candidateInfo.cover_letter}</p>
                             </div>
@@ -737,20 +737,20 @@ function CandidatePage() {
             <div className="grid grid-cols-2 gap-4">
               {getEvaluationCommentName(evaluationCandidateInfo) && (
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Candidate</p>
+                  <p className="text-sm font-medium text-gray-500">Ưng viên</p>
                   <p className="mt-1">{getEvaluationCommentName(evaluationCandidateInfo)}</p>
                 </div>
               )}
               {evaluationCandidateInfo?.evaluation != null && (
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Evaluation Score</p>
+                  <p className="text-sm font-medium text-gray-500">Điểm đánh giá</p>
                   <p className="mt-1">{evaluationCandidateInfo.evaluation}/100</p>
                 </div>
               )}
             </div>
           )}
           <div>
-            <p className="text-sm font-medium text-gray-500">Comment</p>
+            <p className="text-sm font-medium text-gray-500">Bình luận đánh giá</p>
             <div className="mt-2 p-4 bg-gray-50 rounded-md border border-gray-200">
               <p className="text-sm text-gray-700 whitespace-pre-wrap leading-6">
                 {formatEvaluationComment(getEvaluationCommentText(evaluationCandidateInfo)) || 'No evaluation comment yet'}

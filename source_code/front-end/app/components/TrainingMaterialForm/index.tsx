@@ -219,7 +219,7 @@ const TrainingMaterialForm: React.FC<TrainingMaterialFormProps> = ({
       {/* Title */}
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-          Title *
+          Tiêu đề *
         </label>
         <input
           type="text"
@@ -236,7 +236,7 @@ const TrainingMaterialForm: React.FC<TrainingMaterialFormProps> = ({
       {/* Type */}
       <div>
         <label htmlFor="type" className="block text-sm font-medium text-gray-700">
-          Type *
+          Loại *
         </label>
         <select
           id="type"
@@ -274,7 +274,7 @@ const TrainingMaterialForm: React.FC<TrainingMaterialFormProps> = ({
       {/* Description */}
       <div>
         <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-          Description *
+          Mô tả *
         </label>
         <textarea
           id="description"
@@ -291,7 +291,7 @@ const TrainingMaterialForm: React.FC<TrainingMaterialFormProps> = ({
       {/* Content File */}
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          Content File {!initialData?.content_path && '*'}
+          File Nội Dung {!initialData?.content_path && '*'}
         </label>
         
         {/* File Upload Area */}
@@ -314,7 +314,7 @@ const TrainingMaterialForm: React.FC<TrainingMaterialFormProps> = ({
                   htmlFor="content-upload"
                   className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
                 >
-                  <span>Upload a file</span>
+                  <span>Tải lên</span>
                   <input
                     id="content-upload"
                     name="content-upload"
@@ -325,7 +325,7 @@ const TrainingMaterialForm: React.FC<TrainingMaterialFormProps> = ({
                     accept={formData.type === 'video' ? '.mp4,.avi,.mov' : formData.type === 'document' ? '.pdf,.doc,.docx,.ppt,.pptx' : '.pdf,.doc,.docx,.mp4,.avi,.mov,.ppt,.pptx'}
                   />
                 </label>
-                <p className="pl-1">or drag and drop</p>
+                <p className="pl-1">hoặc kéo thả</p>
               </div>
               <p className="text-xs text-gray-500">
                 {formData.type === 'video' ? 'MP4' : formData.type === 'document' ? 'PDF, DOC, DOCX, PPT, PPTX' : 'PDF, DOC, DOCX, MP4, PPT, PPTX'} up to 50MB each (multiple files allowed)
@@ -339,7 +339,7 @@ const TrainingMaterialForm: React.FC<TrainingMaterialFormProps> = ({
           <div className="mt-4 space-y-2">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-medium text-gray-700">
-                Files ({existingFiles.length + contentFiles.length})
+                File đã chọn ({existingFiles.length + contentFiles.length})
               </h4>
               {contentFiles.length > 0 && (
                 <button
@@ -347,7 +347,7 @@ const TrainingMaterialForm: React.FC<TrainingMaterialFormProps> = ({
                   onClick={removeAllFiles}
                   className="text-sm text-red-600 hover:text-red-800"
                 >
-                  Remove All New Files
+                  Xóa tất cả
                 </button>
               )}
             </div>
@@ -361,7 +361,7 @@ const TrainingMaterialForm: React.FC<TrainingMaterialFormProps> = ({
                     <div className="flex items-center space-x-3">
                       <div>
                         <p className="text-sm font-medium text-gray-900">
-                          Current file: {filename}
+                          File hiện tại: {filename}
                         </p>
                       </div>
                     </div>
@@ -385,10 +385,10 @@ const TrainingMaterialForm: React.FC<TrainingMaterialFormProps> = ({
                   <div className="flex items-center space-x-3">
                     <div>
                       <p className="text-sm font-medium text-gray-900">
-                        New file: {file.name}
+                        File mới: {file.name}
                       </p>
                       <p className="text-xs text-gray-500">
-                        Size: {(file.size / 1024 / 1024).toFixed(2)} MB
+                        Kích thước: {(file.size / 1024 / 1024).toFixed(2)} MB
                       </p>
                     </div>
                   </div>
@@ -414,7 +414,7 @@ const TrainingMaterialForm: React.FC<TrainingMaterialFormProps> = ({
           onClick={() => window.history.back()}
           className="inline-flex justify-center rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         >
-          Cancel
+          Hủy
         </button>
         <button
           type="submit"
@@ -424,10 +424,10 @@ const TrainingMaterialForm: React.FC<TrainingMaterialFormProps> = ({
           {isLoading ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-              Saving...
+              Đang lưu...
             </>
           ) : (
-            'Save'
+            'Lưu'
           )}
         </button>
       </div>

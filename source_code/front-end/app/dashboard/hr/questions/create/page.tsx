@@ -111,19 +111,19 @@ function CreateQuestionPage() {
     e.preventDefault();
 
     if (!formData.question_text.trim()) {
-      showToast.error('Please enter question text');
+      showToast.error('Điền nội dung câu hỏi');
       return;
     }
 
     if (!formData.correct_answer) {
-      showToast.error('Please set the correct answer');
+      showToast.error('Vui lòng chọn đáp án đúng');
       return;
     }
 
     if (formData.question_type !== 'true_false') {
       const nonEmptyOptions = formData.options.filter(opt => opt.trim());
       if (nonEmptyOptions.length < 2) {
-        showToast.error('Please provide at least 2 options');
+        showToast.error('Vui lòng cung cấp ít nhất 2 lựa chọn hợp lệ');
         return;
       }
 
@@ -131,25 +131,25 @@ function CreateQuestionPage() {
       if (formData.question_type === 'multiple_response') {
         const correctAnswers = formData.correct_answer ? formData.correct_answer.split(',').filter(ans => ans.trim()) : [];
         if (correctAnswers.length === 0) {
-          showToast.error('Please select at least one correct answer');
+          showToast.error('Vui lòng chọn ít nhất một đáp án đúng');
           return;
         }
         const invalidAnswers = correctAnswers.filter(ans => !nonEmptyOptions.includes(ans));
         if (invalidAnswers.length > 0) {
-          showToast.error('All correct answers must have corresponding option text');
+          showToast.error('Tất cả các đáp án đúng phải có văn bản lựa chọn tương ứng');
           return;
         }
       } else {
         // For multiple choice, check single correct answer
         if (!formData.correct_answer || !nonEmptyOptions.includes(formData.correct_answer)) {
-          showToast.error('Please select a correct answer from the available options');
+          showToast.error('Vui lòng chọn một đáp án đúng từ các lựa chọn có sẵn');
           return;
         }
       }
     }
 
     if (formData.points <= 0) {
-      showToast.error('Points must be greater than 0');
+      showToast.error('Điểm phải lớn hơn 0');
       return;
     }
 
@@ -206,7 +206,7 @@ function CreateQuestionPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Create New Question</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Tạo Câu Hỏi Mới</h1>
           </div>
         </div>
       </div>
@@ -222,9 +222,9 @@ function CreateQuestionPage() {
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-blue-800">Question Bank System</h3>
+                <h3 className="text-sm font-medium text-blue-800">Hệ thống Ngân hàng Câu hỏi</h3>
                 <div className="mt-2 text-sm text-blue-700">
-                  <p>Questions are now added to the question bank and can be used in multiple quizzes. Use tags to categorize your questions for easy selection when creating quizzes.</p>
+                  <p>Các câu hỏi hiện đã được thêm vào ngân hàng câu hỏi và có thể được sử dụng trong nhiều bài kiểm tra. Sử dụng thẻ để phân loại các câu hỏi của bạn cho việc lựa chọn dễ dàng khi tạo bài kiểm tra.</p>
                 </div>
               </div>
             </div>
@@ -232,7 +232,7 @@ function CreateQuestionPage() {
 
           <div>
             <label htmlFor="question_text" className="block text-sm font-medium text-gray-700 mb-2">
-              Question Text *
+              Nội dung Câu hỏi *
             </label>
             <textarea
               id="question_text"
@@ -248,7 +248,7 @@ function CreateQuestionPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Question Type *
+              Loại Câu hỏi *
             </label>
             <div className="flex space-x-4">
               <label className="flex items-center">
@@ -260,7 +260,7 @@ function CreateQuestionPage() {
                   onChange={() => handleQuestionTypeChange('multiple_choice')}
                   className="mr-2"
                 />
-                Multiple Choice (Single Answer)
+                Multiple Choice (1 đáp án) 
               </label>
               <label className="flex items-center">
                 <input
@@ -271,7 +271,7 @@ function CreateQuestionPage() {
                   onChange={() => handleQuestionTypeChange('multiple_response')}
                   className="mr-2"
                 />
-                Multiple Response (Multiple Answers)
+                Multiple Response (Nhiều đáp án)
               </label>
               <label className="flex items-center">
                 <input
@@ -291,7 +291,7 @@ function CreateQuestionPage() {
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="text-sm font-medium text-gray-700">
-                  Options *
+                  Lựa chọn *
                 </label>
                 {formData.options.length < 6 && (
                   <button
@@ -300,7 +300,7 @@ function CreateQuestionPage() {
                     className="flex items-center px-3 py-1 text-sm bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200"
                   >
                     <Plus className="w-4 h-4 mr-1" />
-                    Add Option
+                    Thêm lựa chọn
                   </button>
                 )}
               </div>
@@ -312,7 +312,7 @@ function CreateQuestionPage() {
                         type="text"
                         value={option}
                         onChange={(e) => handleOptionChange(index, e.target.value)}
-                        placeholder={`Option ${index + 1}...`}
+                        placeholder={`Lựa chọn ${index + 1}...`}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                       />
                     </div>
@@ -355,7 +355,7 @@ function CreateQuestionPage() {
                         }}
                         className="mr-2"
                       />
-                      <span className="text-sm text-gray-600">Correct</span>
+                      <span className="text-sm text-gray-600">Đúng</span>
                     </label>
                     {formData.options.length > 2 && (
                       <button
@@ -375,7 +375,7 @@ function CreateQuestionPage() {
           {formData.question_type === 'true_false' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Correct Answer *
+                Đáp án đúng *
               </label>
               <div className="flex space-x-4">
                 <label className="flex items-center">
@@ -387,7 +387,7 @@ function CreateQuestionPage() {
                     onChange={handleInputChange}
                     className="mr-2"
                   />
-                  True
+                  Đúng
                 </label>
                 <label className="flex items-center">
                   <input
@@ -398,7 +398,7 @@ function CreateQuestionPage() {
                     onChange={handleInputChange}
                     className="mr-2"
                   />
-                  False
+                  Sai
                 </label>
               </div>
             </div>
@@ -406,7 +406,7 @@ function CreateQuestionPage() {
 
           <div>
             <label htmlFor="points" className="block text-sm font-medium text-gray-700 mb-2">
-              Points *
+              Điểm *
             </label>
             <input
               type="number"
@@ -430,8 +430,8 @@ function CreateQuestionPage() {
             <div className="border border-gray-200 rounded-lg p-4 min-h-[120px]">
               {tags.length === 0 ? (
                 <div className="text-center py-4">
-                  <p className="text-gray-500 text-sm">No tags available.</p>
-                  <p className="text-gray-400 text-xs mt-1">Tags help categorize questions for better organization.</p>
+                  <p className="text-gray-500 text-sm">Không có tag có sẵn</p>
+                  <p className="text-gray-400 text-xs mt-1">Tags giúp phân loại câu hỏi để sắp xếp tốt hơn.</p>
                 </div>
               ) : (
                 <>
@@ -458,7 +458,7 @@ function CreateQuestionPage() {
                   <p className="text-sm text-gray-500">
                     {selectedTags.length > 0
                       ? `${selectedTags.length} tag${selectedTags.length > 1 ? 's' : ''} selected`
-                      : 'Select tags to categorize this question'
+                      : 'Chọn tag để phân loại câu hỏi này'
                     }
                   </p>
                 </>
@@ -472,7 +472,7 @@ function CreateQuestionPage() {
               onClick={() => router.push('/dashboard/hr/questions')}
               className="px-6 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-colors"
             >
-              Cancel
+              Đóng
             </button>
             <button
               type="submit"
@@ -480,7 +480,7 @@ function CreateQuestionPage() {
               className="flex items-center px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors"
             >
               <Save className="w-4 h-4 mr-2" />
-              {loading ? 'Creating...' : 'Save'}
+              {loading ? 'Đang tạo...' : 'Lưu'}
             </button>
           </div>
         </form>

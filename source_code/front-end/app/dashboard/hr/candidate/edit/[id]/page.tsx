@@ -278,8 +278,8 @@ function EditCandidatePage() {
   if (!candidate) {
     return (
       <div className="text-center py-8">
-        <h3 className="mt-2 text-sm font-medium text-gray-900">Candidate not found</h3>
-        <p className="mt-1 text-sm text-gray-500">The candidate you're looking for doesn't exist.</p>
+        <h3 className="mt-2 text-sm font-medium text-gray-900">Không tìm thấy ứng viên</h3>
+        <p className="mt-1 text-sm text-gray-500">Ứng viên bạn đang tìm kiếm không tồn tại.</p>
       </div>
     );
   }
@@ -295,7 +295,7 @@ function EditCandidatePage() {
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Edit Candidate</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Chỉnh sửa Ứng viên</h1>
         </div>
       </div>
 
@@ -304,12 +304,12 @@ function EditCandidatePage() {
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
             <User className="w-5 h-5 mr-2" />
-            Personal Information
+            Thông tin cá nhân
           </h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name *
+                Họ và tên *
               </label>
               <input
                 type="text"
@@ -335,7 +335,7 @@ function EditCandidatePage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phone Number
+                Số điện thoại
               </label>
               <input
                 type="tel"
@@ -363,7 +363,7 @@ function EditCandidatePage() {
           </div>
           <div className="mt-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Address
+              Địa chỉ
             </label>
             <textarea
               name="address"
@@ -380,7 +380,7 @@ function EditCandidatePage() {
           <div className="bg-white shadow rounded-lg p-6">
             <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
               <Building2 className="w-5 h-5 mr-2" />
-              Job Applications ({applications.length})
+              Các đơn ứng tuyển ({applications.length})
             </h2>
             <div className="space-y-4">
               {applications.map((application, index) => {
@@ -401,7 +401,7 @@ function EditCandidatePage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Applied Position
+                        Vị trí ứng tuyển
                       </label>
                       <div className="p-3 bg-gray-50 rounded-md border border-gray-300">
                         <p className="font-medium text-sm text-gray-700">
@@ -414,7 +414,7 @@ function EditCandidatePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Application Status
+                        Trạng thái đơn ứng tuyển
                       </label>
                       <select
                         value={application.candidate_status}
@@ -431,7 +431,7 @@ function EditCandidatePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Apply Date
+                        Ngày ứng tuyển
                       </label>
                       <div className="p-3 bg-gray-50 rounded-md border border-gray-300">
                         <p className="text-sm text-gray-700">
@@ -441,7 +441,7 @@ function EditCandidatePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Evaluation Score
+                        Điểm đánh giá
                       </label>
                       <input
                         disabled
@@ -458,12 +458,12 @@ function EditCandidatePage() {
                   {/* Evaluation Comment */}
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Evaluation Comment
+                      Nhận xét đánh giá
                     </label>
                     <div className="p-4 bg-white rounded-md border border-gray-300 min-h-[80px]">
                       {evaluationCommentName && (
                         <p className="text-xs text-gray-500 mb-2">
-                          Ung vien: {evaluationCommentName}
+                          Ứng viên: {evaluationCommentName}
                         </p>
                       )}
                       <p
@@ -483,7 +483,7 @@ function EditCandidatePage() {
                           onClick={() => toggleComment(commentKey)}
                           className="mt-2 text-xs font-medium text-indigo-600 hover:text-indigo-700"
                         >
-                          {isExpanded ? 'Thu gon' : 'Xem them'}
+                          {isExpanded ? 'Thu gọn' : 'Xem thêm'}
                         </button>
                       )}
                     </div>
@@ -492,7 +492,7 @@ function EditCandidatePage() {
                   {/* Source */}
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Source
+                      Nguồn ứng tuyển
                     </label>
                     <div className="p-3 bg-gray-50 rounded-md border border-gray-300">
                       <p className="text-sm text-gray-700">{application.source || 'Not specified'}</p>
@@ -502,7 +502,7 @@ function EditCandidatePage() {
                   {/* Cover Letter */}
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Cover Letter
+                      Thư xin ứng tuyển
                     </label>
                     <div className="p-3 bg-gray-50 rounded-md border border-gray-300 min-h-[100px]">
                       <p className="text-sm text-gray-700 whitespace-pre-wrap">
@@ -517,8 +517,7 @@ function EditCandidatePage() {
                       onClick={() => handleSaveApplication(index)}
                       className="px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     >
-                      Save Application
-
+                      Lưu thay đổi
                     </button> 
                   </div>
                 </div>
@@ -534,7 +533,7 @@ function EditCandidatePage() {
             onClick={handleBack}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
           >
-            Cancel
+            Hủy
           </button>
           <button
             onClick={handleSave}
@@ -546,10 +545,10 @@ function EditCandidatePage() {
             {saving ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block" />
-                Saving...
+                Đang lưu...
               </>
             ) : (
-              'Save'
+              'Lưu'
             )}
           </button>
         </div>

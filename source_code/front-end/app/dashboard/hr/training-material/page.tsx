@@ -256,7 +256,7 @@ function TrainingMaterialPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Training Materials Management</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Quản lý Tài liệu Đào tạo</h1>
         </div>
         <div className="flex space-x-4">
           <button
@@ -264,21 +264,21 @@ function TrainingMaterialPage() {
             className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
           >
             <Archive className="w-5 h-5 mr-2" />
-            Archived Materials
+            Tài liệu đã lưu trữ
           </button>
           <button
             onClick={() => setIsTagManagementOpen(true)}
             className="inline-flex items-center px-4 py-2 bg-purple-100 text-purple-700 text-sm font-medium rounded-md hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
           >
             <TagIcon className="w-5 h-5 mr-2" />
-            Manage Tags
+            Quản lý Tags
           </button>
           <button
             onClick={handleCreateNew}
             className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             <Plus className="w-5 h-5 mr-2" />
-            Add New Material
+            Thêm Tài liệu Mới
           </button>
         </div>
       </div>
@@ -290,7 +290,7 @@ function TrainingMaterialPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search by title..."
+              placeholder="Tìm kiếm theo tiêu đề..."
               value={searchTitle}
               onChange={(e) => setSearchTitle(e.target.value)}
               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -300,7 +300,7 @@ function TrainingMaterialPage() {
             <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search by creator..."
+              placeholder="Tìm kiếm theo người tạo..."
               value={searchCreator}
               onChange={(e) => setSearchCreator(e.target.value)}
               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -313,7 +313,7 @@ function TrainingMaterialPage() {
               onChange={(e) => setSearchStatus(e.target.value)}
               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none"
             >
-              <option value="">All Status</option>
+              <option value="">Tất cả trạng thái</option>
               <option value="draft">Draft</option>
               <option value="active">Active</option>
               <option value="archived">Archived</option>
@@ -333,10 +333,10 @@ function TrainingMaterialPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Material
+                  Tài liệu
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Type
+                  Loại
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Tags
@@ -345,13 +345,13 @@ function TrainingMaterialPage() {
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created By
+                  Người tạo
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Quizzes
+                  Bài kiểm tra
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  Hành động
                 </th>
               </tr>
             </thead>
@@ -383,10 +383,10 @@ function TrainingMaterialPage() {
                           </span>
                         ))
                       ) : (
-                        <span className="text-xs text-gray-400">No tags</span>
+                        <span className="text-xs text-gray-400">Không có tags</span>
                       )}
                       {material.tags && material.tags.length > 3 && (
-                        <span className="text-xs text-gray-500">+{material.tags.length - 3} more</span>
+                        <span className="text-xs text-gray-500">+{material.tags.length - 3} thêm</span>
                       )}
                     </div>
                   </td>
@@ -412,10 +412,10 @@ function TrainingMaterialPage() {
                             </span>
                           ))
                         ) : (
-                          <span className="text-xs text-gray-400">No quizzes</span>
+                          <span className="text-xs text-gray-400">Không có bài kiểm tra</span>
                         )}
                         {material.quizzes && material.quizzes.length > 2 && (
-                          <span className="text-xs text-gray-500">+{material.quizzes.length - 2} more</span>
+                          <span className="text-xs text-gray-500">+{material.quizzes.length - 2} thêm</span>
                         )}
                       </div>
                     </div>
@@ -425,7 +425,7 @@ function TrainingMaterialPage() {
                       <button
                         onClick={() => handleView(material.material_id)}
                         className="text-gray-400 hover:text-gray-500"
-                        title="View details">
+                        title="Xem chi tiết">
                         <Eye className="w-5 h-5" />
                       </button>
                       <button
@@ -434,7 +434,7 @@ function TrainingMaterialPage() {
                           setIsMaterialTagModalOpen(true);
                         }}
                         className="text-purple-400 hover:text-purple-500"
-                        title="Manage tags">
+                        title="Quản lý tags">
                         <Tags className="w-5 h-5" />
                       </button>
                       <button
@@ -443,13 +443,13 @@ function TrainingMaterialPage() {
                           setIsMaterialQuizModalOpen(true);
                         }}
                         className="text-green-400 hover:text-green-500"
-                        title="Manage quizzes">
+                        title="Quản lý bài kiểm tra">
                         <BookOpen className="w-5 h-5" />
                       </button>
                       <button
                         onClick={() => handleEdit(material.material_id)}
                         className="text-blue-400 hover:text-blue-500"
-                        title="Edit material">
+                        title="Chỉnh sửa tài liệu">
                         <Edit2 className="w-5 h-5" />
                       </button>
                       <button
@@ -457,7 +457,7 @@ function TrainingMaterialPage() {
                         className={`text-red-400 hover:text-red-500 ${deleteLoading === material.material_id ? 'opacity-50 cursor-not-allowed' : ''
                           }`}
                         disabled={deleteLoading === material.material_id}
-                        title="Delete material">
+                        title="Xóa tài liệu">
                         {deleteLoading === material.material_id ? (
                           <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-400" />
                         ) : (
@@ -480,10 +480,10 @@ function TrainingMaterialPage() {
           setShowDeleteConfirm(false);
           setMaterialToDelete(null);
         }}
-        title="Confirm Delete"
+        title="Xác nhận Xóa"
       >
         <div className="p-6">
-          <p className="mb-4">Are you sure you want to delete this training material?</p>
+          <p className="mb-4">Bạn có chắc chắn muốn xóa tài liệu đào tạo này không?</p>
           <p className="mb-6 font-medium text-gray-700">{materialToDelete?.title}</p>
           <div className="flex justify-end space-x-4">
             <button
@@ -493,7 +493,7 @@ function TrainingMaterialPage() {
               }}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
             >
-              Cancel
+              Hủy
             </button>
             <button
               onClick={handleConfirmDelete}
@@ -501,7 +501,7 @@ function TrainingMaterialPage() {
               className={`px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 ${deleteLoading !== null ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
             >
-              {deleteLoading !== null ? 'Deleting...' : 'Delete'}
+              {deleteLoading !== null ? 'Đang xóa...' : 'Xóa'}
             </button>
           </div>
         </div>
@@ -522,10 +522,10 @@ function TrainingMaterialPage() {
           <div className="space-y-6">
             {/* Basic Information */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Thông tin cơ bản</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Type</p>
+                  <p className="text-sm font-medium text-gray-500">Loại</p>
                   <p className="mt-1">
                     {getTypeDisplayName(selectedMaterial.type)}
                   </p>
@@ -539,7 +539,7 @@ function TrainingMaterialPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Created By</p>
+                  <p className="text-sm font-medium text-gray-500">Tạo bởi</p>
                   <p className="mt-1">
                     {selectedMaterial.creator ? (
                       <span className="text-gray-900 font-medium">{selectedMaterial.creator.full_name}</span>
@@ -549,11 +549,11 @@ function TrainingMaterialPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Created At</p>
+                  <p className="text-sm font-medium text-gray-500">Tạo lúc</p>
                   <p className="mt-1">{new Date(selectedMaterial.created_at).toLocaleString()}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Last Updated</p>
+                  <p className="text-sm font-medium text-gray-500">Cập nhật lần cuối</p>
                   <p className="mt-1">
                     {selectedMaterial.updated_at
                       ? new Date(selectedMaterial.updated_at).toLocaleString()
@@ -578,14 +578,14 @@ function TrainingMaterialPage() {
                     </span>
                   ))
                 ) : (
-                  <span className="text-sm text-gray-500">No tags assigned</span>
+                  <span className="text-sm text-gray-500">Không có tags nào được gán</span>
                 )}
               </div>
             </div>
 
             {/* Description */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Description</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Mô tả</h3>
               <p className="text-gray-600 whitespace-pre-wrap">
                 {selectedMaterial.description || 'No description provided.'}
               </p>
@@ -593,7 +593,7 @@ function TrainingMaterialPage() {
 
             {/* Attached Quizzes */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Attached Quizzes</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Các bài kiểm tra đính kèm</h3>
               {selectedMaterial.quizzes && selectedMaterial.quizzes.length > 0 ? (
                 <div className="space-y-2">
                   {selectedMaterial.quizzes.map((quiz) => (
@@ -601,7 +601,7 @@ function TrainingMaterialPage() {
                       <div>
                         <p className="text-sm font-medium text-gray-900">{quiz.title}</p>
                         <p className="text-xs text-gray-500">
-                          Duration: {quiz.duration} min • Passing Score: {quiz.passing_score}%
+                          Thời lượng: {quiz.duration} min • Điểm vượt qua: {quiz.passing_score}%
                         </p>
                         {quiz.description && (
                           <p className="text-xs text-gray-600 mt-1">{quiz.description}</p>
@@ -611,13 +611,13 @@ function TrainingMaterialPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500">No quizzes attached</p>
+                <p className="text-sm text-gray-500">Không có bài kiểm tra nào được đính kèm</p>
               )}
             </div>
 
             {/* Content Files */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Content Files</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Tệp nội dung</h3>
               {selectedMaterial.content_path ? (
                 <div className="space-y-2">
                   {selectedMaterial.content_path.split(';').filter(path => path.trim()).map((filePath, index) => {
@@ -649,7 +649,7 @@ function TrainingMaterialPage() {
                             className="flex items-center text-indigo-600 hover:text-indigo-500 text-sm"
                           >
                             <Download className="w-4 h-4 mr-1" />
-                            Download
+                            Tải về
                           </button>
                         </div>
                       </div>
@@ -657,7 +657,7 @@ function TrainingMaterialPage() {
                   })}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500">No files uploaded</p>
+                <p className="text-sm text-gray-500">Không có tệp nào được tải lên</p>
               )}
             </div>
           </div>
@@ -683,7 +683,7 @@ function TrainingMaterialPage() {
               <source src={selectedVideoUrl} type="video/mp4" />
               <source src={selectedVideoUrl} type="video/webm" />
               <source src={selectedVideoUrl} type="video/quicktime" />
-              Your browser does not support the video tag.
+              Trình duyệt của bạn không hỗ trợ thẻ video. Vui lòng tải video về để xem.
             </video>
             <div className="mt-4 flex justify-end">
               <a
@@ -692,7 +692,7 @@ function TrainingMaterialPage() {
                 className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 <Download className="w-4 h-4 mr-2" />
-                Download Video
+                Tải về
               </a>
             </div>
           </div>
