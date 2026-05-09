@@ -55,6 +55,11 @@ const menuItems = {
     { name: "Lương thưởng", href: "/dashboard/employee/compensation", icon: Wallet },
     { name: "Đào tạo", href: "/dashboard/employee/training", icon: GraduationCap },
   ],
+  admin: [
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Hồ sơ của tôi", href: "/dashboard/admin/profile", icon: UserCog },
+    { name: "Quản lý tài khoản", href: "/dashboard/admin/manage-account", icon: Users },
+  ],
 };
 
 const hierarchyMenuItems = {
