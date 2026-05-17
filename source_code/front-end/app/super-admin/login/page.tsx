@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getCurrentUser, isAuthenticated, login as authLogin } from "../../auth/lib/auth";
+import { useAuth } from "../../context/AuthContext";
 
 export default function SuperAdminLoginPage() {
 	const router = useRouter();
@@ -12,15 +12,15 @@ export default function SuperAdminLoginPage() {
 	const [rememberMe, setRememberMe] = useState(true);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const { login, isLoggedIn, user, error: authError } = useAuth();
 
 	useEffect(() => {
-		if (!isAuthenticated()) return;
+		if (!isLoggedIn) return;
 
-		const currentUser = getCurrentUser();
-		if (currentUser?.role === "super_admin") {
+		if (user?.role === "super_admin") {
 			router.replace("/super-admin/manage-tenant");
 		}
-	}, [router]);
+	}, [isLoggedIn, router, user]);
 
 	const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
@@ -34,13 +34,20 @@ export default function SuperAdminLoginPage() {
 		setLoading(true);
 
 		try {
-			const user = await authLogin({
-				company_email: email,
-				password,
-				remember_me: rememberMe,
-			});
+			const loggedInUser = await login(
+				{
+					company_email: email,
+					password,
+					remember_me: rememberMe,
+				},
+				{ redirect: false }
+			);
 
-			if (user.role !== "super_admin") {
+			if (!loggedInUser) {
+				return;
+			}
+
+			if (loggedInUser.role !== "super_admin") {
 				setError("Tài khoản này không có quyền super admin.");
 				return;
 			}
@@ -108,9 +115,9 @@ export default function SuperAdminLoginPage() {
 								</p>
 							</div>
 
-							{error && (
+							{(error || authError) && (
 								<div className="mb-6 rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">
-									{error}
+									{error || authError}
 								</div>
 							)}
 
