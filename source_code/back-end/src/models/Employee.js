@@ -7,6 +7,14 @@ const Employee = sequelize.define("Employee_Info", {
         primaryKey: true,
         autoIncrement: true
     },
+    tenant_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: "Tenants",
+            key: "tenant_id"
+        }
+    },
     user_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -18,11 +26,11 @@ const Employee = sequelize.define("Employee_Info", {
     hire_date: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
-        allowNull: false,
+        allowNull: true,
     }, 
     position: {
         type: DataTypes.STRING(100),
-        allowNull: false,
+        allowNull: true,
     },
     department_id: {
         type: DataTypes.INTEGER,

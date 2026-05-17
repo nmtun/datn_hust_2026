@@ -247,12 +247,27 @@ function DepartmentPage() {
                                   const teamData = teamDetails[expandedTeam];
                                   const members: any[] = teamData?.members || [];
                                   const memberIds = new Set(members.map((m: any) => m.user_id));
-                                  const currentDepartmentId = teamData?.department_id || expandedDept;
-                                  const available = allEmployees.filter(e => (
-                                    !memberIds.has(e.user_id)
-                                    && currentDepartmentId !== null
-                                    && getEmployeeDepartmentId(e) === currentDepartmentId
-                                  ));
+                                  const currentDepartmentId = teamData?.department_id ?? expandedDept;
+
+                                  // tìm role của trưởng phòng (dept) và trưởng nhóm (teamData)
+                                  const managerUserId = dept?.manager?.user_id ?? null;
+                                  const managerRole = managerUserId ? allEmployees.find(a => a.user_id === managerUserId)?.role : null;
+                                  const leaderUserId = teamData?.leader_id ?? null;
+                                  const leaderRole = leaderUserId ? allEmployees.find(a => a.user_id === leaderUserId)?.role : null;
+
+                                  const available = allEmployees.filter(e => {
+                                    if (memberIds.has(e.user_id)) return false;
+                                    const empDeptId = getEmployeeDepartmentId(e);
+
+                                    // hiện khi cùng department
+                                    if (currentDepartmentId !== null && empDeptId === currentDepartmentId) return true;
+
+                                    // hoặc khi employee chưa có department (null) nhưng role trùng với manager hoặc leader
+                                    if (empDeptId === null && (e.role === managerRole || e.role === leaderRole)) return true;
+
+                                    return false;
+                                  });
+
                                   return (
                                     <div>
                                       <p className="text-sm font-semibold text-gray-800 mb-3">

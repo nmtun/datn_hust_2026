@@ -1,14 +1,21 @@
 import '../models/associations.js';
 import HRForecast from '../models/HRForecast.js';
 import Department from '../models/Department.js';
+import { requireTenantId } from '../utils/tenantScope.js';
 
-export const createForecastService = async (data) => {
+export const createForecastService = async (data, requestingUser = null) => {
     try {
+        const tenantResult = requireTenantId(requestingUser);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant is required" } };
+        }
+
         const { period, department_id, current_headcount, predicted_needs, creation_date, notes } = data;
         const forecast = await HRForecast.create({
             period, department_id: department_id || null,
             current_headcount, predicted_needs,
-            creation_date: creation_date || new Date(), notes
+            creation_date: creation_date || new Date(), notes,
+            tenant_id: tenantResult.tenantId
         });
         return { status: 201, data: { error: false, message: "HR Forecast created successfully", forecast } };
     } catch (error) {

@@ -3,6 +3,7 @@ import User from '../models/User.js';
 import Employee from '../models/Employee.js';
 import Department from '../models/Department.js';
 import Team from '../models/Team.js';
+import { withTenantWhere } from '../utils/tenantScope.js';
 
 const uniq = (values = []) => [...new Set(values.filter(Boolean))];
 
@@ -42,7 +43,7 @@ const getHierarchyRoleByStructure = async (userId, fallbackRole = 'employee') =>
 
 export const getManagedDepartmentIds = async (userId) => {
     const departments = await Department.findAll({
-        where: { manager_id: userId, active: true },
+        where: withTenantWhere({ manager_id: userId, active: true }),
         attributes: ['department_id']
     });
     return departments.map((department) => department.department_id);
@@ -55,7 +56,10 @@ export const getLedTeamIds = async (userId, departmentIds = null) => {
         where.department_id = { [Op.in]: departmentIds };
     }
 
-    const teams = await Team.findAll({ where, attributes: ['team_id'] });
+    const teams = await Team.findAll({
+        where: withTenantWhere(where),
+        attributes: ['team_id']
+    });
     return teams.map((team) => team.team_id);
 };
 
@@ -70,7 +74,10 @@ const getManagedTeamIdsByDirectReports = async (teamLeadId, departmentIds = null
         where.department_id = { [Op.in]: departmentIds };
     }
 
-    const reports = await Employee.findAll({ where, attributes: ['team_id'] });
+    const reports = await Employee.findAll({
+        where: withTenantWhere(where),
+        attributes: ['team_id']
+    });
     return uniq(reports.map((report) => report.team_id));
 };
 
@@ -85,7 +92,7 @@ export const getEffectiveLedTeamIds = async (userId, departmentIds = null) => {
 
 const getDirectReportIds = async (managerId) => {
     const reports = await Employee.findAll({
-        where: { manager_id: managerId },
+        where: withTenantWhere({ manager_id: managerId }),
         attributes: ['user_id']
     });
     return uniq(reports.map((report) => report.user_id));
@@ -105,10 +112,10 @@ export const getDepartmentHeadIdsForManager = async (managerId) => {
     if (managerReportIds.length === 0) return [];
 
     const managedDepartments = await Department.findAll({
-        where: {
+        where: withTenantWhere({
             manager_id: { [Op.in]: managerReportIds },
             active: true
-        },
+        }),
         attributes: ['manager_id']
     });
 
@@ -120,11 +127,11 @@ export const getTeamLeadIdsForDepartmentHead = async (departmentHeadId) => {
     if (managedDepartmentIds.length === 0) return [];
 
     const teams = await Team.findAll({
-        where: {
+        where: withTenantWhere({
             department_id: { [Op.in]: managedDepartmentIds },
             active: true,
             leader_id: { [Op.ne]: null }
-        },
+        }),
         attributes: ['leader_id']
     });
 
@@ -140,10 +147,10 @@ export const getMemberIdsForTeamLead = async (teamLeadId) => {
     }
 
     const members = await Employee.findAll({
-        where: {
+        where: withTenantWhere({
             [Op.or]: orClauses,
             user_id: { [Op.ne]: teamLeadId }
-        },
+        }),
         attributes: ['user_id']
     });
 
@@ -152,7 +159,7 @@ export const getMemberIdsForTeamLead = async (teamLeadId) => {
 
 const getAllDepartmentHeadIds = async () => {
     const departments = await Department.findAll({
-        where: { active: true, manager_id: { [Op.ne]: null } },
+        where: withTenantWhere({ active: true, manager_id: { [Op.ne]: null } }),
         attributes: ['manager_id']
     });
     return uniq(departments.map((department) => department.manager_id));
@@ -160,7 +167,7 @@ const getAllDepartmentHeadIds = async () => {
 
 const getAllTeamLeadIds = async () => {
     const teams = await Team.findAll({
-        where: { active: true, leader_id: { [Op.ne]: null } },
+        where: withTenantWhere({ active: true, leader_id: { [Op.ne]: null } }),
         attributes: ['leader_id']
     });
     return uniq(teams.map((team) => team.leader_id));
@@ -195,11 +202,11 @@ export const getEvaluationTargetUserIds = async (context) => {
 
     if (hierarchyRole === 'hr') {
         const users = await User.findAll({
-            where: {
+            where: withTenantWhere({
                 role: { [Op.in]: ['employee', 'manager', 'hr'] },
                 is_deleted: false,
                 user_id: { [Op.ne]: userId }
-            },
+            }),
             attributes: ['user_id']
         });
         return users.map((user) => user.user_id);
@@ -239,11 +246,11 @@ export const getManagementTargetUserIds = async (context) => {
 
     if (hierarchyRole === 'hr') {
         const users = await User.findAll({
-            where: {
+            where: withTenantWhere({
                 role: { [Op.in]: ['employee', 'manager', 'hr'] },
                 is_deleted: false,
                 user_id: { [Op.ne]: userId }
-            },
+            }),
             attributes: ['user_id']
         });
         return users.map((user) => user.user_id);
@@ -254,10 +261,10 @@ export const getManagementTargetUserIds = async (context) => {
         if (managedDepartmentIds.length === 0) return [];
 
         const employees = await Employee.findAll({
-            where: {
+            where: withTenantWhere({
                 department_id: { [Op.in]: managedDepartmentIds },
                 user_id: { [Op.ne]: userId }
-            },
+            }),
             attributes: ['user_id']
         });
 
@@ -285,7 +292,10 @@ export const getManageableTeamIds = async (context) => {
     if (!userId || !role) return [];
 
     if (role === 'manager') {
-        const teams = await Team.findAll({ where: { active: true }, attributes: ['team_id'] });
+        const teams = await Team.findAll({
+            where: withTenantWhere({ active: true }),
+            attributes: ['team_id']
+        });
         return teams.map((team) => team.team_id);
     }
 
@@ -294,7 +304,10 @@ export const getManageableTeamIds = async (context) => {
     const hierarchyRole = await resolveHierarchyRole({ userId, role });
 
     if (hierarchyRole === 'hr') {
-        const teams = await Team.findAll({ where: { active: true }, attributes: ['team_id'] });
+        const teams = await Team.findAll({
+            where: withTenantWhere({ active: true }),
+            attributes: ['team_id']
+        });
         return teams.map((team) => team.team_id);
     }
 
@@ -303,10 +316,10 @@ export const getManageableTeamIds = async (context) => {
         if (managedDepartmentIds.length === 0) return [];
 
         const teams = await Team.findAll({
-            where: {
+            where: withTenantWhere({
                 active: true,
                 department_id: { [Op.in]: managedDepartmentIds }
-            },
+            }),
             attributes: ['team_id']
         });
 

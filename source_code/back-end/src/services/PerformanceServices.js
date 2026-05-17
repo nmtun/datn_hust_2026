@@ -7,11 +7,14 @@ import Employee from '../models/Employee.js';
 import Department from '../models/Department.js';
 import Team from '../models/Team.js';
 import { getEvaluationTargetUserIds, getManagementTargetUserIds, resolveHierarchyRole } from './HierarchyServices.js';
+import { requireTenantId, withTenantWhere } from '../utils/tenantScope.js';
 
 const employeeAttributes = ['user_id', 'full_name', 'company_email'];
 
-const getUserById = async (userId) => {
-    return User.findOne({ where: { user_id: userId, is_deleted: false } });
+const getUserById = async (userId, requestingUser = null) => {
+    return User.findOne({
+        where: withTenantWhere({ user_id: userId, is_deleted: false }, requestingUser)
+    });
 };
 
 export const createPerformanceService = async (data, reviewerUser) => {
@@ -19,6 +22,11 @@ export const createPerformanceService = async (data, reviewerUser) => {
         const { user_id, period_id, kpi_goals, achievement, rating, feedback, review_date, visibility } = data;
         if (!user_id || !period_id || !review_date) {
             return { status: 400, data: { error: true, message: "user_id, period_id and review_date are required" } };
+        }
+
+        const tenantResult = requireTenantId(reviewerUser);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant is required" } };
         }
 
         if (visibility && !['private', 'shared_with_employee'].includes(visibility)) {
@@ -31,7 +39,7 @@ export const createPerformanceService = async (data, reviewerUser) => {
             return { status: 400, data: { error: true, message: "You cannot review yourself" } };
         }
 
-        const targetUser = await getUserById(user_id);
+        const targetUser = await getUserById(user_id, reviewerUser);
         if (!targetUser) {
             return { status: 404, data: { error: true, message: "Employee not found" } };
         }
@@ -59,7 +67,8 @@ export const createPerformanceService = async (data, reviewerUser) => {
             visibility: visibility || 'shared_with_employee',
             review_date,
             reviewer_id: reviewerId,
-            created_at: new Date()
+            created_at: new Date(),
+            tenant_id: tenantResult.tenantId
         });
         return { status: 201, data: { error: false, message: "Performance record created successfully", performance: perf } };
     } catch (error) {
@@ -100,7 +109,7 @@ export const getAllPerformanceServiceOfManager = async ({ requestingUser }) => {
         }
 
         const records = await Performance.findAll({
-            where,
+            where: withTenantWhere(where || {}, requestingUser),
             include: [
                 { model: User, as: 'employee', attributes: employeeAttributes },
                 { model: User, as: 'reviewer', attributes: employeeAttributes },
@@ -117,7 +126,8 @@ export const getAllPerformanceServiceOfManager = async ({ requestingUser }) => {
 
 export const getPerformanceByIdService = async (id, requestingUser) => {
     try {
-        const perf = await Performance.findByPk(id, {
+        const perf = await Performance.findOne({
+            where: withTenantWhere({ perf_id: Number(id) }, requestingUser),
             include: [
                 { model: User, as: 'employee', attributes: employeeAttributes },
                 { model: User, as: 'reviewer', attributes: employeeAttributes },
@@ -147,7 +157,9 @@ export const getPerformanceByIdService = async (id, requestingUser) => {
 
 export const updatePerformanceService = async (id, data, requestingUser) => {
     try {
-        const perf = await Performance.findByPk(id);
+        const perf = await Performance.findOne({
+            where: withTenantWhere({ perf_id: Number(id) }, requestingUser)
+        });
         if (!perf) return { status: 404, data: { error: true, message: "Performance record not found" } };
 
         if (requestingUser.role !== 'hr' && Number(perf.reviewer_id) !== Number(requestingUser.user_id)) {
@@ -181,10 +193,10 @@ export const updatePerformanceService = async (id, data, requestingUser) => {
 export const getMyPerformanceService = async (userId) => {
     try {
         const records = await Performance.findAll({
-            where: {
+            where: withTenantWhere({
                 user_id: userId,
                 visibility: 'shared_with_employee'
-            },
+            }),
             include: [
                 { model: User, as: 'reviewer', attributes: employeeAttributes },
                 { model: PerformancePeriod, as: 'period' }
@@ -207,10 +219,10 @@ export const getTeamPerformanceService = async (requestingUser) => {
         }
 
         const records = await Performance.findAll({
-            where: {
+            where: withTenantWhere({
                 user_id: userIds,
                 reviewer_id: requestingUser.user_id
-            },
+            }, requestingUser),
             include: [
                 { model: User, as: 'employee', attributes: employeeAttributes },
                 { model: User, as: 'reviewer', attributes: employeeAttributes },

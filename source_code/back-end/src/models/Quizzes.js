@@ -7,6 +7,14 @@ const Quizzes = sequelize.define("Quizzes", {
         primaryKey: true,
         autoIncrement: true
     },
+    tenant_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: "Tenants",
+            key: "tenant_id"
+        }
+    },
     title: {
         type: DataTypes.STRING(255),
         allowNull: false,

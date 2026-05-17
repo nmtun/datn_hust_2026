@@ -4,6 +4,7 @@ import Quizzes from "../models/Quizzes.js";
 import Tags from "../models/Tag.js";
 import QuestionTags from "../models/QuestionTag.js";
 import { Op } from "sequelize";
+import { requireTenantId } from '../utils/tenantScope.js';
 
 class QuestionToQuizService {
     
@@ -17,6 +18,11 @@ class QuestionToQuizService {
      */
     static async addQuestionToQuizByTag(questionId, quizId, tagId, options = {}) {
         try {
+            const tenantResult = requireTenantId(options.requestingUser || null);
+            if (!tenantResult.ok) {
+                return { success: false, message: "Tenant is required" };
+            }
+
             // Kiểm tra xem câu hỏi có tag này không
             const questionTag = await QuestionTags.findOne({
                 where: { question_id: questionId, tag_id: tagId }
@@ -52,7 +58,8 @@ class QuestionToQuizService {
                 tag_id: tagId,
                 question_order: nextOrder,
                 points_override: options.pointsOverride || null,
-                added_by: options.addedBy || null
+                added_by: options.addedBy || null,
+                tenant_id: tenantResult.tenantId
             });
 
             return {
@@ -135,6 +142,11 @@ class QuestionToQuizService {
             const addedQuestions = [];
             const errors = [];
 
+            const tenantResult = requireTenantId(options.requestingUser || null);
+            if (!tenantResult.ok) {
+                return { success: false, message: "Tenant is required" };
+            }
+
             for (const tagId of tagIds) {
                 // Tìm các câu hỏi có tag này mà chưa có trong quiz
                 const availableQuestions = await QuizQuestion.findAll({
@@ -168,7 +180,7 @@ class QuestionToQuizService {
                             question.question_id, 
                             quizId, 
                             tagId, 
-                            { addedBy }
+                            { addedBy, requestingUser: options.requestingUser }
                         );
                         
                         if (result.success) {

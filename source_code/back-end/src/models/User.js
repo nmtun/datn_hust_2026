@@ -7,6 +7,14 @@ const User = sequelize.define("Users", {
         primaryKey: true,
         autoIncrement: true
     },
+    tenant_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+            model: "Tenants",
+            key: "tenant_id"
+        }
+    },
     personal_email: {
         type: DataTypes.STRING(100),
         allowNull: false,
@@ -33,7 +41,7 @@ const User = sequelize.define("Users", {
         allowNull: true,
     },
     role: {
-        type: DataTypes.ENUM('candidate', 'employee', 'hr', 'manager','admin'),
+        type: DataTypes.ENUM('candidate', 'employee', 'hr', 'manager','tenant_admin', 'super_admin'),
         defaultValue: "candidate",
         allowNull: false,
     },

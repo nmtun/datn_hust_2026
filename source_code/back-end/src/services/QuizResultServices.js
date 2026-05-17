@@ -4,9 +4,15 @@ import Quizzes from "../models/Quizzes.js";
 import User from "../models/User.js";
 import QuizAnswer from "../models/QuizAnswer.js";
 import { Op } from 'sequelize';
+import { requireTenantId } from '../utils/tenantScope.js';
 
 export const submitQuizResultService = async (resultData, user) => {
     try {
+        const tenantResult = requireTenantId(user);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant is required" } };
+        }
+
         const {
             quiz_id,
             score,
@@ -44,7 +50,8 @@ export const submitQuizResultService = async (resultData, user) => {
             pass_status: pass_status,
             completion_time: completion_time,
             attempt_number: attemptNumber,
-            completion_date: new Date()
+            completion_date: new Date(),
+            tenant_id: tenantResult.tenantId
         });
 
         // Save answers if provided
@@ -55,7 +62,8 @@ export const submitQuizResultService = async (resultData, user) => {
                 selected_answer: Array.isArray(answer.answer) 
                     ? answer.answer.join(',') 
                     : answer.answer,
-                is_correct: answer.is_correct || false
+                is_correct: answer.is_correct || false,
+                tenant_id: tenantResult.tenantId
             }));
 
             await QuizAnswer.bulkCreate(answerRecords);

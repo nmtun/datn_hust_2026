@@ -29,7 +29,7 @@ export const getEmployeesByDepartmentService = async () => {
         const departments = await Department.findAll({
             where: { active: true },
             attributes: ['department_id', 'name', 'code',
-                [sequelize.literal(`(SELECT COUNT(*) FROM Employee_Info WHERE Employee_Info.department_id = Department.department_id)`), 'employee_count']
+                [sequelize.literal(`(SELECT COUNT(*) FROM Employee_Info WHERE Employee_Info.department_id = Department.department_id AND Employee_Info.tenant_id = Department.tenant_id)`), 'employee_count']
             ],
             order: [['name', 'ASC']]
         });

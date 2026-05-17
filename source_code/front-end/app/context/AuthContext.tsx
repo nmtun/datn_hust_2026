@@ -14,6 +14,7 @@ interface User {
 
 interface LoginCredentials {
   company_email: string;
+  tenant_code: string;
   password: string;
   remember_me?: boolean;
 }

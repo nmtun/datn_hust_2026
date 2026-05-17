@@ -20,7 +20,7 @@ import Modal from "@/app/components/Modal";
 import { withAuth } from "@/app/middleware/withAuth";
 
 const ROLE_LABELS: Record<string, string> = {
-	admin: "Admin",
+	tenant_admin: "Admin",
 	manager: "Quản lý",
 	hr: "HR",
 	employee: "Nhân viên",
@@ -28,7 +28,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const ROLE_COLORS: Record<string, string> = {
-	admin: "bg-purple-100 text-purple-800",
+	tenant_admin: "bg-purple-100 text-purple-800",
 	manager: "bg-blue-100 text-blue-800",
 	hr: "bg-emerald-100 text-emerald-800",
 	employee: "bg-gray-100 text-gray-800",
@@ -172,7 +172,7 @@ function DeletedAccountsPage() {
 						className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
 					>
 						<option value="">Tất cả vai trò</option>
-						<option value="admin">Admin</option>
+						<option value="tenant_admin">Admin</option>
 						<option value="manager">Quản lý</option>
 						<option value="hr">HR</option>
 						<option value="employee">Nhân viên</option>

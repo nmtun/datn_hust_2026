@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 
 export default function Login() {
   const [email, setEmail] = useState("");
+  const [tenantCode, setTenantCode] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const { login, loading, error } = useAuth();
@@ -12,13 +13,14 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
+    if (!email || !tenantCode || !password) {
       return;
     }
     
     try {
       await login({ 
         company_email: email, 
+        tenant_code: tenantCode,
         password,
         remember_me: rememberMe,
       });
@@ -54,6 +56,21 @@ export default function Login() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="tenant-code" className="block text-sm font-medium text-gray-700">
+              Tenant code
+            </label>
+            <input
+              id="tenant-code"
+              name="tenant-code"
+              type="text"
+              required
+              value={tenantCode}
+              onChange={(e) => setTenantCode(e.target.value)}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>

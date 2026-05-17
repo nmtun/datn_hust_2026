@@ -9,6 +9,7 @@ import { createNotificationsForUsers } from './NotificationServices.js';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { Op } from 'sequelize';
+import { getRequestContext, runWithRequestContext } from '../utils/requestContext.js';
 
 const POSITION_BY_EXPERIENCE_LEVEL = {
     intern: 'Thực tập sinh',
@@ -65,7 +66,7 @@ const getEmployeeInfoInclude = () => ({
     attributes: ['employee_info_id', 'position', 'department_id', 'team_id', 'manager_id', 'hire_date']
 });
 
-const sendHrNotificationForNewApplication = async ({ candidate, candidateUser, candidateData }) => {
+const sendHrNotificationForNewApplication = async ({ candidate, candidateUser, candidateData, tenantId }) => {
     try {
         const jobId = Number(candidate?.job_id ?? candidateData?.job_id);
         if (!Number.isInteger(jobId) || jobId <= 0) return;
@@ -117,7 +118,8 @@ const sendHrNotificationForNewApplication = async ({ candidate, candidateUser, c
                 candidate_user_id: actorId,
                 candidate_info_id: candidateInfoId,
                 source: candidate?.source || candidateData?.source || 'website'
-            }
+            },
+            tenantId
         };
 
         try {
@@ -171,12 +173,12 @@ export const createCandidateService = async (candidateData) => {
         return { status: 400, data: { error: true, message: "Mã vị trí ứng tuyển không hợp lệ" } };
     }
 
-    const selectedJob = await JobDescription.findOne({
+        const selectedJob = await JobDescription.findOne({
         where: {
             job_id: normalizedJobId,
             is_deleted: false
         },
-        attributes: ['job_id', 'title', 'department_id'],
+            attributes: ['job_id', 'title', 'department_id', 'tenant_id'],
         include: [
             {
                 model: Department,
@@ -191,7 +193,12 @@ export const createCandidateService = async (candidateData) => {
         return { status: 404, data: { error: true, message: "Vị trí ứng tuyển không tồn tại" } };
     }
 
-    const appliedJob = {
+        const resolvedTenantId = selectedJob.tenant_id ?? null;
+        if (!resolvedTenantId) {
+            return { status: 400, data: { error: true, message: "Không xác định được tenant cho vị trí ứng tuyển" } };
+        }
+
+        const appliedJob = {
         job_id: selectedJob.job_id,
         title: selectedJob.title,
         department_id: selectedJob.department_id || null,
@@ -199,127 +206,171 @@ export const createCandidateService = async (candidateData) => {
         department_code: selectedJob.department?.code || null
     };
 
-    // Check user exists thì tạo bản ghi candidate liên kết với user đó 
-    const existingUser = await userService.findUserByEmailService(personal_email);
-
-    if (existingUser) {
-        // Kiểm tra xem user đã ứng tuyển job này hay chưa
-        const existingJobApplication = await Candidate.findOne({
-            where: {
-                user_id: existingUser.user_id,
-                job_id: normalizedJobId
-            }
-        });
-        // Kiểm tra xem user này đã có bản ghi candidate có status = hired thì không cho ứng tuyển lại
-        const hiredApplication = await Candidate.findOne({
-            where: {
-                user_id: existingUser.user_id,
-                candidate_status: "hired"
-            }
-        });
-        if (existingJobApplication) {
-            return {
-                status: 400,
-                data: {
-                    error: true,
-                    message: "Bạn đã ứng tuyển vào vị trí này trước đó. Vui lòng chọn vị trí khác hoặc liên hệ bộ phận tuyển dụng để biết thêm thông tin."
+        const runWithTenantContext = async (handler) => {
+            const context = getRequestContext();
+            if (context && Object.prototype.hasOwnProperty.call(context, 'tenantId')) {
+                if (context.tenantId !== resolvedTenantId) {
+                    return {
+                        status: 403,
+                        data: { error: true, message: "Tenant mismatch" }
+                    };
                 }
-            };
-        } else if (hiredApplication) {
-            return {
-                status: 400,
-                data: {
-                    error: true,
-                    message: "Email đã được sử dụng bởi thành viên của công ty, không thể ứng tuyển lại."
-                }
-            };
-        } else {
-            // Tạo bản ghi candidate liên kết với user đã tồn tại
-            const newCandidate = await Candidate.create({
-                user_id: existingUser.user_id,
-                cv_file_path,
-                candidate_status,
-                source,
-                apply_date,
-                evaluation,
-                    evaluation_comment,
-                job_id: normalizedJobId,
-                cover_letter: processedCoverLetter
-            });
-
-            if (!isHrCreated) {
-                await sendHrNotificationForNewApplication({
-                    candidate: newCandidate,
-                    candidateUser: existingUser,
-                    candidateData
-                });
+                return handler();
             }
 
-            return {
-                status: 201,
-                data: {
-                    error: false,
-                    message: "Candidate created successfully",
-                    candidate: newCandidate,
-                    applied_job: appliedJob,
-                    user: existingUser,
-                    temp_password_generated: false
-                }
-            };
-        }
-    } else {
-        // Tạo password tạm nếu chưa có
-        let rawPassword = password;
-        if (!rawPassword) {
-            rawPassword = crypto.randomBytes(6).toString('base64');
-        }
-        const hashedPassword = await bcrypt.hash(rawPassword, 10);
-
-        // Tạo user
-        const newUser = await userService.createUserService({
-            personal_email,
-            company_email,
-            password: hashedPassword,
-            full_name,
-            phone_number,
-            address,
-            role,
-            status
-        });
-
-        // Tạo candidate
-        const newCandidate = await Candidate.create({
-            user_id: newUser.user_id,
-            cv_file_path,
-            candidate_status,
-            source,
-            apply_date,
-            evaluation,
-                evaluation_comment,
-            job_id: normalizedJobId,
-            cover_letter: processedCoverLetter
-        });
-
-        if (!isHrCreated) {
-            await sendHrNotificationForNewApplication({
-                candidate: newCandidate,
-                candidateUser: newUser,
-                candidateData
-            });
-        }
-
-        return {
-            status: 201,
-            data: {
-                error: false,
-                message: "Candidate created successfully",
-                candidate: newCandidate,
-                applied_job: appliedJob,
-                user: newUser,
-                temp_password_generated: !password ? true : false
-            }
+            return runWithRequestContext({ tenantId: resolvedTenantId, role: 'candidate', userId: null }, handler);
         };
-    }
+
+        return runWithTenantContext(async () => {
+            // Check user exists thì tạo bản ghi candidate liên kết với user đó
+            const existingUser = await userService.findUserByEmailService(personal_email);
+
+            if (existingUser) {
+                if (existingUser.role === 'super_admin') {
+                    return {
+                        status: 409,
+                        data: {
+                            error: true,
+                            message: "Email thuộc tài khoản hệ thống, không thể ứng tuyển"
+                        }
+                    };
+                }
+                if (existingUser.tenant_id && existingUser.tenant_id !== resolvedTenantId) {
+                    return {
+                        status: 409,
+                        data: {
+                            error: true,
+                            message: "Email đã thuộc tenant khác, không thể ứng tuyển vào tenant này"
+                        }
+                    };
+                }
+
+                if (!existingUser.tenant_id && existingUser.role !== 'super_admin') {
+                    await existingUser.update({ tenant_id: resolvedTenantId });
+                }
+                // Kiểm tra xem user đã ứng tuyển job này hay chưa
+                const existingJobApplication = await Candidate.findOne({
+                    where: {
+                        user_id: existingUser.user_id,
+                        job_id: normalizedJobId
+                    }
+                });
+                // Kiểm tra xem user này đã có bản ghi candidate có status = hired thì không cho ứng tuyển lại
+                const hiredApplication = await Candidate.findOne({
+                    where: {
+                        user_id: existingUser.user_id,
+                        candidate_status: "hired"
+                    }
+                });
+                if (existingJobApplication) {
+                    return {
+                        status: 400,
+                        data: {
+                            error: true,
+                            message: "Bạn đã ứng tuyển vào vị trí này trước đó. Vui lòng chọn vị trí khác hoặc liên hệ bộ phận tuyển dụng để biết thêm thông tin."
+                        }
+                    };
+                } else if (hiredApplication) {
+                    return {
+                        status: 400,
+                        data: {
+                            error: true,
+                            message: "Email đã được sử dụng bởi thành viên của công ty, không thể ứng tuyển lại."
+                        }
+                    };
+                } else {
+                    // Tạo bản ghi candidate liên kết với user đã tồn tại
+                    const newCandidate = await Candidate.create({
+                        tenant_id: resolvedTenantId,
+                        user_id: existingUser.user_id,
+                        cv_file_path,
+                        candidate_status,
+                        source,
+                        apply_date,
+                        evaluation,
+                            evaluation_comment,
+                        job_id: normalizedJobId,
+                        cover_letter: processedCoverLetter
+                    });
+
+                    if (!isHrCreated) {
+                        await sendHrNotificationForNewApplication({
+                            candidate: newCandidate,
+                            candidateUser: existingUser,
+                            candidateData,
+                            tenantId: resolvedTenantId
+                        });
+                    }
+
+                    return {
+                        status: 201,
+                        data: {
+                            error: false,
+                            message: "Candidate created successfully",
+                            candidate: newCandidate,
+                            applied_job: appliedJob,
+                            user: existingUser,
+                            temp_password_generated: false
+                        }
+                    };
+                }
+            } else {
+                // Tạo password tạm nếu chưa có
+                let rawPassword = password;
+                if (!rawPassword) {
+                    rawPassword = crypto.randomBytes(6).toString('base64');
+                }
+                const hashedPassword = await bcrypt.hash(rawPassword, 10);
+
+                // Tạo user
+                const newUser = await userService.createUserService({
+                    tenant_id: resolvedTenantId,
+                    personal_email,
+                    company_email,
+                    password: hashedPassword,
+                    full_name,
+                    phone_number,
+                    address,
+                    role,
+                    status
+                });
+
+                // Tạo candidate
+                const newCandidate = await Candidate.create({
+                    tenant_id: resolvedTenantId,
+                    user_id: newUser.user_id,
+                    cv_file_path,
+                    candidate_status,
+                    source,
+                    apply_date,
+                    evaluation,
+                        evaluation_comment,
+                    job_id: normalizedJobId,
+                    cover_letter: processedCoverLetter
+                });
+
+                if (!isHrCreated) {
+                    await sendHrNotificationForNewApplication({
+                        candidate: newCandidate,
+                        candidateUser: newUser,
+                        candidateData,
+                        tenantId: resolvedTenantId
+                    });
+                }
+
+                return {
+                    status: 201,
+                    data: {
+                        error: false,
+                        message: "Candidate created successfully",
+                        candidate: newCandidate,
+                        applied_job: appliedJob,
+                        user: newUser,
+                        temp_password_generated: !password ? true : false
+                    }
+                };
+            }
+        });
 
 };
 
@@ -966,7 +1017,8 @@ export const createCompanyEmailService = async (candidateId, companyEmail, passw
                 user_id: candidate.user_id,
                 hire_date: new Date(),
                 position: resolvedPosition,
-                department_id: hiredJob?.department_id || null
+                department_id: hiredJob?.department_id || null,
+                tenant_id: candidate.tenant_id
             }, { transaction });
         } else {
             const resolvedPosition = resolveEmployeePositionFromJob(hiredJob);

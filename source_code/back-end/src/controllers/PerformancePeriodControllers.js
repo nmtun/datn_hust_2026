@@ -12,7 +12,7 @@ export const createPeriod = async (req, res) => {
 
 export const getAllPeriods = async (req, res) => {
     try {
-        const result = await periodService.getAllPeriodsService();
+        const result = await periodService.getAllPeriodsService(req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error getting periods:", error);
@@ -22,7 +22,7 @@ export const getAllPeriods = async (req, res) => {
 
 export const getPeriodById = async (req, res) => {
     try {
-        const result = await periodService.getPeriodByIdService(req.params.id);
+        const result = await periodService.getPeriodByIdService(req.params.id, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error getting period:", error);

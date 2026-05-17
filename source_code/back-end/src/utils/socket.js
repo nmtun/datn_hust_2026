@@ -38,6 +38,9 @@ export const setupSocketServer = (httpServer) => {
             }
 
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            if (!Object.prototype.hasOwnProperty.call(decoded, 'tenant_id')) {
+                return next(new Error('Authentication token missing tenant_id'));
+            }
             socket.user = decoded;
             next();
         } catch (error) {

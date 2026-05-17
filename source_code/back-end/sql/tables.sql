@@ -1,21 +1,37 @@
 -- ------------------ Module Người dùng & Phân quyền ------------------
 
+CREATE TABLE Tenants (
+  tenant_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_name VARCHAR(100) NOT NULL UNIQUE,
+  company_email VARCHAR(255) NOT NULL UNIQUE,
+  phone_number VARCHAR(20),
+  address VARCHAR(255),
+  status ENUM('active', 'inactive', 'suspended') NOT NULL DEFAULT 'active',
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  is_deleted BOOLEAN NOT NULL DEFAULT FALSE
+);
+
 CREATE TABLE Users (
   user_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT,
   password VARCHAR(255),
   personal_email VARCHAR(255) NOT NULL,
   company_email VARCHAR(255),
   full_name VARCHAR(255) NOT NULL,
   phone_number VARCHAR(50),
   address TEXT,
-  role ENUM('candidate', 'employee', 'hr', 'manager','admin') NOT NULL,
+  role ENUM('candidate', 'employee', 'hr', 'manager', 'tenant_admin', 'super_admin') NOT NULL,
   status ENUM('active', 'on_leave', 'terminated') NOT NULL,
   created_at DATETIME NOT NULL,
-  updated_at DATETIME NOT NULL
+  updated_at DATETIME NOT NULL,
+  is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id)
 );
  
 CREATE TABLE Candidate_Info (
   candidate_info_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   user_id INT NOT NULL,
   cv_file_path VARCHAR(255),
   candidate_status ENUM('new', 'screening', 'interview', 'offered', 'rejected', 'hired') NOT NULL,
@@ -25,20 +41,23 @@ CREATE TABLE Candidate_Info (
   evaluation_comment JSON,
   job_id INT,
   notes TEXT,
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
   FOREIGN KEY (user_id) REFERENCES Users(user_id),
   FOREIGN KEY (job_id) REFERENCES Job_Descriptions(job_id)
 );
 
 CREATE TABLE Employee_Info (
   employee_info_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   user_id INT NOT NULL,
-  hire_date DATE NOT NULL,
-  position VARCHAR(100) NOT NULL,
+  hire_date DATE,
+  position VARCHAR(100),
   department_id INT,
   team_id INT,
   manager_id INT,
   termination_date DATE,
   employee_id_number VARCHAR(50),
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
   FOREIGN KEY (user_id) REFERENCES Users(user_id),
   FOREIGN KEY (department_id) REFERENCES Departments(department_id),
   FOREIGN KEY (team_id) REFERENCES Teams(team_id),
@@ -49,6 +68,7 @@ CREATE TABLE Employee_Info (
 
 CREATE TABLE Job_Descriptions (
   job_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   title VARCHAR(255) NOT NULL,
   description TEXT NOT NULL,
   requirements TEXT NOT NULL,
@@ -67,12 +87,14 @@ CREATE TABLE Job_Descriptions (
   created_by INT NOT NULL,
   created_at DATETIME NOT NULL,
   updated_at DATETIME,
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
   FOREIGN KEY (department_id) REFERENCES Departments(department_id),
   FOREIGN KEY (created_by) REFERENCES Users(user_id)
 );
 
 CREATE TABLE Interviews (
   interview_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   user_id INT NOT NULL,
   job_id INT NOT NULL,
   schedule_time DATETIME NOT NULL,
@@ -85,6 +107,7 @@ CREATE TABLE Interviews (
   interviewer_id INT NOT NULL,
   created_at DATETIME NOT NULL,
   updated_at DATETIME,
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
   FOREIGN KEY (user_id) REFERENCES Users(user_id),
   FOREIGN KEY (job_id) REFERENCES Job_Descriptions(job_id),
   FOREIGN KEY (interviewer_id) REFERENCES Users(user_id)
@@ -92,12 +115,14 @@ CREATE TABLE Interviews (
 
 CREATE TABLE Interview_Panels (
   panel_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   interview_id INT NOT NULL,
   interviewer_id INT NOT NULL,
   role ENUM('lead', 'technical', 'hr', 'observer') NOT NULL,
   feedback TEXT,
   individual_score FLOAT,
   created_at DATETIME NOT NULL,
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
   FOREIGN KEY (interview_id) REFERENCES Interviews(interview_id),
   FOREIGN KEY (interviewer_id) REFERENCES Users(user_id)
 );
@@ -106,6 +131,7 @@ CREATE TABLE Interview_Panels (
 
 CREATE TABLE Training_Materials (
   material_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   title VARCHAR(255),
   type ENUM('video', 'document', 'presentation'),
   content_path VARCHAR(255),
@@ -114,11 +140,13 @@ CREATE TABLE Training_Materials (
   description TEXT,
   status ENUM('active', 'draft', 'archived'),
   category VARCHAR(100),
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
   FOREIGN KEY (created_by) REFERENCES Users(user_id)
 );
 
 CREATE TABLE Quizzes (
   quiz_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   title VARCHAR(255),
   description TEXT,
   duration INT,
@@ -126,33 +154,39 @@ CREATE TABLE Quizzes (
   created_by INT,
   creation_date DATE,
   status ENUM('active', 'draft', 'archived'),
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
   FOREIGN KEY (created_by) REFERENCES Users(user_id)
 );
 
 CREATE TABLE Material_Quizzes (
   material_quiz_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   material_id INT NOT NULL,
   quiz_id INT NOT NULL,
   is_required BOOLEAN NOT NULL DEFAULT TRUE,
   sequence_order INT NOT NULL DEFAULT 1,
   UNIQUE (material_id, quiz_id),
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
   FOREIGN KEY (material_id) REFERENCES Training_Materials(material_id),
   FOREIGN KEY (quiz_id) REFERENCES Quizzes(quiz_id)
 );
 
 CREATE TABLE Quiz_Questions (
   question_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   quiz_id INT,
   question_text TEXT,
   question_type ENUM('multiple_choice', 'true_false', 'essay'),
   options TEXT,
   correct_answer TEXT,
   points FLOAT,
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
   FOREIGN KEY (quiz_id) REFERENCES Quizzes(quiz_id)
 );
 
 CREATE TABLE Training_Records (
   record_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   user_id INT NOT NULL,
   material_id INT NOT NULL,
   start_date DATE NOT NULL,
@@ -161,12 +195,14 @@ CREATE TABLE Training_Records (
   progress FLOAT DEFAULT 0,
   created_at DATETIME NOT NULL,
   updated_at DATETIME,
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
   FOREIGN KEY (user_id) REFERENCES Users(user_id),
   FOREIGN KEY (material_id) REFERENCES Training_Materials(material_id)
 );
 
 CREATE TABLE Quiz_Results (
   result_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   user_id INT NOT NULL,
   quiz_id INT NOT NULL,
   score FLOAT,
@@ -175,17 +211,20 @@ CREATE TABLE Quiz_Results (
   attempt_number INT NOT NULL,
   completion_date DATE NOT NULL,
   created_at DATETIME NOT NULL,
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
   FOREIGN KEY (user_id) REFERENCES Users(user_id),
   FOREIGN KEY (quiz_id) REFERENCES Quizzes(quiz_id)
 );
 
 CREATE TABLE Quiz_Answers (
   answer_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   result_id INT,
   question_id INT,
   answer TEXT,
   correct BOOLEAN,
   score FLOAT,
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
   FOREIGN KEY (result_id) REFERENCES Quiz_Results(result_id),
   FOREIGN KEY (question_id) REFERENCES Quiz_Questions(question_id)
 );
@@ -194,6 +233,7 @@ CREATE TABLE Quiz_Answers (
 
 CREATE TABLE Departments (
   department_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   name VARCHAR(255) NOT NULL,
   code VARCHAR(50) NOT NULL,
   description TEXT,
@@ -202,12 +242,14 @@ CREATE TABLE Departments (
   active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at DATETIME NOT NULL,
   updated_at DATETIME,
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
   FOREIGN KEY (manager_id) REFERENCES Users(user_id),
   FOREIGN KEY (parent_department_id) REFERENCES Departments(department_id)
 );
 
 CREATE TABLE Teams (
   team_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   name VARCHAR(255) NOT NULL,
   code VARCHAR(50) NOT NULL,
   department_id INT NOT NULL,
@@ -216,21 +258,25 @@ CREATE TABLE Teams (
   active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at DATETIME NOT NULL,
   updated_at DATETIME,
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
   FOREIGN KEY (department_id) REFERENCES Departments(department_id),
   FOREIGN KEY (leader_id) REFERENCES Users(user_id)
 );
 
 CREATE TABLE Performance_Periods (
   period_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   period_name VARCHAR(100) NOT NULL,
   start_date DATE NOT NULL,
   end_date DATE NOT NULL,
   status ENUM('planned', 'in_progress', 'completed') NOT NULL,
-  description TEXT
+  description TEXT,
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id)
 );
 
 CREATE TABLE Performance (
   perf_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   user_id INT NOT NULL,
   period_id INT NOT NULL,
   kpi_goals TEXT,
@@ -242,6 +288,7 @@ CREATE TABLE Performance (
   reviewer_id INT NOT NULL,
   created_at DATETIME NOT NULL,
   updated_at DATETIME,
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
   FOREIGN KEY (user_id) REFERENCES Users(user_id),
   FOREIGN KEY (period_id) REFERENCES Performance_Periods(period_id),
   FOREIGN KEY (reviewer_id) REFERENCES Users(user_id)
@@ -249,6 +296,7 @@ CREATE TABLE Performance (
 
 CREATE TABLE Compensation (
   comp_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   user_id INT NOT NULL,
   salary DECIMAL(18,2) NOT NULL,
   bonus DECIMAL(18,2) DEFAULT 0,
@@ -260,6 +308,7 @@ CREATE TABLE Compensation (
   approved_at DATETIME NOT NULL,
   created_at DATETIME NOT NULL,
   updated_at DATETIME,
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
   FOREIGN KEY (user_id) REFERENCES Users(user_id),
   FOREIGN KEY (evaluated_by) REFERENCES Users(user_id),
   FOREIGN KEY (approved_by) REFERENCES Users(user_id)
@@ -267,12 +316,14 @@ CREATE TABLE Compensation (
 
 CREATE TABLE HR_Forecasts (
   forecast_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   period VARCHAR(100),
   department_id INT,
   current_headcount INT,
   predicted_needs INT,
   creation_date DATE,
   notes TEXT,
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
   FOREIGN KEY (department_id) REFERENCES Departments(department_id)
 );
 
@@ -280,6 +331,7 @@ CREATE TABLE HR_Forecasts (
 
 CREATE TABLE Projects (
   project_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   name VARCHAR(255) NOT NULL,
   goal TEXT,
   description TEXT,
@@ -291,12 +343,14 @@ CREATE TABLE Projects (
   active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at DATETIME NOT NULL,
   updated_at DATETIME,
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
   FOREIGN KEY (manager_id) REFERENCES Users(user_id),
   FOREIGN KEY (department_id) REFERENCES Departments(department_id)
 );
 
 CREATE TABLE Tasks (
   task_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   project_id INT NOT NULL,
   parent_task_id INT,
   team_id INT,
@@ -312,6 +366,7 @@ CREATE TABLE Tasks (
   active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at DATETIME NOT NULL,
   updated_at DATETIME,
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
   FOREIGN KEY (project_id) REFERENCES Projects(project_id),
   FOREIGN KEY (parent_task_id) REFERENCES Tasks(task_id),
   FOREIGN KEY (team_id) REFERENCES Teams(team_id),
@@ -321,17 +376,20 @@ CREATE TABLE Tasks (
 
 CREATE TABLE Task_Comments (
   comment_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   task_id INT NOT NULL,
   user_id INT NOT NULL,
   comment TEXT NOT NULL,
   created_at DATETIME NOT NULL,
   updated_at DATETIME,
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
   FOREIGN KEY (task_id) REFERENCES Tasks(task_id),
   FOREIGN KEY (user_id) REFERENCES Users(user_id)
 );
 
 CREATE TABLE Task_Reviews (
   review_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   task_id INT NOT NULL,
   reviewer_id INT NOT NULL,
   reviewed_user_id INT NOT NULL,
@@ -339,6 +397,7 @@ CREATE TABLE Task_Reviews (
   note TEXT,
   created_at DATETIME NOT NULL,
   updated_at DATETIME,
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
   FOREIGN KEY (task_id) REFERENCES Tasks(task_id),
   FOREIGN KEY (reviewer_id) REFERENCES Users(user_id),
   FOREIGN KEY (reviewed_user_id) REFERENCES Users(user_id)
@@ -346,6 +405,7 @@ CREATE TABLE Task_Reviews (
 
 CREATE TABLE Notifications (
   notification_id INT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id INT NOT NULL,
   user_id INT NOT NULL,
   actor_id INT,
   type ENUM('task_assigned', 'task_reassigned', 'task_status_changed', 'task_commented', 'task_reviewed', 'task_updated', 'candidate_applied', 'performance_period_created', 'performance_review_reminder') NOT NULL,
@@ -358,6 +418,7 @@ CREATE TABLE Notifications (
   read_at DATETIME,
   created_at DATETIME NOT NULL,
   updated_at DATETIME,
+  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
   FOREIGN KEY (user_id) REFERENCES Users(user_id),
   FOREIGN KEY (actor_id) REFERENCES Users(user_id)
 );

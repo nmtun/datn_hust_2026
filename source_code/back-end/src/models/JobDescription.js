@@ -7,6 +7,14 @@ const JobDescription = sequelize.define("Job_Descriptions", {
         primaryKey: true,
         autoIncrement: true
     },
+    tenant_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: "Tenants",
+            key: "tenant_id"
+        }
+    },
     title: {
         type: DataTypes.STRING(150),
         allowNull: false,

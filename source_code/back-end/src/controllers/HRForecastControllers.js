@@ -2,7 +2,7 @@ import * as forecastService from '../services/HRForecastServices.js';
 
 export const createForecast = async (req, res) => {
     try {
-        const result = await forecastService.createForecastService(req.body);
+        const result = await forecastService.createForecastService(req.body, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error creating forecast:", error);

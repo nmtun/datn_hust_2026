@@ -1,8 +1,11 @@
 import User from "../models/User.js";
+import Tenant from "../models/Tenant.js";
+import Employee from "../models/Employee.js";
 import { Op } from "sequelize";
 import bcrypt from "bcrypt";
+import sequelize from "../config/dbsetup.js";
 
-const ROLE_VALUES = ['employee', 'hr', 'manager', 'admin'];
+const ROLE_VALUES = ['employee', 'hr', 'manager', 'tenant_admin'];
 const STATUS_VALUES = ['active', 'on_leave', 'terminated'];
 
 const isTruthyFlag = (value) => {
@@ -48,6 +51,17 @@ export const findUserByEmailService = async (email) => {
     });
 };
 
+export const findTenantByCodeService = async (tenantCode) => {
+    if (!tenantCode) return null;
+
+    return await Tenant.findOne({
+        where: {
+            tenant_code: tenantCode,
+            is_deleted: false
+        }
+    });
+};
+
 export const findUserByEmailExcludingUserService = async (email, excludeUserId) => {
     if (!email) return null;
     const where = {
@@ -62,7 +76,7 @@ export const findUserByEmailExcludingUserService = async (email, excludeUserId) 
     return await User.findOne({ where });
 };
 
-export const createAdminUserService = async (userData = {}) => {
+export const createAdminUserService = async (userData = {}, requestingUser = null) => {
     try {
         const {
             personal_email,
@@ -72,7 +86,8 @@ export const createAdminUserService = async (userData = {}) => {
             phone_number,
             address,
             role = 'employee',
-            status = 'active'
+            status = 'active',
+            tenant_id
         } = userData;
 
         if (!personal_email) return { status: 400, data: { error: true, message: "Personal email is required" } };
@@ -86,6 +101,39 @@ export const createAdminUserService = async (userData = {}) => {
             return { status: 400, data: { error: true, message: "Invalid status" } };
         }
 
+        if (role === 'tenant_admin' && !company_email) {
+            return { status: 400, data: { error: true, message: "Company email is required for tenant admin" } };
+        }
+
+        const requesterRole = requestingUser?.role || null;
+        const requesterTenantId = requestingUser?.tenant_id ?? null;
+
+        if (requesterRole === 'tenant_admin' && (requesterTenantId === undefined || requesterTenantId === null)) {
+            return { status: 403, data: { error: true, message: "Tenant scope missing" } };
+        }
+
+        let resolvedTenantId = tenant_id;
+        if (requesterRole === 'tenant_admin') {
+            if (tenant_id && Number(tenant_id) !== Number(requesterTenantId)) {
+                return { status: 403, data: { error: true, message: "Tenant mismatch" } };
+            }
+            resolvedTenantId = requesterTenantId;
+        }
+
+        if (resolvedTenantId === undefined || resolvedTenantId === null || resolvedTenantId === '') {
+            return { status: 400, data: { error: true, message: "Tenant is required" } };
+        }
+
+        const normalizedTenantId = Number(resolvedTenantId);
+        if (!Number.isInteger(normalizedTenantId)) {
+            return { status: 400, data: { error: true, message: "Invalid tenant" } };
+        }
+
+        const tenant = await Tenant.findOne({ where: { tenant_id: normalizedTenantId, is_deleted: false } });
+        if (!tenant) {
+            return { status: 404, data: { error: true, message: "Tenant not found" } };
+        }
+
         const existingPersonal = await findUserByEmailService(personal_email);
         if (existingPersonal) {
             return { status: 409, data: { error: true, message: "Personal email already exists" } };
@@ -97,28 +145,52 @@ export const createAdminUserService = async (userData = {}) => {
                 return { status: 409, data: { error: true, message: "Company email already exists" } };
             }
         }
+        const transaction = await sequelize.transaction();
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+        try {
+            const hashedPassword = await bcrypt.hash(password, 10);
 
-        const user = await createUserService({
-            personal_email,
-            company_email: company_email || null,
-            password: hashedPassword,
-            full_name,
-            phone_number,
-            address,
-            role,
-            status
-        });
+            const user = await User.create({
+                personal_email,
+                company_email: company_email || null,
+                password: hashedPassword,
+                full_name,
+                phone_number,
+                address,
+                role,
+                status,
+                tenant_id: normalizedTenantId
+            }, { transaction });
 
-        return {
-            status: 201,
-            data: {
-                error: false,
-                message: "User created successfully",
-                user: sanitizeUser(user)
+            const shouldCreateEmployeeInfo = ['employee', 'hr', 'manager'].includes(role);
+            if (shouldCreateEmployeeInfo) {
+                await Employee.create({
+                    tenant_id: normalizedTenantId,
+                    user_id: user.user_id,
+                    hire_date: new Date(),
+                    position: null,
+                    department_id: null,
+                    team_id: null,
+                    manager_id: null,
+                    termination_date: null,
+                    employee_id_number: null
+                }, { transaction });
             }
-        };
+
+            await transaction.commit();
+
+            return {
+                status: 201,
+                data: {
+                    error: false,
+                    message: "User created successfully",
+                    user: sanitizeUser(user)
+                }
+            };
+        } catch (error) {
+            await transaction.rollback();
+            throw error;
+        }
     } catch (error) {
         console.error('Error in createAdminUserService:', error);
         return {
@@ -128,16 +200,30 @@ export const createAdminUserService = async (userData = {}) => {
     }
 };
 
-export const getAllUsersService = async (query = {}) => {
+export const getAllUsersService = async (query = {}, requestingUser = null) => {
     try {
-        const { full_name, email, role, status, include_deleted } = query;
+        const { full_name, email, role, status, include_deleted, tenant_id } = query;
 
         const where = {};
         if (!isTruthyFlag(include_deleted)) {
             where.is_deleted = false;
         }
 
-        where.role = { [Op.ne]: 'admin' }; // Exclude admin users from the list
+        where.role = { [Op.notIn]: ['tenant_admin', 'super_admin'] }; // Exclude tenant admin and super admin users from the list
+
+        if (requestingUser?.role === 'tenant_admin') {
+            const scopedTenantId = requestingUser.tenant_id;
+            if (scopedTenantId === undefined || scopedTenantId === null) {
+                return { status: 403, data: { error: true, message: "Tenant scope missing" } };
+            }
+            where.tenant_id = scopedTenantId;
+        } else if (tenant_id !== undefined && tenant_id !== null && tenant_id !== '') {
+            const normalizedTenantId = Number(tenant_id);
+            if (!Number.isInteger(normalizedTenantId)) {
+                return { status: 400, data: { error: true, message: "Invalid tenant" } };
+            }
+            where.tenant_id = normalizedTenantId;
+        }
 
         if (full_name) where.full_name = { [Op.like]: `%${full_name}%` };
 
@@ -222,7 +308,8 @@ export const updateUserService = async (userId, updateData = {}) => {
             phone_number,
             address,
             role,
-            status
+            status,
+            tenant_id
         } = updateData;
 
         if (personal_email !== undefined) {
@@ -263,6 +350,26 @@ export const updateUserService = async (userId, updateData = {}) => {
                 return { status: 400, data: { error: true, message: "Invalid status" } };
             }
             updatePayload.status = status;
+        }
+
+        if (tenant_id !== undefined) {
+            if (tenant_id === null || tenant_id === '') {
+                updatePayload.tenant_id = null;
+            } else {
+                const normalizedTenantId = Number(tenant_id);
+                if (!Number.isInteger(normalizedTenantId)) {
+                    return { status: 400, data: { error: true, message: "Invalid tenant" } };
+                }
+
+                const tenant = await Tenant.findOne({ where: { tenant_id: normalizedTenantId, is_deleted: false } });
+                if (!tenant) {
+                    return { status: 404, data: { error: true, message: "Tenant not found" } };
+                }
+
+                updatePayload.tenant_id = normalizedTenantId;
+            }
+        } else if (role === 'tenant_admin' && !user.tenant_id) {
+            return { status: 400, data: { error: true, message: "Tenant is required for tenant admin" } };
         }
 
         if (password !== undefined) {
@@ -402,3 +509,34 @@ export const updateAdminProfileService = async (userId, updateData = {}) => {
         };
     }
 };
+
+export const createSuperAdminService = async (data) => {
+    const { personal_email, password, full_name, phone_number, address, role } = data;
+    if (!personal_email || !password || !full_name) {
+        throw new Error("Missing required fields: personal_email, password, full_name");
+    }
+    const existing = await findUserByEmailService(personal_email);
+    if (existing) {
+        throw new Error("User with this personal email already exists");
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const superAdmin = await createUserService({
+        personal_email,
+        company_email: null,
+        password: hashedPassword,
+        full_name,
+        phone_number,
+        address,
+        role,
+        status: 'active',
+        is_deleted: false
+    });
+    return {
+        status: 201,
+        data: {
+            error: false,
+            message: "Super admin created successfully",
+            user: sanitizeUser(superAdmin)
+        }
+    }
+}

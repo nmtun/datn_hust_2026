@@ -1,9 +1,11 @@
 import { Op } from "sequelize";
 import sequelize from "../src/config/dbsetup.js";
 import "../src/models/associations.js";
+import Tenant from "../src/models/Tenant.js";
 import User from "../src/models/User.js";
 import Compensation from "../src/models/Compensation.js";
 import compensationSeeds from "./compensations.js";
+import { DEFAULT_TENANT_CODE } from "./tenants.js";
 
 const APPROVER_EMAIL = "mng1@company.com";
 
@@ -20,6 +22,11 @@ const importCompensations = async () => {
     const approver = await User.findOne({ where: { company_email: APPROVER_EMAIL } });
     if (!approver) {
         throw new Error(`Approver not found: ${APPROVER_EMAIL}`);
+    }
+
+    const tenant = await Tenant.findOne({ where: { tenant_code: DEFAULT_TENANT_CODE } });
+    if (!tenant) {
+        throw new Error(`Tenant not found: ${DEFAULT_TENANT_CODE}. Run seed:tenants first.`);
     }
 
     const emailList = [...new Set(compensationSeeds.map((seed) => seed.company_email))];
@@ -52,6 +59,7 @@ const importCompensations = async () => {
 
             if (!existing) {
                 await Compensation.create({
+                    tenant_id: tenant.tenant_id,
                     user_id: user.user_id,
                     salary: seed.salary,
                     bonus: seed.bonus,
@@ -65,6 +73,7 @@ const importCompensations = async () => {
                 summary.created += 1;
             } else {
                 await existing.update({
+                    tenant_id: tenant.tenant_id,
                     salary: seed.salary,
                     bonus: seed.bonus,
                     reason: seed.reason ?? existing.reason,
@@ -76,7 +85,7 @@ const importCompensations = async () => {
             }
 
             await transaction.commit();
-            console.log(`Imported compensation: ${seed.company_email} (${seed.effective_date})`);
+            console.log(`Imported compensation: ${seed.company_email} (${seed.effective_date}) -> ${tenant.tenant_code}`);
         } catch (error) {
             await transaction.rollback();
             summary.failed += 1;

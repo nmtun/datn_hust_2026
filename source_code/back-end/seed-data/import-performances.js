@@ -1,11 +1,13 @@
 import { Op } from "sequelize";
 import sequelize from "../src/config/dbsetup.js";
 import "../src/models/associations.js";
+import Tenant from "../src/models/Tenant.js";
 import User from "../src/models/User.js";
 import PerformancePeriod from "../src/models/PerformancePeriod.js";
 import Performance from "../src/models/Performance.js";
 import performancePeriods from "./performance-periods.js";
 import performanceSeeds from "./performances.js";
+import { DEFAULT_TENANT_CODE } from "./tenants.js";
 
 const buildReviewTimestamp = (reviewDate) => {
     if (!reviewDate) return new Date();
@@ -21,6 +23,10 @@ const upsertPerformancePeriods = async () => {
     };
 
     const periodsByKey = new Map();
+    const tenant = await Tenant.findOne({ where: { tenant_code: DEFAULT_TENANT_CODE } });
+    if (!tenant) {
+        throw new Error(`Tenant not found: ${DEFAULT_TENANT_CODE}. Run seed:tenants first.`);
+    }
     const transaction = await sequelize.transaction();
 
     try {
@@ -41,6 +47,7 @@ const upsertPerformancePeriods = async () => {
 
             if (!existing) {
                 const period = await PerformancePeriod.create({
+                    tenant_id: tenant.tenant_id,
                     period_name: seed.period_name,
                     start_date: seed.start_date,
                     end_date: seed.end_date,
@@ -54,6 +61,7 @@ const upsertPerformancePeriods = async () => {
             }
 
             await existing.update({
+                tenant_id: tenant.tenant_id,
                 end_date: seed.end_date,
                 status: seed.status,
                 description: seed.description ?? existing.description
@@ -90,6 +98,11 @@ const importPerformances = async (periodsByKey) => {
         skipped: 0,
         failed: 0
     };
+
+    const tenant = await Tenant.findOne({ where: { tenant_code: DEFAULT_TENANT_CODE } });
+    if (!tenant) {
+        throw new Error(`Tenant not found: ${DEFAULT_TENANT_CODE}. Run seed:tenants first.`);
+    }
 
     const emailList = [
         ...new Set(
@@ -137,6 +150,7 @@ const importPerformances = async (periodsByKey) => {
             });
 
             const payload = {
+                tenant_id: tenant.tenant_id,
                 user_id: employee.user_id,
                 reviewer_id: reviewer.user_id,
                 period_id: period.period_id,
@@ -164,7 +178,7 @@ const importPerformances = async (periodsByKey) => {
             }
 
             await transaction.commit();
-            console.log(`Imported performance: ${seed.employee_email} (${seed.period_key})`);
+            console.log(`Imported performance: ${seed.employee_email} (${seed.period_key}) -> ${tenant.tenant_code}`);
         } catch (error) {
             await transaction.rollback();
             summary.failed += 1;

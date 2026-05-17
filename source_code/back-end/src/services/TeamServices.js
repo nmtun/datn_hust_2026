@@ -5,6 +5,7 @@ import Department from '../models/Department.js';
 import Employee from '../models/Employee.js';
 import User from '../models/User.js';
 import { canManageTeam, getManagedDepartmentIds, getManageableTeamIds, resolveHierarchyRole } from './HierarchyServices.js';
+import { requireTenantId, withTenantWhere } from '../utils/tenantScope.js';
 
 const baseTeamIncludes = [
     { model: Department, as: 'department', attributes: ['department_id', 'name', 'code'] },
@@ -28,18 +29,20 @@ const buildTeamWhere = async (query = {}, requestingUser = null) => {
         where.department_id = Number(query.department_id);
     }
 
-    if (!requestingUser) return where;
+    const scoped = (value) => withTenantWhere(value, requestingUser);
+
+    if (!requestingUser) return scoped(where);
 
     if (requestingUser.role === 'hr') {
-        return where;
+        return scoped(where);
     }
 
     if (requestingUser.role === 'manager') {
-        return where;
+        return scoped(where);
     }
 
     if (requestingUser.role !== 'employee') {
-        return { active: true, team_id: -1 };
+        return scoped({ active: true, team_id: -1 });
     }
 
     const hierarchyRole = await resolveHierarchyRole({
@@ -49,26 +52,26 @@ const buildTeamWhere = async (query = {}, requestingUser = null) => {
 
     if (hierarchyRole === 'department_head') {
         const managedDepartmentIds = await getManagedDepartmentIds(requestingUser.user_id);
-        if (managedDepartmentIds.length === 0) return { active: true, team_id: -1 };
+        if (managedDepartmentIds.length === 0) return scoped({ active: true, team_id: -1 });
 
         if (where.department_id && !managedDepartmentIds.includes(where.department_id)) {
-            return { active: true, team_id: -1 };
+            return scoped({ active: true, team_id: -1 });
         }
 
         where.department_id = where.department_id
             ? where.department_id
             : { [Op.in]: managedDepartmentIds };
-        return where;
+        return scoped(where);
     }
 
     if (hierarchyRole === 'team_lead') {
-        return {
+        return scoped({
             ...where,
             leader_id: requestingUser.user_id
-        };
+        });
     }
 
-    return where;
+    return scoped(where);
 };
 
 export const createTeamService = async (data, requestingUser) => {
@@ -79,7 +82,7 @@ export const createTeamService = async (data, requestingUser) => {
         if (!department_id) return { status: 400, data: { error: true, message: "Department ID is required" } };
 
         const department = await Department.findOne({
-            where: { department_id, active: true },
+            where: withTenantWhere({ department_id, active: true }, requestingUser),
             attributes: ['department_id', 'manager_id']
         });
         if (!department) return { status: 404, data: { error: true, message: 'Department not found' } };
@@ -88,12 +91,17 @@ export const createTeamService = async (data, requestingUser) => {
             return { status: 403, data: { error: true, message: 'Access denied' } };
         }
 
-        const existing = await Team.findOne({ where: { code } });
+        const existing = await Team.findOne({ where: withTenantWhere({ code }, requestingUser) });
         if (existing) return { status: 400, data: { error: true, message: "Team code already exists" } };
+
+        const tenantResult = requireTenantId(requestingUser);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant is required" } };
+        }
 
         const team = await Team.create({
             name, code, department_id, leader_id: leader_id || null,
-            description, active: true, created_at: new Date()
+            description, tenant_id: tenantResult.tenantId, active: true, created_at: new Date()
         });
         // Sync leader's team_id in Employee table
         if (leader_id) {
@@ -103,7 +111,7 @@ export const createTeamService = async (data, requestingUser) => {
                     department_id,
                     manager_id: department.manager_id || null
                 },
-                { where: { user_id: leader_id } }
+                { where: withTenantWhere({ user_id: leader_id }, requestingUser) }
             );
         }
         return { status: 201, data: { error: false, message: "Team created successfully", team } };
@@ -132,7 +140,7 @@ export const getAllTeamsService = async (query = {}, requestingUser = null) => {
 export const getTeamByIdService = async (id, requestingUser = null) => {
     try {
         const team = await Team.findOne({
-            where: { team_id: id },
+            where: withTenantWhere({ team_id: id }, requestingUser),
             include: [
                 ...baseTeamIncludes,
                 {
@@ -165,7 +173,9 @@ export const getTeamByIdService = async (id, requestingUser = null) => {
 
 export const updateTeamService = async (id, data, requestingUser) => {
     try {
-        const team = await Team.findOne({ where: { team_id: id } });
+        const team = await Team.findOne({
+            where: withTenantWhere({ team_id: id }, requestingUser)
+        });
         if (!team) return { status: 404, data: { error: true, message: "Team not found" } };
 
         const canEdit = await canEditTeam(requestingUser, team);
@@ -182,7 +192,7 @@ export const updateTeamService = async (id, data, requestingUser) => {
 
         const targetDepartmentId = updateData.department_id || team.department_id;
         const department = await Department.findOne({
-            where: { department_id: targetDepartmentId, active: true },
+            where: withTenantWhere({ department_id: targetDepartmentId, active: true }, requestingUser),
             attributes: ['department_id', 'manager_id']
         });
 
@@ -198,7 +208,7 @@ export const updateTeamService = async (id, data, requestingUser) => {
                 // Clear old leader's team_id if they were in this team
                 await Employee.update(
                     { team_id: null, manager_id: null },
-                    { where: { user_id: oldLeaderId, team_id: id } }
+                    { where: withTenantWhere({ user_id: oldLeaderId, team_id: id }, requestingUser) }
                 );
             }
             if (newLeaderId) {
@@ -208,16 +218,16 @@ export const updateTeamService = async (id, data, requestingUser) => {
                         department_id: targetDepartmentId,
                         manager_id: department.manager_id || null
                     },
-                    { where: { user_id: newLeaderId } }
+                    { where: withTenantWhere({ user_id: newLeaderId }, requestingUser) }
                 );
 
                 await Employee.update(
                     { manager_id: newLeaderId },
                     {
-                        where: {
+                        where: withTenantWhere({
                             team_id: id,
                             user_id: { [Op.ne]: newLeaderId }
-                        }
+                        }, requestingUser)
                     }
                 );
             }
@@ -233,7 +243,9 @@ export const updateTeamService = async (id, data, requestingUser) => {
 
 export const addMemberToTeamService = async (teamId, userId, requestingUser) => {
     try {
-        const team = await Team.findOne({ where: { team_id: teamId } });
+        const team = await Team.findOne({
+            where: withTenantWhere({ team_id: teamId }, requestingUser)
+        });
         if (!team) return { status: 404, data: { error: true, message: "Team not found" } };
 
         const canManage = await canManageTeam({
@@ -245,7 +257,9 @@ export const addMemberToTeamService = async (teamId, userId, requestingUser) => 
             return { status: 403, data: { error: true, message: 'Access denied' } };
         }
 
-        const employee = await Employee.findOne({ where: { user_id: userId } });
+        const employee = await Employee.findOne({
+            where: withTenantWhere({ user_id: userId }, requestingUser)
+        });
         if (!employee) return { status: 404, data: { error: true, message: "Employee not found" } };
 
         const nextData = {
@@ -264,7 +278,9 @@ export const addMemberToTeamService = async (teamId, userId, requestingUser) => 
 
 export const removeMemberFromTeamService = async (teamId, userId, requestingUser) => {
     try {
-        const team = await Team.findOne({ where: { team_id: teamId } });
+        const team = await Team.findOne({
+            where: withTenantWhere({ team_id: teamId }, requestingUser)
+        });
         if (!team) return { status: 404, data: { error: true, message: 'Team not found' } };
 
         const canManage = await canManageTeam({
@@ -276,7 +292,9 @@ export const removeMemberFromTeamService = async (teamId, userId, requestingUser
             return { status: 403, data: { error: true, message: 'Access denied' } };
         }
 
-        const employee = await Employee.findOne({ where: { user_id: userId, team_id: teamId } });
+        const employee = await Employee.findOne({
+            where: withTenantWhere({ user_id: userId, team_id: teamId }, requestingUser)
+        });
         if (!employee) return { status: 404, data: { error: true, message: "Member not found in team" } };
 
         const updateData = { team_id: null };
@@ -294,7 +312,9 @@ export const removeMemberFromTeamService = async (teamId, userId, requestingUser
 
 export const deleteTeamService = async (id, requestingUser) => {
     try {
-        const team = await Team.findOne({ where: { team_id: id } });
+        const team = await Team.findOne({
+            where: withTenantWhere({ team_id: id }, requestingUser)
+        });
         if (!team) return { status: 404, data: { error: true, message: "Team not found" } };
 
         const canEdit = await canEditTeam(requestingUser, team);
@@ -319,10 +339,10 @@ export const getManagedTeamsService = async (requestingUser) => {
         }
 
         const teams = await Team.findAll({
-            where: {
+            where: withTenantWhere({
                 team_id: { [Op.in]: manageableTeamIds },
                 active: true
-            },
+            }, requestingUser),
             include: baseTeamIncludes,
             order: [['name', 'ASC']]
         });

@@ -43,7 +43,8 @@ export const createNotificationsForUsers = async ({
     message,
     entityType = null,
     entityId = null,
-    metadata = null
+    metadata = null,
+    tenantId = undefined
 }) => {
     if (!type || !title || !message) return [];
 
@@ -54,19 +55,27 @@ export const createNotificationsForUsers = async ({
     if (uniqueRecipientIds.length === 0) return [];
 
     const now = new Date();
-    const payload = uniqueRecipientIds.map((recipientId) => ({
-        user_id: recipientId,
-        actor_id: actorId ? Number(actorId) : null,
-        type,
-        title,
-        message,
-        entity_type: entityType,
-        entity_id: entityId ? Number(entityId) : null,
-        metadata,
-        is_read: false,
-        created_at: now,
-        updated_at: now
-    }));
+    const payload = uniqueRecipientIds.map((recipientId) => {
+        const entry = {
+            user_id: recipientId,
+            actor_id: actorId ? Number(actorId) : null,
+            type,
+            title,
+            message,
+            entity_type: entityType,
+            entity_id: entityId ? Number(entityId) : null,
+            metadata,
+            is_read: false,
+            created_at: now,
+            updated_at: now
+        };
+
+        if (tenantId !== undefined) {
+            entry.tenant_id = tenantId;
+        }
+
+        return entry;
+    });
 
     const createdNotifications = await Notification.bulkCreate(payload);
     const createdIds = createdNotifications.map((item) => item.notification_id);

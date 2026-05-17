@@ -1,9 +1,15 @@
 import * as employeeService from '../services/EmployeeServices.js';
 import * as userService from '../services/UserServices.js';
 import bcrypt from 'bcrypt';
+import { requireTenantId } from '../utils/tenantScope.js';
 
 export const createEmployee = async (req, res) => {
     try {
+        const tenantResult = requireTenantId(req.user);
+        if (!tenantResult.ok) {
+            return res.status(400).json({ error: true, message: "Tenant is required" });
+        }
+
         const {
             personal_email,
             company_email,
@@ -39,6 +45,7 @@ export const createEmployee = async (req, res) => {
             phone_number,
             address,
             role,
+            tenant_id: tenantResult.tenantId
         });
 
         const employee = await employeeService.createEmployeeService({
@@ -46,7 +53,8 @@ export const createEmployee = async (req, res) => {
             hire_date,
             position,
             termination_date,
-            employee_id_number
+            employee_id_number,
+            tenant_id: tenantResult.tenantId
         });
 
         res.status(201).json({

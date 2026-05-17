@@ -14,7 +14,7 @@ export const createQuiz = async (req, res) => {
 export const getAllQuizzes = async (req, res) => {
     try {
         const { search = '', status = '' } = req.query;
-        const result = await quizzesService.getAllQuizzesService(search, status);
+        const result = await quizzesService.getAllQuizzesService(search, status, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error fetching quizzes:", error);
@@ -25,7 +25,7 @@ export const getAllQuizzes = async (req, res) => {
 export const getQuizById = async (req, res) => {
     try {
         const quizId = req.params.id;
-        const result = await quizzesService.getQuizByIdService(quizId);
+        const result = await quizzesService.getQuizByIdService(quizId, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error fetching quiz by ID:", error);
@@ -37,7 +37,7 @@ export const updateQuiz = async (req, res) => {
     try {
         const quizId = req.params.id;
         const updateData = req.body;
-        const result = await quizzesService.updateQuizService(quizId, updateData);
+        const result = await quizzesService.updateQuizService(quizId, updateData, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error updating quiz:", error);
@@ -48,7 +48,7 @@ export const updateQuiz = async (req, res) => {
 export const deleteQuiz = async (req, res) => {
     try {
         const quizId = req.params.id;
-        const result = await quizzesService.deleteQuizService(quizId);
+        const result = await quizzesService.deleteQuizService(quizId, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error deleting quiz:", error);
@@ -59,7 +59,7 @@ export const deleteQuiz = async (req, res) => {
 export const restoreQuiz = async (req, res) => {
     try {
         const quizId = req.params.id;
-        const result = await quizzesService.restoreQuizService(quizId);
+        const result = await quizzesService.restoreQuizService(quizId, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error restoring quiz:", error);
@@ -69,7 +69,7 @@ export const restoreQuiz = async (req, res) => {
 
 export const getArchivedQuizzes = async (req, res) => {
     try {
-        const result = await quizzesService.getArchivedQuizzesService();
+        const result = await quizzesService.getArchivedQuizzesService(req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error fetching archived quizzes:", error);
@@ -88,7 +88,7 @@ export const attachQuizToMaterial = async (req, res) => {
             });
         }
 
-        const result = await quizzesService.attachQuizToMaterialService(materialId, quizId);
+        const result = await quizzesService.attachQuizToMaterialService(materialId, quizId, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error attaching quiz to material:", error);
@@ -99,7 +99,7 @@ export const attachQuizToMaterial = async (req, res) => {
 export const detachQuizFromMaterial = async (req, res) => {
     try {
         const { materialId, quizId } = req.params;
-        const result = await quizzesService.detachQuizFromMaterialService(materialId, quizId);
+        const result = await quizzesService.detachQuizFromMaterialService(materialId, quizId, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error detaching quiz from material:", error);
@@ -146,7 +146,7 @@ export const createQuizWithRandomQuestions = async (req, res) => {
 export const hardDeleteQuiz = async (req, res) => {
     try {
         const quizId = req.params.id;
-        const result = await quizzesService.hardDeleteQuizService(quizId);
+        const result = await quizzesService.hardDeleteQuizService(quizId, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error hard deleting quiz:", error);

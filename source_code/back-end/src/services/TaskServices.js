@@ -17,6 +17,7 @@ import {
     resolveHierarchyRole
 } from './HierarchyServices.js';
 import { createNotificationsForUsers } from './NotificationServices.js';
+import { requireTenantId, withTenantWhere } from '../utils/tenantScope.js';
 
 const TASK_STATUSES = ['to_do', 'doing', 'review', 'done'];
 const TASK_PRIORITIES = ['low', 'medium', 'high', 'urgent'];
@@ -97,30 +98,30 @@ const baseTaskIncludes = [
 
 const ensureProjectExists = async (projectId) => {
     return Project.findOne({
-        where: {
+        where: withTenantWhere({
             project_id: Number(projectId),
             active: true
-        },
+        }),
         attributes: ['project_id', 'name']
     });
 };
 
 const ensureTaskExists = async (taskId) => {
     return Task.findOne({
-        where: {
+        where: withTenantWhere({
             task_id: Number(taskId),
             active: true
-        }
+        })
     });
 };
 
 const ensureAssigneeExists = async (userId) => {
     return User.findOne({
-        where: {
+        where: withTenantWhere({
             user_id: Number(userId),
             role: { [Op.in]: ['employee', 'manager', 'hr'] },
             is_deleted: false
-        },
+        }),
         attributes: ['user_id', 'role']
     });
 };
@@ -160,7 +161,10 @@ const getHierarchyRole = async (requestingUser) => {
 
 const resolveManagerOrHrTeamId = async (assigneeId, inputTeamId) => {
     if (inputTeamId) {
-        const team = await Team.findOne({ where: { team_id: inputTeamId, active: true }, attributes: ['team_id'] });
+        const team = await Team.findOne({
+            where: withTenantWhere({ team_id: inputTeamId, active: true }),
+            attributes: ['team_id']
+        });
         if (!team) {
             return { status: 404, message: 'Team not found' };
         }
@@ -168,7 +172,7 @@ const resolveManagerOrHrTeamId = async (assigneeId, inputTeamId) => {
     }
 
     const employee = await Employee.findOne({
-        where: { user_id: assigneeId },
+        where: withTenantWhere({ user_id: assigneeId }),
         attributes: ['team_id']
     });
 
@@ -179,10 +183,10 @@ const resolveManagerDepartment = async (departmentId) => {
     if (!departmentId) return null;
 
     return Department.findOne({
-        where: {
+        where: withTenantWhere({
             department_id: Number(departmentId),
             active: true
-        },
+        }),
         attributes: ['department_id', 'manager_id']
     });
 };
@@ -421,8 +425,10 @@ const buildTaskWhere = async (query = {}, requestingUser) => {
     const userId = normalizeUserId(requestingUser);
     const hierarchyRole = await getHierarchyRole(requestingUser);
 
+    const scoped = (value) => withTenantWhere(value, requestingUser);
+
     if (role === 'manager' || (role === 'hr' && hierarchyRole === 'hr')) {
-        return where;
+        return scoped(where);
     }
 
     const useScopedVisibility =
@@ -430,7 +436,7 @@ const buildTaskWhere = async (query = {}, requestingUser) => {
         (role === 'hr' && ['department_head', 'team_lead'].includes(hierarchyRole || ''));
 
     if (!useScopedVisibility || !userId) {
-        return { active: true, task_id: -1 };
+        return scoped({ active: true, task_id: -1 });
     }
 
     const manageableTeamIds = await getManageableTeamIds({ userId, role });
@@ -444,7 +450,7 @@ const buildTaskWhere = async (query = {}, requestingUser) => {
     }
 
     where[Op.or] = visibilityClauses;
-    return where;
+    return scoped(where);
 };
 
 export const createTaskService = async (data, requestingUser) => {
@@ -453,6 +459,11 @@ export const createTaskService = async (data, requestingUser) => {
 
         if (!requesterId) {
             return { status: 401, data: { error: true, message: 'Invalid requester context' } };
+        }
+
+        const tenantResult = requireTenantId(requestingUser);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: 'Tenant is required' } };
         }
 
         const { title, description, project_id, assigned_to, parent_task_id, due_date, priority, status, start_date, team_id, department_id } = data;
@@ -532,7 +543,8 @@ export const createTaskService = async (data, requestingUser) => {
             status: status || 'to_do',
             priority: resolvedPriority,
             active: true,
-            created_at: new Date()
+            created_at: new Date(),
+            tenant_id: tenantResult.tenantId
         });
 
         await pushTaskNotifications({
@@ -575,10 +587,10 @@ export const getAllTasksService = async (query = {}, requestingUser) => {
 export const getTaskByIdService = async (id, requestingUser) => {
     try {
         const task = await Task.findOne({
-            where: {
+            where: withTenantWhere({
                 task_id: Number(id),
                 active: true
-            },
+            }, requestingUser),
             include: [
                 ...baseTaskIncludes,
                 {
@@ -602,7 +614,7 @@ export const getTaskByIdService = async (id, requestingUser) => {
                     model: Task,
                     as: 'subTasks',
                     required: false,
-                    where: { active: true },
+                    where: withTenantWhere({ active: true }, requestingUser),
                     include: [
                         { model: User, as: 'assignee', attributes: ['user_id', 'full_name', 'company_email'] }
                     ]
@@ -791,7 +803,7 @@ export const deleteTaskService = async (id, requestingUser) => {
         await task.update({ active: false, updated_at: now });
         await Task.update(
             { active: false, updated_at: now },
-            { where: { parent_task_id: Number(id), active: true } }
+            { where: withTenantWhere({ parent_task_id: Number(id), active: true }, requestingUser) }
         );
 
         return { status: 200, data: { error: false, message: 'Task deleted successfully' } };
@@ -864,6 +876,11 @@ export const updateTaskStatusService = async (id, status, requestingUser) => {
 
 export const addTaskCommentService = async (taskId, data, requestingUser) => {
     try {
+        const tenantResult = requireTenantId(requestingUser);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: 'Tenant is required' } };
+        }
+
         const task = await ensureTaskExists(taskId);
         if (!task) {
             return { status: 404, data: { error: true, message: 'Task not found' } };
@@ -883,7 +900,8 @@ export const addTaskCommentService = async (taskId, data, requestingUser) => {
             task_id: Number(taskId),
             user_id: normalizeUserId(requestingUser),
             comment: commentText,
-            created_at: new Date()
+            created_at: new Date(),
+            tenant_id: tenantResult.tenantId
         });
 
         const actorId = normalizeUserId(requestingUser);
@@ -918,7 +936,7 @@ export const getTaskCommentsService = async (taskId, requestingUser) => {
         }
 
         const comments = await TaskComment.findAll({
-            where: { task_id: Number(taskId) },
+            where: withTenantWhere({ task_id: Number(taskId) }, requestingUser),
             include: [
                 { model: User, as: 'author', attributes: ['user_id', 'full_name', 'company_email'] }
             ],
@@ -934,6 +952,11 @@ export const getTaskCommentsService = async (taskId, requestingUser) => {
 
 export const createTaskReviewService = async (taskId, data, requestingUser) => {
     try {
+        const tenantResult = requireTenantId(requestingUser);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: 'Tenant is required' } };
+        }
+
         const task = await ensureTaskExists(taskId);
         if (!task) {
             return { status: 404, data: { error: true, message: 'Task not found' } };
@@ -959,7 +982,8 @@ export const createTaskReviewService = async (taskId, data, requestingUser) => {
             reviewed_user_id: task.assigned_to,
             decision,
             note: data?.note || null,
-            created_at: new Date()
+            created_at: new Date(),
+            tenant_id: tenantResult.tenantId
         });
 
         const nextStatus = decision === 'approved' ? 'done' : 'doing';

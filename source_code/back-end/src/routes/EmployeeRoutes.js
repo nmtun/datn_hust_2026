@@ -4,8 +4,7 @@ import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// router.post('/create', authenticate, authorize("hr"), employeeController.createEmployee);
-router.post('/create', employeeController.createEmployee);
+router.post('/create', authenticate, authorize("hr"), employeeController.createEmployee);
 
 
 // Employee / Manager self-service

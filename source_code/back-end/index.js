@@ -36,6 +36,7 @@ import "./src/models/Task.js";
 import "./src/models/TaskComment.js";
 import "./src/models/TaskReview.js";
 import "./src/models/Notification.js";
+import "./src/models/Tenant.js";
 
 // Import routes here
 import UserRoutes from "./src/routes/UserRoutes.js";
@@ -58,6 +59,7 @@ import HRReportRoutes from "./src/routes/HRReportRoutes.js";
 import ProjectRoutes from "./src/routes/ProjectRoutes.js";
 import TaskRoutes from "./src/routes/TaskRoutes.js";
 import NotificationRoutes from "./src/routes/NotificationRoutes.js";
+import TenantRoutes from "./src/routes/TenantRoutes.js";
 import { startPerformanceReminderScheduler } from "./src/services/PerformancePeriodServices.js";
 
 dotenv.config();
@@ -117,6 +119,7 @@ app.use("/api/report", HRReportRoutes);
 app.use("/api/project", ProjectRoutes);
 app.use("/api/task", TaskRoutes);
 app.use("/api/notification", NotificationRoutes);
+app.use("/api/tenant", TenantRoutes);
 
 setupSocketServer(server);
 

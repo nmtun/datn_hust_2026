@@ -1,4 +1,5 @@
 import User from "./User.js";
+import Tenant from "./Tenant.js";
 import Candidate from "./Candidate.js";
 import Employee from "./Employee.js";
 import JobDescription from "./JobDescription.js";
@@ -25,6 +26,10 @@ import Task from "./Task.js";
 import TaskComment from "./TaskComment.js";
 import TaskReview from "./TaskReview.js";
 import Notification from "./Notification.js";
+
+// Tenant ↔ User
+Tenant.hasMany(User, { foreignKey: "tenant_id", as: "users" });
+User.belongsTo(Tenant, { foreignKey: "tenant_id", as: "tenant" });
 
 // Define one-to-many associations between User and Candidate_Info
 User.hasMany(Candidate, { foreignKey: "user_id" });

@@ -2,13 +2,14 @@ import apiClient from "./axios";
 
 export interface AdminProfile {
     user_id: number;
+    tenant_id?: number | null;
     full_name: string;
     personal_email: string;
     company_email?: string;
     phone_number?: string;
     address?: string;
     status: 'active' | 'on_leave' | 'terminated';
-    role: string;
+    role: 'candidate' | 'employee' | 'hr' | 'manager' | 'tenant_admin' | 'super_admin';
     is_deleted?: boolean;
     created_at?: string;
     updated_at?: string;
@@ -21,7 +22,8 @@ export interface AdminUserCreatePayload {
     password: string;
     phone_number?: string;
     address?: string;
-    role: 'employee' | 'hr' | 'manager' | 'admin';
+    tenant_id?: number;
+    role: 'employee' | 'hr' | 'manager' | 'tenant_admin';
     status?: 'active' | 'on_leave' | 'terminated';
 }
 
@@ -35,7 +37,7 @@ export const userApi = {
         return response.data;
     },
     // Admin functions
-    getAll: async (params?: { full_name?: string; email?: string; role?: string; status?: string; include_deleted?: boolean }) => {
+    getAll: async (params?: { full_name?: string; email?: string; role?: string; status?: string; include_deleted?: boolean; tenant_id?: number }) => {
         const response = await apiClient.get('/api/user/get-all', { params });
         return response.data;
     },

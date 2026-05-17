@@ -4,6 +4,7 @@ import Department from '../models/Department.js';
 import Team from '../models/Team.js';
 import Employee from '../models/Employee.js';
 import User from '../models/User.js';
+import { requireTenantId, withTenantWhere } from '../utils/tenantScope.js';
 
 const departmentIncludes = [
     { model: User, as: 'manager', attributes: ['user_id', 'full_name', 'company_email'] },
@@ -40,12 +41,20 @@ export const createDepartmentService = async (data, requestingUser) => {
             return { status: 403, data: { error: true, message: 'Only HR or manager can manage departments' } };
         }
 
-        const existing = await Department.findOne({ where: { code } });
+        const existing = await Department.findOne({
+            where: withTenantWhere({ code }, requestingUser)
+        });
         if (existing) return { status: 400, data: { error: true, message: "Department code already exists" } };
+
+        const tenantResult = requireTenantId(requestingUser);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant is required" } };
+        }
 
         const department = await Department.create({
             name, code, description, manager_id: manager_id || null,
             parent_department_id: parent_department_id || null,
+            tenant_id: tenantResult.tenantId,
             active: true,
             created_at: new Date()
         });
@@ -71,7 +80,7 @@ export const getAllDepartmentsService = async (requestingUser = null) => {
         const where = await getDepartmentScopeWhere(requestingUser);
 
         const departments = await Department.findAll({
-            where,
+            where: withTenantWhere(where, requestingUser),
             include: departmentIncludes,
             order: [['name', 'ASC']]
         });
@@ -85,7 +94,7 @@ export const getAllDepartmentsService = async (requestingUser = null) => {
 export const getDepartmentByIdService = async (id, requestingUser = null) => {
     try {
         const department = await Department.findOne({
-            where: { department_id: id },
+            where: withTenantWhere({ department_id: id }, requestingUser),
             include: [
                 { model: User, as: 'manager', attributes: ['user_id', 'full_name', 'company_email'] },
                 { model: Department, as: 'parentDepartment', attributes: ['department_id', 'name', 'code'] },
@@ -121,7 +130,9 @@ export const getDepartmentByIdService = async (id, requestingUser = null) => {
 
 export const updateDepartmentService = async (id, data, requestingUser) => {
     try {
-        const department = await Department.findOne({ where: { department_id: id } });
+        const department = await Department.findOne({
+            where: withTenantWhere({ department_id: id }, requestingUser)
+        });
         if (!department) return { status: 404, data: { error: true, message: "Department not found" } };
 
         const canMutate = await canMutateDepartment(requestingUser);
@@ -144,14 +155,17 @@ export const updateDepartmentService = async (id, data, requestingUser) => {
                 managerUpdate.manager_id = requestingUser.user_id;
             }
 
-            await Employee.update(managerUpdate, { where: { user_id: updateData.manager_id } });
+            await Employee.update(
+                managerUpdate,
+                { where: withTenantWhere({ user_id: updateData.manager_id }, requestingUser) }
+            );
 
             const teams = await Team.findAll({
-                where: {
+                where: withTenantWhere({
                     department_id: Number(id),
                     active: true,
                     leader_id: { [Op.ne]: null }
-                },
+                }, requestingUser),
                 attributes: ['leader_id']
             });
 
@@ -159,7 +173,7 @@ export const updateDepartmentService = async (id, data, requestingUser) => {
             if (teamLeaderIds.length > 0) {
                 await Employee.update(
                     { manager_id: updateData.manager_id },
-                    { where: { user_id: { [Op.in]: teamLeaderIds } } }
+                    { where: withTenantWhere({ user_id: { [Op.in]: teamLeaderIds } }, requestingUser) }
                 );
             }
         }
@@ -173,7 +187,9 @@ export const updateDepartmentService = async (id, data, requestingUser) => {
 
 export const deleteDepartmentService = async (id, requestingUser) => {
     try {
-        const department = await Department.findOne({ where: { department_id: id } });
+        const department = await Department.findOne({
+            where: withTenantWhere({ department_id: id }, requestingUser)
+        });
         if (!department) return { status: 404, data: { error: true, message: "Department not found" } };
 
         const canMutate = await canMutateDepartment(requestingUser);

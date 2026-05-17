@@ -2,10 +2,47 @@ import '../models/associations.js';
 import JobDescription from "../models/JobDescription.js";
 import Department from "../models/Department.js";
 import { Op } from "sequelize";
+import { getRequestContext, runWithRequestContext } from '../utils/requestContext.js';
+import { requireTenantId } from '../utils/tenantScope.js';
 
 const jobDescriptionIncludes = [
     { model: Department, as: 'department', attributes: ['department_id', 'name', 'code'], required: false }
 ];
+
+const isTruthyFlag = (value) => {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value === 1;
+    if (typeof value === 'string') {
+        return ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase());
+    }
+    return false;
+};
+
+const parseTenantId = (value) => {
+    const parsed = Number(value);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
+const resolveTenantIdFromQuery = (query = {}) => {
+    return parseTenantId(query.tenant_id ?? query.tenantId);
+};
+
+const runWithTenantContext = async (query, handler) => {
+    const context = getRequestContext();
+    if (context && Object.prototype.hasOwnProperty.call(context, 'tenantId')) {
+        return handler();
+    }
+
+    const tenantId = resolveTenantIdFromQuery(query);
+    if (!tenantId) {
+        return {
+            status: 400,
+            data: { error: true, message: "Tenant id is required" }
+        };
+    }
+
+    return runWithRequestContext({ tenantId, role: 'public', userId: null }, handler);
+};
 
 const parseDepartmentId = (value) => {
     const parsed = Number(value);
@@ -66,6 +103,11 @@ export const createJobDescriptionService = async (jobData, user) => {
         return { status: 404, data: { error: true, message: "Department not found or inactive" } };
     }
 
+    const tenantResult = requireTenantId(user);
+    if (!tenantResult.ok) {
+        return { status: 400, data: { error: true, message: "Tenant is required" } };
+    }
+
     const created_by = user.user_id;
 
     const newJob = await JobDescription.create({
@@ -85,7 +127,8 @@ export const createJobDescriptionService = async (jobData, user) => {
         closing_date,
         positions_count,
         department_id: normalizedDepartmentId,
-        created_by
+        created_by,
+        tenant_id: tenantResult.tenantId
     });
 
     const createdJob = await JobDescription.findOne({
@@ -103,19 +146,23 @@ export const createJobDescriptionService = async (jobData, user) => {
     };
 };
 
-export const getAllJobDescriptionsService = async (includeDeleted = false) => {
-    const jobs = await JobDescription.findAll({
-        where: includeDeleted ? {} : { is_deleted: false },
-        include: jobDescriptionIncludes,
-        order: [['updated_at', 'DESC'], ['created_at', 'DESC']]
+export const getAllJobDescriptionsService = async (query = {}) => {
+    const includeDeleted = isTruthyFlag(query.include_deleted);
+
+    return runWithTenantContext(query, async () => {
+        const jobs = await JobDescription.findAll({
+            where: includeDeleted ? {} : { is_deleted: false },
+            include: jobDescriptionIncludes,
+            order: [['updated_at', 'DESC'], ['created_at', 'DESC']]
+        });
+        return {
+            status: 200,
+            data: {
+                error: false,
+                jobs
+            }
+        };
     });
-    return {
-        status: 200,
-        data: {
-            error: false,
-            jobs
-        }
-    };
 };
 
 export const getDeletedJobDescriptionsService = async () => {
@@ -153,18 +200,20 @@ export const restoreJobDescriptionService = async (jobId) => {
     };
 };
 
-export const getJobDescriptionByIdService = async (jobId) => {
-    const job = await JobDescription.findOne({
-        where: { job_id: Number(jobId) },
-        include: jobDescriptionIncludes
+export const getJobDescriptionByIdService = async (jobId, query = {}) => {
+    return runWithTenantContext(query, async () => {
+        const job = await JobDescription.findOne({
+            where: { job_id: Number(jobId) },
+            include: jobDescriptionIncludes
+        });
+        return {
+            status: 200,
+            data: {
+                error: false,
+                job
+            }
+        };
     });
-    return {
-        status: 200,
-        data: {
-            error: false,
-            job
-        }
-    };
 };
 
 export const updateJobDescriptionService = async (jobId, jobData) => {

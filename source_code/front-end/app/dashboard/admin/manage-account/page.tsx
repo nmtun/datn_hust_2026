@@ -88,7 +88,7 @@ function ManageAccountPage() {
 	const [deleting, setDeleting] = useState(false);
 
 	const visibleAccounts = useMemo(
-		() => accounts.filter((account) => account.role !== "candidate" && account.role !== "admin"),
+		() => accounts.filter((account) => account.role !== "candidate" && account.role !== "tenant_admin"),
 		[accounts]
 	);
 

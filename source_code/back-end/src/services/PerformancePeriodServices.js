@@ -6,8 +6,11 @@ import Department from '../models/Department.js';
 import Team from '../models/Team.js';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
+import Tenant from '../models/Tenant.js';
 import { createNotificationsForUsers } from './NotificationServices.js';
 import { getEvaluationTargetUserIds, resolveHierarchyRole } from './HierarchyServices.js';
+import { getRequestContext, runWithRequestContext } from '../utils/requestContext.js';
+import { requireTenantId, withTenantWhere } from '../utils/tenantScope.js';
 
 const PERFORMANCE_NOTIFICATION_TYPES = {
     periodCreated: 'performance_period_created',
@@ -53,17 +56,17 @@ const formatDateForMessage = (value) => {
 const getActiveReviewLeads = async () => {
     const [departments, teams] = await Promise.all([
         Department.findAll({
-            where: {
+            where: withTenantWhere({
                 active: true,
                 manager_id: { [Op.ne]: null }
-            },
+            }),
             attributes: ['manager_id']
         }),
         Team.findAll({
-            where: {
+            where: withTenantWhere({
                 active: true,
                 leader_id: { [Op.ne]: null }
-            },
+            }),
             attributes: ['leader_id']
         })
     ]);
@@ -78,11 +81,11 @@ const getActiveReviewLeads = async () => {
     if (userIds.length === 0) return [];
 
     return User.findAll({
-        where: {
+        where: withTenantWhere({
             user_id: { [Op.in]: userIds },
             is_deleted: false,
             status: 'active'
-        },
+        }),
         attributes: ['user_id', 'role', 'full_name']
     });
 };
@@ -94,7 +97,8 @@ const createPerformanceNotificationsWithFallback = async ({
     title,
     message,
     period,
-    metadata = null
+    metadata = null,
+    tenantId = undefined
 }) => {
     const payload = {
         recipientIds,
@@ -103,7 +107,8 @@ const createPerformanceNotificationsWithFallback = async ({
         message,
         entityType: 'performance_period',
         entityId: Number(period?.period_id) || null,
-        metadata
+        metadata,
+        tenantId
     };
 
     try {
@@ -144,7 +149,8 @@ const notifyReviewLeadsForNewPeriod = async ({ period, actorId }) => {
             end_date: period.end_date,
             status: period.status,
             trigger: 'period_created'
-        }
+        },
+        tenantId: period?.tenant_id
     });
 
     return notifications.length;
@@ -152,7 +158,7 @@ const notifyReviewLeadsForNewPeriod = async ({ period, actorId }) => {
 
 const hasInitialPeriodNotificationSent = async (periodId) => {
     const sentCount = await Notification.count({
-        where: {
+        where: withTenantWhere({
             entity_type: 'performance_period',
             entity_id: Number(periodId),
             title: PERFORMANCE_NOTIFICATION_TITLES.periodCreated,
@@ -162,7 +168,7 @@ const hasInitialPeriodNotificationSent = async (periodId) => {
                     PERFORMANCE_NOTIFICATION_TYPES.fallback
                 ]
             }
-        }
+        })
     });
 
     return sentCount > 0;
@@ -180,7 +186,7 @@ const notifyReviewLeadsWhenPeriodInProgress = async ({ period, actorId }) => {
 const hasRecentReminder = async ({ reviewerId, periodId, lookbackHours }) => {
     const windowStart = new Date(Date.now() - lookbackHours * 60 * 60 * 1000);
     const sentCount = await Notification.count({
-        where: {
+        where: withTenantWhere({
             user_id: reviewerId,
             entity_type: 'performance_period',
             entity_id: periodId,
@@ -192,7 +198,7 @@ const hasRecentReminder = async ({ reviewerId, periodId, lookbackHours }) => {
                 ]
             },
             created_at: { [Op.gte]: windowStart }
-        }
+        })
     });
 
     return sentCount > 0;
@@ -209,11 +215,11 @@ const getPendingReviewCountForReviewer = async ({ reviewer, periodId }) => {
     }
 
     const completedCount = await Performance.count({
-        where: {
+        where: withTenantWhere({
             period_id: periodId,
             reviewer_id: reviewer.user_id,
             user_id: { [Op.in]: targetUserIds }
-        },
+        }),
         distinct: true,
         col: 'user_id'
     });
@@ -227,12 +233,7 @@ const getPendingReviewCountForReviewer = async ({ reviewer, periodId }) => {
     };
 };
 
-export const sendPerformanceReviewDeadlineReminders = async (customConfig = {}) => {
-    const config = {
-        ...getReminderConfig(),
-        ...customConfig
-    };
-
+const runPerformanceReviewDeadlineRemindersForContext = async (config) => {
     const today = new Date();
     const todayDate = toDateOnlyLocal(today);
     if (!todayDate) return { periods: 0, notifications_sent: 0 };
@@ -244,15 +245,15 @@ export const sendPerformanceReviewDeadlineReminders = async (customConfig = {}) 
     if (!reminderDeadlineDate) return { periods: 0, notifications_sent: 0 };
 
     const periods = await PerformancePeriod.findAll({
-        where: {
+        where: withTenantWhere({
             status: 'in_progress',
             end_date: {
                 [Op.gte]: todayDate,
                 [Op.lte]: reminderDeadlineDate
             }
-        },
+        }),
         order: [['end_date', 'ASC']],
-        attributes: ['period_id', 'period_name', 'start_date', 'end_date', 'status']
+        attributes: ['period_id', 'period_name', 'start_date', 'end_date', 'status', 'tenant_id']
     });
 
     if (periods.length === 0) {
@@ -300,7 +301,8 @@ export const sendPerformanceReviewDeadlineReminders = async (customConfig = {}) 
                     completed_count: completedCount,
                     total_targets: totalTargets,
                     trigger: 'deadline_reminder'
-                }
+                },
+                tenantId: period?.tenant_id
             });
 
             notificationsSent += reminderNotifications.length;
@@ -311,6 +313,42 @@ export const sendPerformanceReviewDeadlineReminders = async (customConfig = {}) 
         periods: periods.length,
         notifications_sent: notificationsSent
     };
+};
+
+export const sendPerformanceReviewDeadlineReminders = async (customConfig = {}) => {
+    const config = {
+        ...getReminderConfig(),
+        ...customConfig
+    };
+
+    const context = getRequestContext();
+    if (context && Object.prototype.hasOwnProperty.call(context, 'tenantId')) {
+        return runPerformanceReviewDeadlineRemindersForContext(config);
+    }
+
+    const tenants = await Tenant.findAll({
+        where: { is_deleted: false },
+        attributes: ['tenant_id']
+    });
+
+    if (tenants.length === 0) {
+        return { periods: 0, notifications_sent: 0 };
+    }
+
+    let totalPeriods = 0;
+    let totalNotifications = 0;
+
+    for (const tenant of tenants) {
+        const tenantId = tenant.tenant_id;
+        const result = await runWithRequestContext({ tenantId, role: 'system', userId: null }, () => {
+            return runPerformanceReviewDeadlineRemindersForContext(config);
+        });
+
+        totalPeriods += result.periods;
+        totalNotifications += result.notifications_sent;
+    }
+
+    return { periods: totalPeriods, notifications_sent: totalNotifications };
 };
 
 export const startPerformanceReminderScheduler = () => {
@@ -369,11 +407,23 @@ export const createPeriodService = async (data, requestingUser) => {
             return { status: 403, data: { error: true, message: 'Only HR or senior manager can create performance periods' } };
         }
 
+        const tenantResult = requireTenantId(requestingUser);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: 'Tenant is required' } };
+        }
+
         const { period_name, start_date, end_date, status = 'planned', description } = data;
         if (!period_name) return { status: 400, data: { error: true, message: "Period name is required" } };
         if (!start_date || !end_date) return { status: 400, data: { error: true, message: "Start date and end date are required" } };
 
-        const period = await PerformancePeriod.create({ period_name, start_date, end_date, status, description });
+        const period = await PerformancePeriod.create({
+            period_name,
+            start_date,
+            end_date,
+            status,
+            description,
+            tenant_id: tenantResult.tenantId
+        });
 
         try {
             await notifyReviewLeadsWhenPeriodInProgress({
@@ -391,9 +441,12 @@ export const createPeriodService = async (data, requestingUser) => {
     }
 };
 
-export const getAllPeriodsService = async () => {
+export const getAllPeriodsService = async (requestingUser = null) => {
     try {
-        const periods = await PerformancePeriod.findAll({ order: [['start_date', 'DESC']] });
+        const periods = await PerformancePeriod.findAll({
+            where: withTenantWhere({}, requestingUser),
+            order: [['start_date', 'DESC']]
+        });
         return { status: 200, data: { error: false, message: "Performance periods retrieved successfully", periods } };
     } catch (error) {
         console.error('Error in getAllPeriodsService:', error);
@@ -401,9 +454,10 @@ export const getAllPeriodsService = async () => {
     }
 };
 
-export const getPeriodByIdService = async (id) => {
+export const getPeriodByIdService = async (id, requestingUser = null) => {
     try {
-        const period = await PerformancePeriod.findByPk(id, {
+        const period = await PerformancePeriod.findOne({
+            where: withTenantWhere({ period_id: Number(id) }, requestingUser),
             include: [{ model: Performance, as: 'performances', attributes: ['perf_id', 'user_id', 'rating', 'review_date'] }]
         });
         if (!period) return { status: 404, data: { error: true, message: "Period not found" } };
@@ -421,7 +475,9 @@ export const updatePeriodService = async (id, data, requestingUser) => {
             return { status: 403, data: { error: true, message: 'Only HR or senior manager can update performance periods' } };
         }
 
-        const period = await PerformancePeriod.findByPk(id);
+        const period = await PerformancePeriod.findOne({
+            where: withTenantWhere({ period_id: Number(id) }, requestingUser)
+        });
         if (!period) return { status: 404, data: { error: true, message: "Period not found" } };
 
         const allowed = ['period_name', 'start_date', 'end_date', 'status', 'description'];
@@ -457,7 +513,9 @@ export const togglePeriodStatusService = async (id, requestingUser) => {
             return { status: 403, data: { error: true, message: 'Only HR or senior manager can change period status' } };
         }
 
-        const period = await PerformancePeriod.findByPk(id);
+        const period = await PerformancePeriod.findOne({
+            where: withTenantWhere({ period_id: Number(id) }, requestingUser)
+        });
         if (!period) return { status: 404, data: { error: true, message: "Period not found" } };
 
         const previousStatus = period.status;

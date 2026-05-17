@@ -10,6 +10,7 @@ import QuestionToQuiz from "../models/QuesionToQuiz.js";
 import Tags from "../models/Tag.js";
 import QuizTags from "../models/QuizTag.js";
 import { Op } from 'sequelize';
+import { requireTenantId, withTenantWhere } from '../utils/tenantScope.js';
 
 export const createQuizService = async (quizData, user) => {
     try {
@@ -23,6 +24,11 @@ export const createQuizService = async (quizData, user) => {
             created_by = user.user_id
         } = quizData;
 
+        const tenantResult = requireTenantId(user);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant is required" } };
+        }
+
         // Validation
         if (!title) return { status: 400, data: { error: true, message: "Title is required" } };
         if (!duration || duration <= 0) return { status: 400, data: { error: true, message: "Valid duration is required" } };
@@ -33,7 +39,7 @@ export const createQuizService = async (quizData, user) => {
         // Validate tags if provided
         if (tag_ids.length > 0) {
             const validTags = await Tags.findAll({
-                where: { tag_id: { [Op.in]: tag_ids } }
+                where: withTenantWhere({ tag_id: { [Op.in]: tag_ids } }, user)
             });
             if (validTags.length !== tag_ids.length) {
                 return { status: 400, data: { error: true, message: "Some tag IDs are invalid" } };
@@ -46,7 +52,8 @@ export const createQuizService = async (quizData, user) => {
             duration,
             passing_score,
             status,
-            created_by
+            created_by,
+            tenant_id: tenantResult.tenantId
         });
 
         // Add tags to quiz if provided
@@ -56,7 +63,8 @@ export const createQuizService = async (quizData, user) => {
                 // Create QuizTags records manually
                 const quizTagData = tag_ids.map(tagId => ({
                     quiz_id: newQuiz.quiz_id,
-                    tag_id: tagId
+                    tag_id: tagId,
+                    tenant_id: tenantResult.tenantId
                 }));
                 await QuizTags.bulkCreate(quizTagData);
                 console.log('Tags added successfully via QuizTags.bulkCreate');
@@ -97,7 +105,7 @@ export const createQuizService = async (quizData, user) => {
     }
 };
 
-export const getAllQuizzesService = async (search = '', status = '') => {
+export const getAllQuizzesService = async (search = '', status = '', requestingUser = null) => {
     try {
         const whereClause = {};
         
@@ -113,7 +121,7 @@ export const getAllQuizzesService = async (search = '', status = '') => {
         }
 
         const quizzes = await Quizzes.findAll({
-            where: whereClause,
+            where: withTenantWhere(whereClause, requestingUser),
             include: [
                 {
                     model: User,
@@ -123,7 +131,7 @@ export const getAllQuizzesService = async (search = '', status = '') => {
                 {
                     model: QuestionToQuiz,
                     as: 'questionAssignments',
-                    where: { is_active: true },
+                    where: withTenantWhere({ is_active: true }, requestingUser),
                     required: false,
                     include: [
                         {
@@ -167,9 +175,10 @@ export const getAllQuizzesService = async (search = '', status = '') => {
     }
 };
 
-export const getQuizByIdService = async (quizId) => {
+export const getQuizByIdService = async (quizId, requestingUser = null) => {
     try {
-        const quiz = await Quizzes.findByPk(quizId, {
+        const quiz = await Quizzes.findOne({
+            where: withTenantWhere({ quiz_id: quizId }, requestingUser),
             include: [
                 {
                     model: User,
@@ -179,7 +188,7 @@ export const getQuizByIdService = async (quizId) => {
                 {
                     model: QuestionToQuiz,
                     as: 'questionAssignments',
-                    where: { is_active: true },
+                    where: withTenantWhere({ is_active: true }, requestingUser),
                     required: false,
                     include: [
                         {
@@ -239,9 +248,11 @@ export const getQuizByIdService = async (quizId) => {
     }
 };
 
-export const updateQuizService = async (quizId, updateData) => {
+export const updateQuizService = async (quizId, updateData, requestingUser = null) => {
     try {
-        const quiz = await Quizzes.findByPk(quizId);
+        const quiz = await Quizzes.findOne({
+            where: withTenantWhere({ quiz_id: quizId }, requestingUser)
+        });
         
         if (!quiz) {
             return {
@@ -269,7 +280,7 @@ export const updateQuizService = async (quizId, updateData) => {
         if (tag_ids !== undefined) {
             if (tag_ids.length > 0) {
                 const validTags = await Tags.findAll({
-                    where: { tag_id: { [Op.in]: tag_ids } }
+                    where: withTenantWhere({ tag_id: { [Op.in]: tag_ids } }, requestingUser)
                 });
                 if (validTags.length !== tag_ids.length) {
                     return { status: 400, data: { error: true, message: "Some tag IDs are invalid" } };
@@ -283,7 +294,8 @@ export const updateQuizService = async (quizId, updateData) => {
         // Update quiz data
         await quiz.update(quizUpdateData);
 
-        const updatedQuiz = await Quizzes.findByPk(quizId, {
+        const updatedQuiz = await Quizzes.findOne({
+            where: withTenantWhere({ quiz_id: quizId }, requestingUser),
             include: [
                 {
                     model: User,
@@ -293,7 +305,7 @@ export const updateQuizService = async (quizId, updateData) => {
                 {
                     model: QuestionToQuiz,
                     as: 'questionAssignments',
-                    where: { is_active: true },
+                    where: withTenantWhere({ is_active: true }, requestingUser),
                     required: false,
                     include: [
                         {
@@ -337,9 +349,11 @@ export const updateQuizService = async (quizId, updateData) => {
     }
 };
 
-export const deleteQuizService = async (quizId) => {
+export const deleteQuizService = async (quizId, requestingUser = null) => {
     try {
-        const quiz = await Quizzes.findByPk(quizId);
+        const quiz = await Quizzes.findOne({
+            where: withTenantWhere({ quiz_id: quizId }, requestingUser)
+        });
         
         if (!quiz) {
             return {
@@ -373,9 +387,11 @@ export const deleteQuizService = async (quizId) => {
     }
 };
 
-export const restoreQuizService = async (quizId) => {
+export const restoreQuizService = async (quizId, requestingUser = null) => {
     try {
-        const quiz = await Quizzes.findByPk(quizId);
+        const quiz = await Quizzes.findOne({
+            where: withTenantWhere({ quiz_id: quizId }, requestingUser)
+        });
         
         if (!quiz) {
             return {
@@ -409,10 +425,10 @@ export const restoreQuizService = async (quizId) => {
     }
 };
 
-export const getArchivedQuizzesService = async () => {
+export const getArchivedQuizzesService = async (requestingUser = null) => {
     try {
         const quizzes = await Quizzes.findAll({
-            where: { status: 'archived' },
+            where: withTenantWhere({ status: 'archived' }, requestingUser),
             include: [
                 {
                     model: User,
@@ -422,7 +438,7 @@ export const getArchivedQuizzesService = async () => {
                 {
                     model: QuestionToQuiz,
                     as: 'questionAssignments',
-                    where: { is_active: true },
+                    where: withTenantWhere({ is_active: true }, requestingUser),
                     required: false,
                     include: [
                         {
@@ -456,10 +472,16 @@ export const getArchivedQuizzesService = async () => {
     }
 };
 
-export const attachQuizToMaterialService = async (materialId, quizId) => {
+export const attachQuizToMaterialService = async (materialId, quizId, requestingUser = null) => {
     try {
+        const tenantResult = requireTenantId(requestingUser);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant is required" } };
+        }
+
         // Check if material exists and get its tags
-        const material = await TrainingMaterial.findByPk(materialId, {
+        const material = await TrainingMaterial.findOne({
+            where: withTenantWhere({ material_id: materialId }, requestingUser),
             include: [
                 {
                     model: Tags,
@@ -479,7 +501,8 @@ export const attachQuizToMaterialService = async (materialId, quizId) => {
         }
 
         // Check if quiz exists and get its tags
-        const quiz = await Quizzes.findByPk(quizId, {
+        const quiz = await Quizzes.findOne({
+            where: withTenantWhere({ quiz_id: quizId }, requestingUser),
             include: [
                 {
                     model: Tags,
@@ -534,7 +557,8 @@ export const attachQuizToMaterialService = async (materialId, quizId) => {
         // Create association
         await MaterialQuizzes.create({
             material_id: materialId,
-            quiz_id: quizId
+            quiz_id: quizId,
+            tenant_id: tenantResult.tenantId
         });
 
         return {
@@ -556,10 +580,10 @@ export const attachQuizToMaterialService = async (materialId, quizId) => {
     }
 };
 
-export const detachQuizFromMaterialService = async (materialId, quizId) => {
+export const detachQuizFromMaterialService = async (materialId, quizId, requestingUser = null) => {
     try {
         const association = await MaterialQuizzes.findOne({
-            where: { material_id: materialId, quiz_id: quizId }
+            where: withTenantWhere({ material_id: materialId, quiz_id: quizId }, requestingUser)
         });
 
         if (!association) {
@@ -604,6 +628,13 @@ export const createQuizWithRandomQuestionsService = async (quizData, tagConfigs,
             created_by = user.user_id
         } = quizData;
 
+        const tenantResult = requireTenantId(user);
+        if (!tenantResult.ok) {
+            return { status: 401, data: { error: true, message: "Tenant context is required" } };
+        }
+
+        const tenantId = tenantResult.tenantId;
+
         // Validation
         if (!title) return { status: 400, data: { error: true, message: "Title is required" } };
         if (!duration || duration <= 0) return { status: 400, data: { error: true, message: "Valid duration is required" } };
@@ -628,7 +659,8 @@ export const createQuizWithRandomQuestionsService = async (quizData, tagConfigs,
             duration,
             passing_score,
             status,
-            created_by
+            created_by,
+            tenant_id: tenantId
         });
 
         // lấy ds tag
@@ -639,7 +671,8 @@ export const createQuizWithRandomQuestionsService = async (quizData, tagConfigs,
                 // quiz-tags records
                 const quizTagData = tagIds.map(tagId => ({
                     quiz_id: newQuiz.quiz_id,
-                    tag_id: tagId
+                    tag_id: tagId,
+                    tenant_id: tenantId
                 }));
                 await QuizTags.bulkCreate(quizTagData);
                 console.log('Tags added successfully to quiz via QuizTags.bulkCreate');
@@ -661,10 +694,17 @@ export const createQuizWithRandomQuestionsService = async (quizData, tagConfigs,
                 SELECT DISTINCT q.*, qt.tag_id
                 FROM Quiz_Questions q
                 INNER JOIN Question_Tags qt ON q.question_id = qt.question_id
-                WHERE q.is_active = 1 AND qt.tag_id = ${tagId}
+                WHERE q.is_active = 1
+                    AND qt.tag_id = :tagId
+                    AND q.tenant_id = :tenantId
+                    AND qt.tenant_id = :tenantId
                 ORDER BY q.question_id DESC
             `, {
-                type: sequelize.QueryTypes.SELECT
+                type: sequelize.QueryTypes.SELECT,
+                replacements: {
+                    tagId,
+                    tenantId
+                }
             });
 
             // save
@@ -672,8 +712,12 @@ export const createQuizWithRandomQuestionsService = async (quizData, tagConfigs,
             console.log(`Tag ${tagId}: Found ${questionsForTag.length} available questions, need ${config.questionCount}`);
         }
 
-        // chọn câu hỏi cho mỗi tag
-        for (const config of tagConfigs) {
+        // chọn câu hỏi cho mỗi tag (ưu tiên tag ít câu hỏi trước)
+        const sortedTagConfigs = [...tagConfigs].sort((a, b) => {
+            return questionsByTag[a.tagId].length - questionsByTag[b.tagId].length;
+        });
+
+        for (const config of sortedTagConfigs) {
             const tagId = config.tagId;
             const questionCount = config.questionCount;
             const availableQuestions = questionsByTag[tagId];
@@ -725,7 +769,8 @@ export const createQuizWithRandomQuestionsService = async (quizData, tagConfigs,
                 quiz_id: newQuiz.quiz_id,
                 tag_id: question.assigned_tag_id, // gán tag đã chọn cho câu hỏi
                 question_order: i + 1,
-                added_by: user.user_id
+                added_by: user.user_id,
+                tenant_id: tenantId
             });
         }
 
@@ -798,9 +843,11 @@ export const createQuizWithRandomQuestionsService = async (quizData, tagConfigs,
 };
 
 // xóa cứng 
-export const hardDeleteQuizService = async (quizId) => {
+export const hardDeleteQuizService = async (quizId, requestingUser = null) => {
     try {
-        const quiz = await Quizzes.findByPk(quizId);
+        const quiz = await Quizzes.findOne({
+            where: withTenantWhere({ quiz_id: quizId }, requestingUser)
+        });
         if (!quiz) {
             return {
                 status: 404,
@@ -812,9 +859,9 @@ export const hardDeleteQuizService = async (quizId) => {
         }
 
         // xóa các liên kết trước khi xóa quiz
-        await MaterialQuizzes.destroy({ where: { quiz_id: quizId } });
-        await QuestionToQuiz.destroy({ where: { quiz_id: quizId } });
-        await QuizTags.destroy({ where: { quiz_id: quizId } });
+        await MaterialQuizzes.destroy({ where: withTenantWhere({ quiz_id: quizId }, requestingUser) });
+        await QuestionToQuiz.destroy({ where: withTenantWhere({ quiz_id: quizId }, requestingUser) });
+        await QuizTags.destroy({ where: withTenantWhere({ quiz_id: quizId }, requestingUser) });
         
         await quiz.destroy();
         return {
