@@ -59,6 +59,20 @@ export const login = async (req, res) => {
                     message: "Tenant code does not match account"
                 });
             }
+
+            if (tenant.status === 'inactive') {
+                return res.status(403).json({
+                    error: true,
+                    message: "Tenant is inactive. Please contact support for more information."
+                });
+            }
+
+            if (tenant.status === 'suspended') {
+                return res.status(403).json({
+                    error: true,
+                    message: "Tenant is suspended. Please contact support for more information."
+                });
+            }
         }
 
         // Check status
