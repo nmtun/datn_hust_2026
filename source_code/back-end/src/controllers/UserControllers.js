@@ -3,6 +3,8 @@ import { resolveHierarchyRole } from '../services/HierarchyServices.js';
 
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { sendEmailFromSuperAdmin } from '../utils/sendEmail.js';
+import Tenant from '../models/Tenant.js';
 
 export const login = async (req, res) => {
     try {
@@ -143,6 +145,60 @@ export const login = async (req, res) => {
 export const createUser = async (req, res) => {
     try {
         const result = await userService.createAdminUserService(req.body, req.user);
+
+        if (
+            result.status === 201
+            && req.user?.role === 'super_admin'
+            && req.body?.role === 'tenant_admin'
+        ) {
+            const notificationEmail = req.body.personal_email;
+            if (notificationEmail) {
+                let tenantCode = req.body.tenant_code;
+                const resolvedTenantId = result?.data?.user?.tenant_id ?? req.body.tenant_id;
+
+                if (!tenantCode && resolvedTenantId !== undefined && resolvedTenantId !== null && resolvedTenantId !== '') {
+                    try {
+                        const tenant = await Tenant.findOne({
+                            where: {
+                                tenant_id: Number(resolvedTenantId),
+                                is_deleted: false
+                            }
+                        });
+                        tenantCode = tenant?.tenant_code;
+                    } catch (tenantError) {
+                        console.error('Failed to resolve tenant code:', tenantError);
+                    }
+                }
+
+                const subject = "Tenant admin account created";
+                const loginUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/login`;
+                const htmlContent = `
+                    <h2>Hello ${req.body.full_name},</h2>
+                    <p>Your tenant admin account has been created by the super admin.</p>
+
+                    <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 1rem; margin: 1rem 0;">
+                        <p><strong>Company Email:</strong> ${req.body.company_email}</p>
+                        <p><strong>Tenant Code:</strong> ${tenantCode || 'N/A'}</p>
+                        <p><strong>Password:</strong> ${req.body.password}</p>
+                    </div>
+
+                    <p>Please sign in at: <a href="${loginUrl}">${loginUrl}</a></p>
+                    <p>Please change your password after the first login.</p>
+
+                    <br/>
+                    <p>Regards,<br/>Super Admin</p>
+                `;
+
+                try {
+                    await sendEmailFromSuperAdmin(notificationEmail, subject, htmlContent);
+                } catch (emailError) {
+                    console.error('Failed to send tenant admin account email:', emailError);
+                }
+            } else {
+                console.warn('No email available to notify tenant admin account creation.');
+            }
+        }
+
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error creating user:", error);
