@@ -28,6 +28,7 @@ import { AdminProfile, userApi } from "@/app/api/userApi";
 type TenantForm = {
 	tenant_name: string;
 	tenant_code: string;
+	subdomain: string;
 	company_email: string;
 	phone_number: string;
 	address: string;
@@ -37,6 +38,7 @@ type TenantForm = {
 const EMPTY_FORM: TenantForm = {
 	tenant_name: "",
 	tenant_code: "",
+	subdomain: "",
 	company_email: "",
 	phone_number: "",
 	address: "",
@@ -137,7 +139,7 @@ function ManageTenantPage() {
 			const matchesDeletedVisibility = showDeleted || !tenant.is_deleted;
 			const matchesStatus = filterStatus ? tenant.status === filterStatus : true;
 			const matchesSearch = keyword
-				? [tenant.tenant_name, tenant.tenant_code, tenant.company_email, tenant.phone_number, tenant.address]
+				? [tenant.tenant_name, tenant.tenant_code, tenant.subdomain, tenant.company_email, tenant.phone_number, tenant.address]
 					  .filter(Boolean)
 					  .some((value) => normalize(String(value)).includes(keyword))
 				: true;
@@ -236,6 +238,7 @@ function ManageTenantPage() {
 		setForm({
 			tenant_name: tenant.tenant_name || "",
 			tenant_code: tenant.tenant_code || "",
+			subdomain: tenant.subdomain || "",
 			company_email: tenant.company_email || "",
 			phone_number: tenant.phone_number || "",
 			address: tenant.address || "",
@@ -251,8 +254,8 @@ function ManageTenantPage() {
 	};
 
 	const handleSave = async () => {
-		if (!form.tenant_name.trim() || !form.tenant_code.trim() || !form.company_email.trim()) {
-			showToast.error("Vui lòng nhập tên tenant, mã tenant và email công ty");
+		if (!form.tenant_name.trim() || !form.tenant_code.trim() || !form.subdomain.trim() || !form.company_email.trim()) {
+			showToast.error("Vui lòng nhập tên tenant, mã tenant, subdomain và email công ty");
 			return;
 		}
 
@@ -261,6 +264,7 @@ function ManageTenantPage() {
 			const payload: TenantPayload = {
 				tenant_name: form.tenant_name.trim(),
 				tenant_code: form.tenant_code.trim(),
+				subdomain: form.subdomain.trim().toLowerCase(),
 				company_email: form.company_email.trim(),
 				phone_number: form.phone_number.trim() || undefined,
 				address: form.address.trim() || undefined,
@@ -483,7 +487,7 @@ function ManageTenantPage() {
 									value={search}
 									onChange={(event) => setSearch(event.target.value)}
 									onKeyDown={(event) => event.key === "Enter" && handleSearch()}
-									placeholder="Tên tenant, mã, email, số điện thoại, địa chỉ"
+									placeholder="Tên tenant, mã, subdomain, email, số điện thoại, địa chỉ"
 									className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-800 outline-none ring-0 transition placeholder:text-slate-400 focus:border-slate-400"
 								/>
 							</div>
@@ -589,6 +593,7 @@ function ManageTenantPage() {
 															)}
 														</div>
 														<p className="mt-1 text-xs text-slate-500">Mã: {tenant.tenant_code}</p>
+														<p className="mt-1 text-xs text-slate-500">Subdomain: {tenant.subdomain}</p>
 													</div>
 												</div>
 											</td>
@@ -687,6 +692,15 @@ function ManageTenantPage() {
 						/>
 					</div>
 					<div>
+						<label className="mb-2 block text-sm font-medium text-slate-700">Subdomain</label>
+						<input
+							value={form.subdomain}
+							onChange={(event) => setForm((current) => ({ ...current, subdomain: event.target.value }))}
+							className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-slate-400"
+							placeholder="Ví dụ: datn-hr"
+						/>
+					</div>
+					<div>
 						<label className="mb-2 block text-sm font-medium text-slate-700">Email công ty</label>
 						<input
 							type="email"
@@ -768,6 +782,7 @@ function ManageTenantPage() {
 								["Email công ty", viewTenant.company_email],
 								["Số điện thoại", viewTenant.phone_number || "—"],
 								["Địa chỉ", viewTenant.address || "—"],
+								["Subdomain", viewTenant.subdomain],
 								["Trạng thái", STATUS_META[viewTenant.status]?.label || viewTenant.status],
 								["Tạo lúc", formatDate(viewTenant.created_at)],
 								["Cập nhật lúc", formatDate(viewTenant.updated_at)],

@@ -48,7 +48,7 @@ export default function Careers() {
           );
           setJobListings(activeJobs);
         } else {
-          setError('Failed to fetch job listings');
+          setError(result?.message || 'Failed to fetch job listings');
         }
       } catch (err) {
         setError('An error occurred while fetching job descriptions');

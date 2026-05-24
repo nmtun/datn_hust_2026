@@ -1,6 +1,7 @@
 import '../models/associations.js';
 import JobDescription from "../models/JobDescription.js";
 import Department from "../models/Department.js";
+import Tenant from "../models/Tenant.js";
 import { Op } from "sequelize";
 import { getRequestContext, runWithRequestContext } from '../utils/requestContext.js';
 import { requireTenantId, resolveTenantId, withTenantWhere } from '../utils/tenantScope.js';
@@ -18,6 +19,23 @@ const isTruthyFlag = (value) => {
     return false;
 };
 
+const normalizeSubdomain = (value) => {
+    if (typeof value !== 'string') return null;
+    const normalized = value.trim().toLowerCase();
+    return normalized ? normalized : null;
+};
+
+const findTenantBySubdomain = async (subdomain) => {
+    if (!subdomain) return null;
+    return Tenant.findOne({
+        where: {
+            subdomain,
+            is_deleted: false
+        },
+        attributes: ['tenant_id', 'status', 'subdomain']
+    });
+};
+
 const runWithTenantContext = async (query, handler) => {
     const context = getRequestContext();
     if (context && Object.prototype.hasOwnProperty.call(context, 'tenantId')) {
@@ -27,10 +45,30 @@ const runWithTenantContext = async (query, handler) => {
     const tenantIdRaw = resolveTenantId(query);
     const tenantId = Number(tenantIdRaw);
     if (!Number.isInteger(tenantId) || tenantId <= 0) {
-        return {
-            status: 400,
-            data: { error: true, message: "Tenant id is required" }
-        };
+        const subdomain = normalizeSubdomain(query?.subdomain || query?.tenant_subdomain);
+        if (!subdomain) {
+            return {
+                status: 400,
+                data: { error: true, message: "Tenant id or subdomain is required" }
+            };
+        }
+
+        const tenant = await findTenantBySubdomain(subdomain);
+        if (!tenant) {
+            return {
+                status: 404,
+                data: { error: true, message: "Tenant not found" }
+            };
+        }
+
+        if (tenant.status !== 'active') {
+            return {
+                status: 403,
+                data: { error: true, message: "Tenant is inactive" }
+            };
+        }
+
+        return runWithRequestContext({ tenantId: tenant.tenant_id, role: 'public', userId: null }, handler);
     }
 
     return runWithRequestContext({ tenantId, role: 'public', userId: null }, handler);

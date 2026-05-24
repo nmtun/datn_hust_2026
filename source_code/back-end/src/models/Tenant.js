@@ -17,6 +17,11 @@ const Tenant = sequelize.define("Tenants", {
         allowNull: false,
         unique: true,
     },
+    subdomain: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+        unique: true,
+    },
     company_email: {
         type: DataTypes.STRING(255),
         allowNull: false,

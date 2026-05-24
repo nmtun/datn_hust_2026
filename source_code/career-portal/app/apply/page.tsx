@@ -67,6 +67,11 @@ export default function Apply() {
         // Get job title if possible
         try {
           const result = await JobDescriptionApi.getById(Number(positionId));
+          if (result?.error) {
+            setError(result.message || 'Không tìm thấy thông tin vị trí ứng tuyển');
+            return;
+          }
+
           if (!result.error && result.job) {
             const job: JobDescription = result.job;
             setJobTitle(job.title || '');

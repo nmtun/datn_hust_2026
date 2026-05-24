@@ -3,6 +3,8 @@
 CREATE TABLE Tenants (
   tenant_id INT AUTO_INCREMENT PRIMARY KEY,
   tenant_name VARCHAR(100) NOT NULL UNIQUE,
+  tenant_code VARCHAR(50) NOT NULL UNIQUE,
+  subdomain VARCHAR(100) NOT NULL UNIQUE,
   company_email VARCHAR(255) NOT NULL UNIQUE,
   phone_number VARCHAR(20),
   address VARCHAR(255),

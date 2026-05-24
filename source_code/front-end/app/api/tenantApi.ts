@@ -6,6 +6,7 @@ export interface TenantRecord {
     tenant_id: number;
     tenant_name: string;
     tenant_code: string;
+    subdomain: string;
     company_email: string;
     phone_number?: string | null;
     address?: string | null;
@@ -18,6 +19,7 @@ export interface TenantRecord {
 export interface TenantPayload {
     tenant_name: string;
     tenant_code: string;
+    subdomain: string;
     company_email: string;
     phone_number?: string;
     address?: string;

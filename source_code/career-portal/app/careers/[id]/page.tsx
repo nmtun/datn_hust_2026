@@ -60,7 +60,7 @@ export default function JobDetail() {
         if (!result.error && result.job) {
           setJob(result.job);
         } else {
-          setError('Không tìm thấy công việc');
+          setError(result?.message || 'Không tìm thấy công việc');
         }
       } catch (err) {
         setError('Lỗi khi tải dữ liệu công việc');

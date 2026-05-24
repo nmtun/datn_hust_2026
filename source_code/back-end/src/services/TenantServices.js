@@ -2,6 +2,7 @@ import { Op } from "sequelize";
 import Tenant from "../models/Tenant.js";
 
 const STATUS_VALUES = ['active', 'inactive', 'suspended'];
+const SUBDOMAIN_REGEX = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
 const isTruthyFlag = (value) => {
     if (typeof value === 'boolean') return value;
@@ -17,17 +18,27 @@ const buildSearchWhere = (searchTerm) => {
     return {
         [Op.or]: [
             { tenant_name: { [Op.like]: `%${searchTerm}%` } },
+            { tenant_code: { [Op.like]: `%${searchTerm}%` } },
+            { subdomain: { [Op.like]: `%${searchTerm}%` } },
             { company_email: { [Op.like]: `%${searchTerm}%` } },
             { phone_number: { [Op.like]: `%${searchTerm}%` } }
         ]
     };
 };
 
+const normalizeSubdomain = (value) => {
+    if (typeof value !== 'string') return '';
+    return value.trim().toLowerCase();
+};
+
+const isValidSubdomain = (value) => SUBDOMAIN_REGEX.test(value);
+
 export const createTenantService = async (tenantData = {}) => {
     try {
         const {
             tenant_name,
             tenant_code,
+            subdomain,
             company_email,
             phone_number,
             address,
@@ -36,6 +47,16 @@ export const createTenantService = async (tenantData = {}) => {
 
         if (!tenant_name) {
             return { status: 400, data: { error: true, message: "Tenant name is required" } };
+        }
+        if (!tenant_code) {
+            return { status: 400, data: { error: true, message: "Tenant code is required" } };
+        }
+        const normalizedSubdomain = normalizeSubdomain(subdomain);
+        if (!normalizedSubdomain) {
+            return { status: 400, data: { error: true, message: "Subdomain is required" } };
+        }
+        if (!isValidSubdomain(normalizedSubdomain)) {
+            return { status: 400, data: { error: true, message: "Invalid subdomain format" } };
         }
         if (!company_email) {
             return { status: 400, data: { error: true, message: "Company email is required" } };
@@ -49,6 +70,8 @@ export const createTenantService = async (tenantData = {}) => {
                 is_deleted: false,
                 [Op.or]: [
                     { tenant_name },
+                    { tenant_code },
+                    { subdomain: normalizedSubdomain },
                     { company_email }
                 ]
             }
@@ -60,6 +83,7 @@ export const createTenantService = async (tenantData = {}) => {
         const tenant = await Tenant.create({
             tenant_name,
             tenant_code,
+            subdomain: normalizedSubdomain,
             company_email,
             phone_number: phone_number || null,
             address: address || null,
@@ -144,7 +168,7 @@ export const updateTenantService = async (tenantId, updateData = {}) => {
             return { status: 404, data: { error: true, message: "Tenant not found" } };
         }
 
-        const allowedFields = ['tenant_name', 'tenant_code', 'company_email', 'phone_number', 'address', 'status'];
+        const allowedFields = ['tenant_name', 'tenant_code', 'subdomain', 'company_email', 'phone_number', 'address', 'status'];
         const payload = {};
 
         allowedFields.forEach((field) => {
@@ -155,6 +179,30 @@ export const updateTenantService = async (tenantId, updateData = {}) => {
 
         if (payload.status && !STATUS_VALUES.includes(payload.status)) {
             return { status: 400, data: { error: true, message: "Invalid status" } };
+        }
+
+        if (payload.subdomain !== undefined) {
+            const normalizedSubdomain = normalizeSubdomain(payload.subdomain);
+            if (!normalizedSubdomain) {
+                return { status: 400, data: { error: true, message: "Subdomain is required" } };
+            }
+            if (!isValidSubdomain(normalizedSubdomain)) {
+                return { status: 400, data: { error: true, message: "Invalid subdomain format" } };
+            }
+
+            const existingSubdomain = await Tenant.findOne({
+                where: {
+                    tenant_id: { [Op.ne]: tenant.tenant_id },
+                    subdomain: normalizedSubdomain,
+                    is_deleted: false
+                }
+            });
+
+            if (existingSubdomain) {
+                return { status: 409, data: { error: true, message: "Subdomain already exists" } };
+            }
+
+            payload.subdomain = normalizedSubdomain;
         }
 
         if (Object.keys(payload).length === 0) {

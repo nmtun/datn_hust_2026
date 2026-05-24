@@ -22,6 +22,7 @@ const upsertTenants = async () => {
             const payload = {
                 tenant_name: seed.tenant_name,
                 tenant_code: seed.tenant_code,
+                subdomain: seed.subdomain,
                 company_email: seed.company_email,
                 phone_number: seed.phone_number ?? null,
                 address: seed.address ?? null,
