@@ -30,6 +30,7 @@ type AccountForm = {
 	password: string;
 	phone_number: string;
 	address: string;
+	position: string;
 	role: AdminUserCreatePayload["role"];
 	status: NonNullable<AdminUserCreatePayload["status"]>;
 };
@@ -41,6 +42,7 @@ const EMPTY_FORM: AccountForm = {
 	password: "",
 	phone_number: "",
 	address: "",
+	position: "",
 	role: "employee",
 	status: "active",
 };
@@ -153,6 +155,7 @@ function ManageAccountPage() {
 			password: "",
 			phone_number: account.phone_number || "",
 			address: account.address || "",
+			position: "",
 			role: (account.role as AccountForm["role"]) || "employee",
 			status: (account.status as AccountForm["status"]) || "active",
 		});
@@ -202,6 +205,7 @@ function ManageAccountPage() {
 					company_email: form.company_email.trim() || undefined,
 					phone_number: form.phone_number.trim() || undefined,
 					address: form.address.trim() || undefined,
+					position: form.position.trim() || undefined,
 				};
 
 				const result = await userApi.create(payload);
@@ -538,6 +542,18 @@ function ManageAccountPage() {
 								</select>
 							</div>
 						</div>
+						{!editingAccount && (
+							<div>
+								<label className="block text-xs font-medium text-gray-600 mb-1">Chức vụ</label>
+								<input
+									type="text"
+									value={form.position}
+									onChange={(event) => setForm({ ...form, position: event.target.value })}
+									placeholder="Ví dụ: Backend Developer"
+									className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+								/>
+							</div>
+						)}
 						<div>
 							<label className="block text-xs font-medium text-gray-600 mb-1">Trạng thái *</label>
 							<select

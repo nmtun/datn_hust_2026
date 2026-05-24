@@ -85,6 +85,7 @@ export const createAdminUserService = async (userData = {}, requestingUser = nul
             full_name,
             phone_number,
             address,
+            position,
             role = 'employee',
             status = 'active',
             tenant_id
@@ -164,11 +165,12 @@ export const createAdminUserService = async (userData = {}, requestingUser = nul
 
             const shouldCreateEmployeeInfo = ['employee', 'hr', 'manager'].includes(role);
             if (shouldCreateEmployeeInfo) {
+                const normalizedPosition = typeof position === 'string' ? position.trim() : position;
                 await Employee.create({
                     tenant_id: normalizedTenantId,
                     user_id: user.user_id,
                     hire_date: new Date(),
-                    position: null,
+                    position: normalizedPosition || null,
                     department_id: null,
                     team_id: null,
                     manager_id: null,

@@ -15,6 +15,7 @@ const departmentIncludes = [
 const canMutateDepartment = async (requestingUser) => {
     if (!requestingUser) return false;
     if (requestingUser.role === 'hr') return true;
+    if (requestingUser.role === 'tenant_admin') return true;
     return requestingUser.role === 'manager';
 };
 
@@ -23,7 +24,7 @@ const getDepartmentScopeWhere = async (requestingUser) => {
 
     if (!requestingUser) return where;
 
-    if (requestingUser.role === 'hr' || requestingUser.role === 'employee' || requestingUser.role === 'manager') {
+    if (['hr', 'employee', 'manager', 'tenant_admin'].includes(requestingUser.role)) {
         return where;
     }
 

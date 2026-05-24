@@ -16,6 +16,7 @@ const canEditTeam = async (requestingUser, team) => {
     if (!requestingUser || !team) return false;
 
     if (requestingUser.role === 'hr') return true;
+    if (requestingUser.role === 'tenant_admin') return true;
     if (requestingUser.role === 'manager') return true;
     if (requestingUser.role !== 'employee') return false;
     // Department head can view managed teams but cannot edit team entities.
@@ -38,6 +39,10 @@ const buildTeamWhere = async (query = {}, requestingUser = null) => {
     }
 
     if (requestingUser.role === 'manager') {
+        return scoped(where);
+    }
+
+    if (requestingUser.role === 'tenant_admin') {
         return scoped(where);
     }
 
@@ -87,7 +92,7 @@ export const createTeamService = async (data, requestingUser) => {
         });
         if (!department) return { status: 404, data: { error: true, message: 'Department not found' } };
 
-        if (!requestingUser || !['hr', 'manager'].includes(requestingUser.role)) {
+        if (!requestingUser || !['hr', 'manager', 'tenant_admin'].includes(requestingUser.role)) {
             return { status: 403, data: { error: true, message: 'Access denied' } };
         }
 

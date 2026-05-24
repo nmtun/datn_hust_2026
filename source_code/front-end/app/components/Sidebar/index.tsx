@@ -58,6 +58,8 @@ const menuItems = {
   tenant_admin: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Hồ sơ của tôi", href: "/dashboard/admin/profile", icon: UserCog },
+    { name: "Phòng ban", href: "/dashboard/admin/department", icon: Building2 },
+    { name: "Nhóm", href: "/dashboard/admin/team", icon: Users },
     { name: "Quản lý tài khoản", href: "/dashboard/admin/manage-account", icon: Users },
   ],
 };

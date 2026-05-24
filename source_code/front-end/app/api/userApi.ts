@@ -22,6 +22,7 @@ export interface AdminUserCreatePayload {
     password: string;
     phone_number?: string;
     address?: string;
+    position?: string;
     tenant_id?: number;
     role: 'employee' | 'hr' | 'manager' | 'tenant_admin';
     status?: 'active' | 'on_leave' | 'terminated';

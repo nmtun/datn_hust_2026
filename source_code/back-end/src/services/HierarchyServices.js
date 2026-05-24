@@ -299,6 +299,14 @@ export const getManageableTeamIds = async (context) => {
         return teams.map((team) => team.team_id);
     }
 
+    if (role === 'tenant_admin') {
+        const teams = await Team.findAll({
+            where: withTenantWhere({ active: true }),
+            attributes: ['team_id']
+        });
+        return teams.map((team) => team.team_id);
+    }
+
     if (!['employee', 'hr'].includes(role)) return [];
 
     const hierarchyRole = await resolveHierarchyRole({ userId, role });
@@ -340,6 +348,7 @@ export const canManageTeam = async (context) => {
 
     if (!team) return false;
     if (!role) return false;
+    if (role === 'tenant_admin') return true;
     if (role === 'manager') return true;
     if (!['employee', 'hr'].includes(role)) return false;
     if (!userId) return false;
