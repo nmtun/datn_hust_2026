@@ -3,7 +3,7 @@ import JobDescription from "../models/JobDescription.js";
 import Department from "../models/Department.js";
 import { Op } from "sequelize";
 import { getRequestContext, runWithRequestContext } from '../utils/requestContext.js';
-import { requireTenantId } from '../utils/tenantScope.js';
+import { requireTenantId, resolveTenantId, withTenantWhere } from '../utils/tenantScope.js';
 
 const jobDescriptionIncludes = [
     { model: Department, as: 'department', attributes: ['department_id', 'name', 'code'], required: false }
@@ -18,23 +18,15 @@ const isTruthyFlag = (value) => {
     return false;
 };
 
-const parseTenantId = (value) => {
-    const parsed = Number(value);
-    return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
-};
-
-const resolveTenantIdFromQuery = (query = {}) => {
-    return parseTenantId(query.tenant_id ?? query.tenantId);
-};
-
 const runWithTenantContext = async (query, handler) => {
     const context = getRequestContext();
     if (context && Object.prototype.hasOwnProperty.call(context, 'tenantId')) {
         return handler();
     }
 
-    const tenantId = resolveTenantIdFromQuery(query);
-    if (!tenantId) {
+    const tenantIdRaw = resolveTenantId(query);
+    const tenantId = Number(tenantIdRaw);
+    if (!Number.isInteger(tenantId) || tenantId <= 0) {
         return {
             status: 400,
             data: { error: true, message: "Tenant id is required" }
@@ -150,8 +142,9 @@ export const getAllJobDescriptionsService = async (query = {}) => {
     const includeDeleted = isTruthyFlag(query.include_deleted);
 
     return runWithTenantContext(query, async () => {
+        const where = includeDeleted ? {} : { is_deleted: false };
         const jobs = await JobDescription.findAll({
-            where: includeDeleted ? {} : { is_deleted: false },
+            where: withTenantWhere(where),
             include: jobDescriptionIncludes,
             order: [['updated_at', 'DESC'], ['created_at', 'DESC']]
         });
@@ -165,23 +158,32 @@ export const getAllJobDescriptionsService = async (query = {}) => {
     });
 };
 
-export const getDeletedJobDescriptionsService = async () => {
-    const jobs = await JobDescription.findAll({
-        where: { is_deleted: true },
-        include: jobDescriptionIncludes,
-        order: [['updated_at', 'DESC'], ['created_at', 'DESC']]
+export const getDeletedJobDescriptionsService = async (query = {}) => {
+    return runWithTenantContext(query, async () => {
+        const jobs = await JobDescription.findAll({
+            where: withTenantWhere({ is_deleted: true }),
+            include: jobDescriptionIncludes,
+            order: [['updated_at', 'DESC'], ['created_at', 'DESC']]
+        });
+        return {
+            status: 200,
+            data: {
+                error: false,
+                jobs
+            }
+        };
     });
-    return {
-        status: 200,
-        data: {
-            error: false,
-            jobs
-        }
-    };
 };
 
 export const restoreJobDescriptionService = async (jobId) => {
-    const job = await JobDescription.findByPk(jobId);
+    const tenantResult = requireTenantId();
+    if (!tenantResult.ok) {
+        return { status: 400, data: { error: true, message: "Tenant id is required" } };
+    }
+
+    const job = await JobDescription.findOne({
+        where: withTenantWhere({ job_id: Number(jobId) })
+    });
     if (!job) {
         return { status: 404, data: { error: true, message: "Job description not found" } };
     }
@@ -203,7 +205,7 @@ export const restoreJobDescriptionService = async (jobId) => {
 export const getJobDescriptionByIdService = async (jobId, query = {}) => {
     return runWithTenantContext(query, async () => {
         const job = await JobDescription.findOne({
-            where: { job_id: Number(jobId) },
+            where: withTenantWhere({ job_id: Number(jobId) }),
             include: jobDescriptionIncludes
         });
         return {
@@ -217,7 +219,14 @@ export const getJobDescriptionByIdService = async (jobId, query = {}) => {
 };
 
 export const updateJobDescriptionService = async (jobId, jobData) => {
-    const job = await JobDescription.findByPk(jobId);
+    const tenantResult = requireTenantId();
+    if (!tenantResult.ok) {
+        return { status: 400, data: { error: true, message: "Tenant id is required" } };
+    }
+
+    const job = await JobDescription.findOne({
+        where: withTenantWhere({ job_id: Number(jobId) })
+    });
     if (!job) {
         return { status: 404, data: { error: true, message: "Job description not found" } };
     }
@@ -243,7 +252,7 @@ export const updateJobDescriptionService = async (jobId, jobData) => {
     await job.update(jobData);
 
     const updatedJob = await JobDescription.findOne({
-        where: { job_id: Number(jobId) },
+        where: withTenantWhere({ job_id: Number(jobId) }),
         include: jobDescriptionIncludes
     });
 
@@ -258,7 +267,14 @@ export const updateJobDescriptionService = async (jobId, jobData) => {
 };
 
 export const deleteJobDescriptionService = async (jobId) => {
-    const job = await JobDescription.findByPk(jobId);
+    const tenantResult = requireTenantId();
+    if (!tenantResult.ok) {
+        return { status: 400, data: { error: true, message: "Tenant id is required" } };
+    }
+
+    const job = await JobDescription.findOne({
+        where: withTenantWhere({ job_id: Number(jobId) })
+    });
     if (!job) {
         return { status: 404, data: { error: true, message: "Job description not found" } };
     }
@@ -275,71 +291,75 @@ export const deleteJobDescriptionService = async (jobId) => {
 
 
 export const searchJobDescriptionsService = async (query = {}) => {
-    const {
-        title,
-        location,
-        experience_level
-    } = query;
+    return runWithTenantContext(query, async () => {
+        const {
+            title,
+            location,
+            experience_level
+        } = query;
 
-    const where = {};
+        const where = {};
 
-    if (title) {
-        where.title = { [Op.like]: `%${title}%` };
-    }
-    if (location) {
-        where.location = { [Op.like]: `%${location}%` };
-    }
-    if (experience_level) {
-        where.experience_level = { [Op.like]: `%${experience_level}%` };
-    }
-
-    where.is_deleted = false;
-
-    const jobs = await JobDescription.findAll({
-        where,
-        include: jobDescriptionIncludes,
-        order: [['posting_date', 'DESC']]
-    });
-    return {
-        status: 200,
-        data: {
-            error: false,
-            jobs
+        if (title) {
+            where.title = { [Op.like]: `%${title}%` };
         }
-    };
+        if (location) {
+            where.location = { [Op.like]: `%${location}%` };
+        }
+        if (experience_level) {
+            where.experience_level = { [Op.like]: `%${experience_level}%` };
+        }
+
+        where.is_deleted = false;
+
+        const jobs = await JobDescription.findAll({
+            where: withTenantWhere(where),
+            include: jobDescriptionIncludes,
+            order: [['posting_date', 'DESC']]
+        });
+        return {
+            status: 200,
+            data: {
+                error: false,
+                jobs
+            }
+        };
+    });
 };
 
 export const searchDeletedJobDescriptionsService = async (query = {}) => {
-    const {
-        title,
-        location,
-        experience_level
-    } = query;
+    return runWithTenantContext(query, async () => {
+        const {
+            title,
+            location,
+            experience_level
+        } = query;
 
-    const where = {};
+        const where = {};
 
-    if (title) {
-        where.title = { [Op.like]: `%${title}%` };
-    }
-    if (location) {
-        where.location = { [Op.like]: `%${location}%` };
-    }
-    if (experience_level) {
-        where.experience_level = { [Op.like]: `%${experience_level}%` };
-    }
-
-    where.is_deleted = true;
-
-    const jobs = await JobDescription.findAll({
-        where,
-        include: jobDescriptionIncludes,
-        order: [['updated_at', 'DESC'], ['created_at', 'DESC']]
-    });
-    return {
-        status: 200,
-        data: {
-            error: false,
-            jobs
+        if (title) {
+            where.title = { [Op.like]: `%${title}%` };
         }
-    };
+        if (location) {
+            where.location = { [Op.like]: `%${location}%` };
+        }
+        if (experience_level) {
+            where.experience_level = { [Op.like]: `%${experience_level}%` };
+        }
+
+        where.is_deleted = true;
+
+        const jobs = await JobDescription.findAll({
+            where: withTenantWhere(where),
+            include: jobDescriptionIncludes,
+            order: [['updated_at', 'DESC'], ['created_at', 'DESC']]
+        });
+        return {
+            status: 200,
+            data: {
+                error: false,
+                jobs
+            }
+        };
+    });
 };

@@ -9,7 +9,8 @@ import { createNotificationsForUsers } from './NotificationServices.js';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { Op } from 'sequelize';
-import { getRequestContext, runWithRequestContext } from '../utils/requestContext.js';
+import { runWithRequestContext } from '../utils/requestContext.js';
+import { requireTenantId, resolveTenantId, withTenantWhere } from '../utils/tenantScope.js';
 
 const POSITION_BY_EXPERIENCE_LEVEL = {
     intern: 'Thực tập sinh',
@@ -63,6 +64,7 @@ const getEmployeeInfoInclude = () => ({
     model: Employee,
     as: 'Employee_Info',
     required: false,
+    where: withTenantWhere({}),
     attributes: ['employee_info_id', 'position', 'department_id', 'team_id', 'manager_id', 'hire_date']
 });
 
@@ -72,7 +74,7 @@ const sendHrNotificationForNewApplication = async ({ candidate, candidateUser, c
         if (!Number.isInteger(jobId) || jobId <= 0) return;
 
         const job = await JobDescription.findOne({
-            where: { job_id: jobId },
+            where: withTenantWhere({ job_id: jobId }),
             attributes: ['job_id', 'title', 'created_by', 'department_id'],
             include: [
                 {
@@ -87,11 +89,11 @@ const sendHrNotificationForNewApplication = async ({ candidate, candidateUser, c
         if (!job?.created_by) return;
 
         const hrCreator = await User.findOne({
-            where: {
+            where: withTenantWhere({
                 user_id: job.created_by,
                 role: 'hr',
                 is_deleted: false
-            },
+            }),
             attributes: ['user_id']
         });
 
@@ -193,8 +195,9 @@ export const createCandidateService = async (candidateData) => {
         return { status: 404, data: { error: true, message: "Vị trí ứng tuyển không tồn tại" } };
     }
 
-        const resolvedTenantId = selectedJob.tenant_id ?? null;
-        if (!resolvedTenantId) {
+        const resolvedTenantIdRaw = selectedJob.tenant_id ?? null;
+        const resolvedTenantId = Number(resolvedTenantIdRaw);
+        if (!Number.isInteger(resolvedTenantId) || resolvedTenantId <= 0) {
             return { status: 400, data: { error: true, message: "Không xác định được tenant cho vị trí ứng tuyển" } };
         }
 
@@ -206,22 +209,7 @@ export const createCandidateService = async (candidateData) => {
         department_code: selectedJob.department?.code || null
     };
 
-        const runWithTenantContext = async (handler) => {
-            const context = getRequestContext();
-            if (context && Object.prototype.hasOwnProperty.call(context, 'tenantId')) {
-                if (context.tenantId !== resolvedTenantId) {
-                    return {
-                        status: 403,
-                        data: { error: true, message: "Tenant mismatch" }
-                    };
-                }
-                return handler();
-            }
-
-            return runWithRequestContext({ tenantId: resolvedTenantId, role: 'candidate', userId: null }, handler);
-        };
-
-        return runWithTenantContext(async () => {
+        const createCandidateWithContext = async () => {
             // Check user exists thì tạo bản ghi candidate liên kết với user đó
             const existingUser = await userService.findUserByEmailService(personal_email);
 
@@ -250,17 +238,17 @@ export const createCandidateService = async (candidateData) => {
                 }
                 // Kiểm tra xem user đã ứng tuyển job này hay chưa
                 const existingJobApplication = await Candidate.findOne({
-                    where: {
+                    where: withTenantWhere({
                         user_id: existingUser.user_id,
                         job_id: normalizedJobId
-                    }
+                    })
                 });
                 // Kiểm tra xem user này đã có bản ghi candidate có status = hired thì không cho ứng tuyển lại
                 const hiredApplication = await Candidate.findOne({
-                    where: {
+                    where: withTenantWhere({
                         user_id: existingUser.user_id,
                         candidate_status: "hired"
-                    }
+                    })
                 });
                 if (existingJobApplication) {
                     return {
@@ -370,22 +358,45 @@ export const createCandidateService = async (candidateData) => {
                     }
                 };
             }
-        });
+        };
+
+        const contextTenantIdRaw = resolveTenantId();
+        if (contextTenantIdRaw !== null) {
+            const contextTenantId = Number(contextTenantIdRaw);
+            if (!Number.isInteger(contextTenantId) || contextTenantId <= 0 || contextTenantId !== resolvedTenantId) {
+                return {
+                    status: 403,
+                    data: { error: true, message: "Tenant mismatch" }
+                };
+            }
+
+            return createCandidateWithContext();
+        }
+
+        return runWithRequestContext({ tenantId: resolvedTenantId, role: 'candidate', userId: null }, createCandidateWithContext);
 
 };
 
 export const getAllCandidatesService = async () => {
     // join bảng User, Candidate và JobDescription để lấy thông tin ứng viên cùng với thông tin công việc đã ứng tuyển
     try {
+        const tenantResult = requireTenantId();
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant id is required" } };
+        }
+
+        const userWhere = {
+            role: 'candidate',
+            is_deleted: false
+        };
+
         const candidates = await User.findAll({
-            where: {
-                role: 'candidate', // Chỉ lấy user có role là candidate
-                is_deleted: false // Chỉ lấy user chưa bị xóa
-            },
+            where: withTenantWhere(userWhere),
             include: [
                 {
                     model: Candidate,
                     required: false, // LEFT JOIN - bao gồm cả users không có candidate info
+                    where: withTenantWhere({}),
                     attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id'],
                     include: [
                         {
@@ -423,14 +434,21 @@ export const getAllCandidatesService = async () => {
 
 export const getCandidateByIdService = async (userId) => {
     try {
+        const tenantResult = requireTenantId();
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant id is required" } };
+        }
+
         const candidate = await User.findOne({
-            where: { 
+            where: withTenantWhere({
                 user_id: userId,
-                role: 'candidate' 
-            },
+                role: 'candidate'
+            }),
             include: [
                 {
                     model: Candidate,
+                    required: false,
+                    where: withTenantWhere({}),
                     attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id'],
                     include: [
                         {
@@ -476,11 +494,16 @@ export const getCandidateByIdService = async (userId) => {
 
 export const updateCandidateService = async (userId, updateData) => {
     try {
+        const tenantResult = requireTenantId();
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant id is required" } };
+        }
+
         const user = await User.findOne({ 
-            where: { 
-                user_id: userId, 
-                role: 'candidate' 
-            } 
+            where: withTenantWhere({
+                user_id: userId,
+                role: 'candidate'
+            })
         });
         
         if (!user) {
@@ -493,7 +516,9 @@ export const updateCandidateService = async (userId, updateData) => {
             };
         }
 
-        const candidate = await Candidate.findOne({ where: { user_id: userId } });
+        const candidate = await Candidate.findOne({
+            where: withTenantWhere({ user_id: userId })
+        });
         if (!candidate) {
             return {
                 status: 404,
@@ -542,13 +567,15 @@ export const updateCandidateService = async (userId, updateData) => {
 
         // Lấy dữ liệu đã update để trả về
         const updatedCandidate = await User.findOne({
-            where: { 
+            where: withTenantWhere({
                 user_id: userId,
-                role: 'candidate' 
-            },
+                role: 'candidate'
+            }),
             include: [
                 {
                     model: Candidate,
+                    required: false,
+                    where: withTenantWhere({}),
                     attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id'],
                     include: [
                         {
@@ -585,11 +612,16 @@ export const updateCandidateService = async (userId, updateData) => {
 
 export const deleteCandidateService = async (userId) => {
     try {
+        const tenantResult = requireTenantId();
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant id is required" } };
+        }
+
         const user = await User.findOne({
-            where: { 
+            where: withTenantWhere({
                 user_id: userId,
-                role: 'candidate' 
-            } 
+                role: 'candidate'
+            })
         });
         if (!user) {
             return {
@@ -623,14 +655,21 @@ export const deleteCandidateService = async (userId) => {
 
 export const getDeletedCandidatesService = async () => {
     try {
+        const tenantResult = requireTenantId();
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant id is required" } };
+        }
+
         const candidates = await User.findAll({
-            where: { 
+            where: withTenantWhere({
                 role: 'candidate',
                 is_deleted: true
-            },
+            }),
             include: [
                 {
                     model: Candidate,
+                    required: false,
+                    where: withTenantWhere({}),
                     attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id'],
                     include: [
                         {
@@ -667,11 +706,16 @@ export const getDeletedCandidatesService = async () => {
 
 export const restoreCandidateService = async (userId) => {
     try {
+        const tenantResult = requireTenantId();
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant id is required" } };
+        }
+
         const user = await User.findOne({
-            where: { 
+            where: withTenantWhere({
                 user_id: userId,
                 role: 'candidate'
-            } 
+            })
         });
         if (!user) {
             return {
@@ -705,18 +749,23 @@ export const restoreCandidateService = async (userId) => {
 
 export const searchCandidatesService = async (query = {}) => {
     try {
+        const tenantResult = requireTenantId();
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant id is required" } };
+        }
+
         const {
             full_name,
             personal_email,
             candidate_status
         } = query;
 
-        let userWhere = {
+        const userWhere = {
             role: 'candidate',
             is_deleted: false
         };
 
-        let candidateWhere = {};
+        const candidateWhere = {};
 
         // Điều kiện tìm kiếm cho User
         if (full_name) {
@@ -732,11 +781,12 @@ export const searchCandidatesService = async (query = {}) => {
         }
 
         const candidates = await User.findAll({
-            where: userWhere,
+            where: withTenantWhere(userWhere),
             include: [
                 {
                     model: Candidate,
-                    where: Object.keys(candidateWhere).length > 0 ? candidateWhere : undefined,
+                    required: false,
+                    where: withTenantWhere(candidateWhere),
                     attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id'],
                     include: [
                         {
@@ -774,18 +824,23 @@ export const searchCandidatesService = async (query = {}) => {
 
 export const searchDeletedCandidatesService = async (query = {}) => {
     try {
+        const tenantResult = requireTenantId();
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant id is required" } };
+        }
+
         const {
             full_name,
             personal_email,
             candidate_status
         } = query;
 
-        let userWhere = {
+        const userWhere = {
             role: 'candidate',
             is_deleted: true
         };
 
-        let candidateWhere = {};
+        const candidateWhere = {};
 
         // Điều kiện tìm kiếm cho User
         if (full_name) {
@@ -801,11 +856,12 @@ export const searchDeletedCandidatesService = async (query = {}) => {
         }
 
         const candidates = await User.findAll({
-            where: userWhere,
+            where: withTenantWhere(userWhere),
             include: [
                 {
                     model: Candidate,
-                    where: Object.keys(candidateWhere).length > 0 ? candidateWhere : undefined,
+                    required: false,
+                    where: withTenantWhere(candidateWhere),
                     attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id'],
                     include: [
                         {
@@ -843,10 +899,15 @@ export const searchDeletedCandidatesService = async (query = {}) => {
 
 export const updateCandidateApplicationService = async (candidateInfoId, updateData) => {
     try {
+        const tenantResult = requireTenantId();
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant id is required" } };
+        }
+
         const candidateInfo = await Candidate.findOne({
-            where: { 
-                candidate_info_id: candidateInfoId 
-            }
+            where: withTenantWhere({
+                candidate_info_id: candidateInfoId
+            })
         });
 
         if (!candidateInfo) {
@@ -869,9 +930,9 @@ export const updateCandidateApplicationService = async (candidateInfoId, updateD
 
         // Lấy dữ liệu đã cập nhật
         const updatedCandidateInfo = await Candidate.findOne({
-            where: { 
-                candidate_info_id: candidateInfoId 
-            },
+            where: withTenantWhere({
+                candidate_info_id: candidateInfoId
+            }),
             include: [
                 {
                     model: JobDescription,
@@ -903,19 +964,24 @@ export const updateCandidateApplicationService = async (candidateInfoId, updateD
 
 export const createCompanyEmailService = async (candidateId, companyEmail, password) => {
     try {
+        const tenantResult = requireTenantId();
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant id is required" } };
+        }
+
         const transaction = await User.sequelize.transaction();
 
         try {
         // Kiểm tra candidate exists
         const candidate = await User.findOne({
-            where: { 
+            where: withTenantWhere({
                 user_id: candidateId,
-                is_deleted: false 
-            },
+                is_deleted: false
+            }),
             include: [
                 {
                     model: Candidate,
-                    where: { candidate_status: 'hired' },
+                    where: withTenantWhere({ candidate_status: 'hired' }),
                     include: [
                         {
                             model: JobDescription,
@@ -948,10 +1014,10 @@ export const createCompanyEmailService = async (candidateId, companyEmail, passw
 
         // Kiểm tra company_email đã tồn tại chưa
         const existingEmailUser = await User.findOne({
-            where: { 
+            where: withTenantWhere({
                 company_email: companyEmail,
-                is_deleted: false 
-            },
+                is_deleted: false
+            }),
             transaction
         });
 
@@ -1006,7 +1072,7 @@ export const createCompanyEmailService = async (candidateId, companyEmail, passw
 
         // Đảm bảo có bản ghi Employee_Info tương ứng (idempotent)
         const existingEmployeeInfo = await Employee.findOne({
-            where: { user_id: candidate.user_id },
+            where: withTenantWhere({ user_id: candidate.user_id }),
             transaction
         });
 
@@ -1043,12 +1109,12 @@ export const createCompanyEmailService = async (candidateId, companyEmail, passw
 
         // Lấy dữ liệu đã cập nhật
         const updatedCandidate = await User.findOne({
-            where: { user_id: candidateId },
+            where: withTenantWhere({ user_id: candidateId }),
             attributes: { exclude: ['password'] }, // Không trả về password
             include: [
                 {
                     model: Candidate,
-                    where: { candidate_status: 'hired' },
+                    where: withTenantWhere({ candidate_status: 'hired' }),
                     include: [
                         {
                             model: JobDescription,

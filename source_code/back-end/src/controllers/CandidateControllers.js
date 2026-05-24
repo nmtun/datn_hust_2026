@@ -295,6 +295,7 @@ export const createCompanyEmail = async (req, res) => {
                 
                 <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 1rem; margin: 1rem 0;">
                     <p><strong>Company Email:</strong> ${company_email}</p>
+                    ${tenantCode ? `<p><strong>Tenant Code:</strong> ${tenantCode}</p>` : ''}
                     <p><strong>Password:</strong> ${password}</p>
                 </div>
                 
