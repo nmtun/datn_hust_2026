@@ -3,11 +3,17 @@ import Tag from "../models/Tag.js";
 import MaterialTag from "../models/MaterialTag.js";
 import TrainingMaterial from "../models/TrainingMaterial.js";
 import { Op } from 'sequelize';
+import { requireTenantId, withTenantWhere } from '../utils/tenantScope.js';
 
 // Create new tag
-export const createTagService = async (tagData) => {
+export const createTagService = async (tagData, requestingUser = null) => {
     try {
         const { name } = tagData;
+
+        const tenantResult = requireTenantId(requestingUser);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant is required" } };
+        }
 
         // Validation
         if (!name) {
@@ -15,12 +21,17 @@ export const createTagService = async (tagData) => {
         }
 
         // Check if tag already exists
-        const existingTag = await Tag.findOne({ where: { name } });
+        const existingTag = await Tag.findOne({
+            where: withTenantWhere({ name }, requestingUser)
+        });
         if (existingTag) {
             return { status: 409, data: { error: true, message: "Tag already exists" } };
         }
 
-        const newTag = await Tag.create({ name });
+        const newTag = await Tag.create({
+            name,
+            tenant_id: tenantResult.tenantId
+        });
 
         return {
             status: 201,
@@ -43,9 +54,15 @@ export const createTagService = async (tagData) => {
 };
 
 // Get all tags
-export const getAllTagsService = async () => {
+export const getAllTagsService = async (requestingUser = null) => {
     try {
+        const tenantResult = requireTenantId(requestingUser);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant is required" } };
+        }
+
         const tags = await Tag.findAll({
+            where: withTenantWhere({}, requestingUser),
             order: [['created_at', 'DESC']],
             include: [{
                 model: TrainingMaterial,
@@ -76,9 +93,15 @@ export const getAllTagsService = async () => {
 };
 
 // Get tag by ID
-export const getTagByIdService = async (tagId) => {
+export const getTagByIdService = async (tagId, requestingUser = null) => {
     try {
-        const tag = await Tag.findByPk(tagId, {
+        const tenantResult = requireTenantId(requestingUser);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant is required" } };
+        }
+
+        const tag = await Tag.findOne({
+            where: withTenantWhere({ tag_id: Number(tagId) }, requestingUser),
             include: [{
                 model: TrainingMaterial,
                 as: 'trainingMaterials',
@@ -112,11 +135,18 @@ export const getTagByIdService = async (tagId) => {
 };
 
 // Update tag
-export const updateTagService = async (tagId, tagData) => {
+export const updateTagService = async (tagId, tagData, requestingUser = null) => {
     try {
         const { name } = tagData;
 
-        const tag = await Tag.findByPk(tagId);
+        const tenantResult = requireTenantId(requestingUser);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant is required" } };
+        }
+
+        const tag = await Tag.findOne({
+            where: withTenantWhere({ tag_id: Number(tagId) }, requestingUser)
+        });
         if (!tag) {
             return { status: 404, data: { error: true, message: "Tag not found" } };
         }
@@ -128,10 +158,10 @@ export const updateTagService = async (tagId, tagData) => {
 
         // Check if another tag with the same name exists
         const existingTag = await Tag.findOne({
-            where: {
+            where: withTenantWhere({
                 name,
-                tag_id: { [Op.ne]: tagId }
-            }
+                tag_id: { [Op.ne]: Number(tagId) }
+            }, requestingUser)
         });
         if (existingTag) {
             return { status: 409, data: { error: true, message: "Tag name already exists" } };
@@ -163,9 +193,16 @@ export const updateTagService = async (tagId, tagData) => {
 };
 
 // Delete tag
-export const deleteTagService = async (tagId) => {
+export const deleteTagService = async (tagId, requestingUser = null) => {
     try {
-        const tag = await Tag.findByPk(tagId);
+        const tenantResult = requireTenantId(requestingUser);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant is required" } };
+        }
+
+        const tag = await Tag.findOne({
+            where: withTenantWhere({ tag_id: Number(tagId) }, requestingUser)
+        });
         if (!tag) {
             return { status: 404, data: { error: true, message: "Tag not found" } };
         }
@@ -203,14 +240,14 @@ export const deleteTagService = async (tagId) => {
 };
 
 // Search tags
-export const searchTagsService = async (searchTerm) => {
+export const searchTagsService = async (searchTerm, requestingUser = null) => {
     try {
         const tags = await Tag.findAll({
-            where: {
+            where: withTenantWhere({
                 name: {
                     [Op.like]: `%${searchTerm}%`
                 }
-            },
+            }, requestingUser),
             order: [['name', 'ASC']],
             include: [{
                 model: TrainingMaterial,
@@ -241,10 +278,17 @@ export const searchTagsService = async (searchTerm) => {
 };
 
 // Assign tags to training material
-export const assignTagsToMaterialService = async (materialId, tagIds) => {
+export const assignTagsToMaterialService = async (materialId, tagIds, requestingUser = null) => {
     try {
+        const tenantResult = requireTenantId(requestingUser);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant is required" } };
+        }
+
         // Validate if training material exists
-        const material = await TrainingMaterial.findByPk(materialId);
+        const material = await TrainingMaterial.findOne({
+            where: withTenantWhere({ material_id: materialId }, requestingUser)
+        });
         if (!material) {
             return { status: 404, data: { error: true, message: "Training material not found" } };
         }
@@ -264,7 +308,9 @@ export const assignTagsToMaterialService = async (materialId, tagIds) => {
         }
 
         // Validate if all tags exist
-        const tags = await Tag.findAll({ where: { tag_id: tagIds } });
+        const tags = await Tag.findAll({
+            where: withTenantWhere({ tag_id: { [Op.in]: tagIds } }, requestingUser)
+        });
         if (tags.length !== tagIds.length) {
             return { status: 404, data: { error: true, message: "One or more tags not found" } };
         }
@@ -272,7 +318,8 @@ export const assignTagsToMaterialService = async (materialId, tagIds) => {
         // Create new material-tag associations
         const materialTags = tagIds.map(tagId => ({
             material_id: materialId,
-            tag_id: tagId
+            tag_id: tagId,
+            tenant_id: tenantResult.tenantId
         }));
 
         await MaterialTag.bulkCreate(materialTags);
@@ -336,9 +383,15 @@ export const removeTagsFromMaterialService = async (materialId, tagIds) => {
 };
 
 // Get materials by tag
-export const getMaterialsByTagService = async (tagId) => {
+export const getMaterialsByTagService = async (tagId, requestingUser = null) => {
     try {
-        const tag = await Tag.findByPk(tagId, {
+        const tenantResult = requireTenantId(requestingUser);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant is required" } };
+        }
+
+        const tag = await Tag.findOne({
+            where: withTenantWhere({ tag_id: Number(tagId) }, requestingUser),
             include: [{
                 model: TrainingMaterial,
                 as: 'trainingMaterials',
@@ -372,14 +425,21 @@ export const getMaterialsByTagService = async (tagId) => {
 };
 
 // Assign tags to question
-export const assignTagsToQuestionService = async (questionId, tagIds) => {
+export const assignTagsToQuestionService = async (questionId, tagIds, requestingUser = null) => {
     try {
+        const tenantResult = requireTenantId(requestingUser);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant is required" } };
+        }
+
         // Import QuestionTag and QuizQuestion models
         const { default: QuestionTag } = await import('../models/QuestionTag.js');
         const { default: QuizQuestion } = await import('../models/QuizQuestion.js');
 
         // Check if question exists
-        const question = await QuizQuestion.findByPk(questionId);
+        const question = await QuizQuestion.findOne({
+            where: withTenantWhere({ question_id: questionId }, requestingUser)
+        });
         if (!question) {
             return { status: 404, data: { error: true, message: "Question not found" } };
         }
@@ -400,7 +460,9 @@ export const assignTagsToQuestionService = async (questionId, tagIds) => {
         }
 
         // Check if tags exist
-        const tags = await Tag.findAll({ where: { tag_id: { [Op.in]: tagIds } } });
+        const tags = await Tag.findAll({
+            where: withTenantWhere({ tag_id: { [Op.in]: tagIds } }, requestingUser)
+        });
         if (tags.length !== tagIds.length) {
             return { status: 404, data: { error: true, message: "One or more tags not found" } };
         }
@@ -408,7 +470,8 @@ export const assignTagsToQuestionService = async (questionId, tagIds) => {
         // Create new associations
         const associations = tagIds.map(tagId => ({
             question_id: questionId,
-            tag_id: tagId
+            tag_id: tagId,
+            tenant_id: tenantResult.tenantId
         }));
 
         await QuestionTag.bulkCreate(associations, { ignoreDuplicates: true });

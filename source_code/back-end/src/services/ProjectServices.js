@@ -4,6 +4,7 @@ import Project from '../models/Project.js';
 import Task from '../models/Task.js';
 import User from '../models/User.js';
 import Department from '../models/Department.js';
+import { requireTenantId, withTenantWhere } from '../utils/tenantScope.js';
 
 const PROJECT_STATUSES = ['to_do', 'doing', 'review', 'done', 'on_hold', 'cancelled'];
 
@@ -34,14 +35,14 @@ const canViewProject = async (project, requestingUser) => {
     if (Number(project.manager_id) === Number(userId)) return true;
 
     const linkedTask = await Task.findOne({
-        where: {
+        where: withTenantWhere({
             project_id: project.project_id,
             active: true,
             [Op.or]: [
                 { assigned_to: userId },
                 { created_by: userId }
             ]
-        },
+        }, requestingUser),
         attributes: ['task_id']
     });
 
@@ -79,13 +80,13 @@ const buildProjectWhere = async (query = {}, requestingUser = null) => {
     }
 
     const linkedTasks = await Task.findAll({
-        where: {
+        where: withTenantWhere({
             active: true,
             [Op.or]: [
                 { assigned_to: userId },
                 { created_by: userId }
             ]
-        },
+        }, requestingUser),
         attributes: ['project_id']
     });
 
@@ -111,6 +112,11 @@ export const createProjectService = async (data, requestingUser) => {
             return { status: 403, data: { error: true, message: 'Only manager can create projects' } };
         }
 
+        const tenantResult = requireTenantId(requestingUser);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: 'Tenant is required' } };
+        }
+
         const { name, goal, description, manager_id, department_id, start_date, end_date, status } = data;
 
         if (!name) {
@@ -123,11 +129,11 @@ export const createProjectService = async (data, requestingUser) => {
 
         const targetManagerId = manager_id ? Number(manager_id) : requestUserId;
         const manager = await User.findOne({
-            where: {
+            where: withTenantWhere({
                 user_id: targetManagerId,
                 role: 'manager',
                 is_deleted: false
-            },
+            }, requestingUser),
             attributes: ['user_id']
         });
 
@@ -137,7 +143,7 @@ export const createProjectService = async (data, requestingUser) => {
 
         if (department_id) {
             const department = await Department.findOne({
-                where: { department_id: Number(department_id), active: true },
+                where: withTenantWhere({ department_id: Number(department_id), active: true }, requestingUser),
                 attributes: ['department_id']
             });
             if (!department) {
@@ -155,7 +161,8 @@ export const createProjectService = async (data, requestingUser) => {
             end_date: end_date || null,
             status: status || 'to_do',
             active: true,
-            created_at: new Date()
+            created_at: new Date(),
+            tenant_id: tenantResult.tenantId
         });
 
         return { status: 201, data: { error: false, message: 'Project created successfully', project } };
@@ -174,7 +181,7 @@ export const getAllProjectsService = async (query = {}, requestingUser) => {
         const where = await buildProjectWhere(query, requestingUser);
 
         const projects = await Project.findAll({
-            where,
+            where: withTenantWhere(where, requestingUser),
             include: projectIncludes,
             order: [['created_at', 'DESC']]
         });
@@ -189,14 +196,14 @@ export const getAllProjectsService = async (query = {}, requestingUser) => {
 export const getProjectByIdService = async (id, requestingUser) => {
     try {
         const project = await Project.findOne({
-            where: { project_id: Number(id), active: true },
+            where: withTenantWhere({ project_id: Number(id), active: true }, requestingUser),
             include: [
                 ...projectIncludes,
                 {
                     model: Task,
                     as: 'tasks',
                     required: false,
-                    where: { active: true },
+                    where: withTenantWhere({ active: true }, requestingUser),
                     attributes: [
                         'task_id',
                         'title',

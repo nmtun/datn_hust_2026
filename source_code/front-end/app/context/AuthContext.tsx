@@ -14,8 +14,13 @@ interface User {
 
 interface LoginCredentials {
   company_email: string;
+  tenant_code?: string;
   password: string;
   remember_me?: boolean;
+}
+
+interface LoginOptions {
+  redirect?: boolean;
 }
 
 interface AuthContextType {
@@ -23,7 +28,7 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   isLoggedIn: boolean;
-  login: (credentials: LoginCredentials) => Promise<void>;
+  login: (credentials: LoginCredentials, options?: LoginOptions) => Promise<User | null>;
   logout: () => void;
 }
 
@@ -57,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Login function
-  const login = async (credentials: LoginCredentials) => {
+  const login = async (credentials: LoginCredentials, options: LoginOptions = {}) => {
     setLoading(true);
     setError(null);
     
@@ -65,10 +70,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const loggedInUser = await authLogin(credentials);
       setUser(loggedInUser);
       setIsLoggedIn(true);
-      router.push('/dashboard'); // Redirect to dashboard after login
+      if (options.redirect !== false) {
+        if (loggedInUser?.role === 'super_admin') {
+          router.push('/super-admin/manage-tenant'); // Redirect to super admin dashboard after login
+        } else {
+          router.push('/dashboard'); // Redirect to another role page after login
+        }
+      }
+      return loggedInUser;
     } catch (err: any) {
       setError(err.message || 'Login failed');
       setIsLoggedIn(false);
+      return null;
     } finally {
       setLoading(false);
     }

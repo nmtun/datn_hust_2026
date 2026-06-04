@@ -7,6 +7,14 @@ const Department = sequelize.define("Department", {
         primaryKey: true,
         autoIncrement: true
     },
+    tenant_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: "Tenants",
+            key: "tenant_id"
+        }
+    },
     name: {
         type: DataTypes.STRING(255),
         allowNull: false

@@ -7,6 +7,14 @@ const Compensation = sequelize.define("Compensation", {
         primaryKey: true,
         autoIncrement: true
     },
+    tenant_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: "Tenants",
+            key: "tenant_id"
+        }
+    },
     user_id: {
         type: DataTypes.INTEGER,
         allowNull: false,

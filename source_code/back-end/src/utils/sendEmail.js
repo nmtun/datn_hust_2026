@@ -23,3 +23,27 @@ export const sendEmail = async (to, subject, htmlContent) => {
     throw new Error('Failed to send email');
   }
 };
+
+export const sendEmailFromSuperAdmin = async (to, subject, htmlContent) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.SUPER_ADMIN_MAIL_SENDER,
+        pass: process.env.SUPER_ADMIN_MAIL_PASSWORD,
+      },
+    });
+
+    const mailOptions = {
+      from: `"Super Admin" <${process.env.SUPER_ADMIN_MAIL_SENDER}>`,
+      to,
+      subject,
+      html: htmlContent,
+    };
+
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error('Error sending email:', error);
+    throw new Error('Failed to send email');
+  }
+};

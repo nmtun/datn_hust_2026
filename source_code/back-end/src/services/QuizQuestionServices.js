@@ -4,6 +4,7 @@ import Quizzes from "../models/Quizzes.js";
 import QuestionToQuiz from "../models/QuesionToQuiz.js";
 import Tags from "../models/Tag.js";
 import { Op } from 'sequelize';
+import { requireTenantId, withTenantWhere } from '../utils/tenantScope.js';
 
 export const createQuestionService = async (questionData, user = null) => {
     try {
@@ -15,6 +16,11 @@ export const createQuestionService = async (questionData, user = null) => {
             correct_answer,
             points = 1.0
         } = questionData;
+
+        const tenantResult = requireTenantId(user);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant is required" } };
+        }
 
         // Validation
         if (!question_text) return { status: 400, data: { error: true, message: "Question text is required" } };
@@ -46,7 +52,8 @@ export const createQuestionService = async (questionData, user = null) => {
             options: processedOptions,
             correct_answer,
             points,
-            created_by: user?.user_id || null
+            created_by: user?.user_id || null,
+            tenant_id: tenantResult.tenantId
         });
 
         return {
@@ -69,10 +76,12 @@ export const createQuestionService = async (questionData, user = null) => {
     }
 };
 
-export const getQuestionsByQuizIdService = async (quizId) => {
+export const getQuestionsByQuizIdService = async (quizId, requestingUser = null) => {
     try {
         // Check if quiz exists
-        const quiz = await Quizzes.findByPk(quizId);
+        const quiz = await Quizzes.findOne({
+            where: withTenantWhere({ quiz_id: quizId }, requestingUser)
+        });
         if (!quiz) {
             return { status: 404, data: { error: true, message: "Quiz not found" } };
         }
@@ -80,15 +89,15 @@ export const getQuestionsByQuizIdService = async (quizId) => {
         // Get questions through QuestionToQuiz relationships
         console.log('Fetching questions for quiz ID:', quizId);
         const questionAssignments = await QuestionToQuiz.findAll({
-            where: {
+            where: withTenantWhere({
                 quiz_id: quizId,
                 is_active: true
-            },
+            }, requestingUser),
             include: [
                 {
                     model: QuizQuestion,
                     as: 'question',
-                    where: { is_active: true }
+                    where: withTenantWhere({ is_active: true }, requestingUser)
                 },
                 {
                     model: Tags,
@@ -135,7 +144,7 @@ export const getQuestionsByQuizIdService = async (quizId) => {
     }
 };
 
-export const getAllQuestionsService = async (search = '', questionType = '') => {
+export const getAllQuestionsService = async (search = '', questionType = '', requestingUser = null) => {
     try {
         // Import Tag model
         const { default: Tag } = await import('../models/Tag.js');
@@ -151,7 +160,7 @@ export const getAllQuestionsService = async (search = '', questionType = '') => 
         }
 
         const questions = await QuizQuestion.findAll({
-            where: whereClause,
+            where: withTenantWhere(whereClause, requestingUser),
             include: [
                 {
                     model: Quizzes,
@@ -188,12 +197,13 @@ export const getAllQuestionsService = async (search = '', questionType = '') => 
     }
 };
 
-export const getQuestionByIdService = async (questionId) => {
+export const getQuestionByIdService = async (questionId, requestingUser = null) => {
     try {
         // Import Tag model
         const { default: Tag } = await import('../models/Tag.js');
 
-        const question = await QuizQuestion.findByPk(questionId, {
+        const question = await QuizQuestion.findOne({
+            where: withTenantWhere({ question_id: questionId }, requestingUser),
             include: [
                 {
                     model: Quizzes,
@@ -239,9 +249,11 @@ export const getQuestionByIdService = async (questionId) => {
     }
 };
 
-export const updateQuestionService = async (questionId, updateData) => {
+export const updateQuestionService = async (questionId, updateData, requestingUser = null) => {
     try {
-        const question = await QuizQuestion.findByPk(questionId);
+        const question = await QuizQuestion.findOne({
+            where: withTenantWhere({ question_id: questionId }, requestingUser)
+        });
 
         if (!question) {
             return {
@@ -275,7 +287,8 @@ export const updateQuestionService = async (questionId, updateData) => {
 
         await question.update(updateData);
 
-        const updatedQuestion = await QuizQuestion.findByPk(questionId, {
+        const updatedQuestion = await QuizQuestion.findOne({
+            where: withTenantWhere({ question_id: questionId }, requestingUser),
             include: [
                 {
                     model: Quizzes,
@@ -305,9 +318,11 @@ export const updateQuestionService = async (questionId, updateData) => {
     }
 };
 
-export const deleteQuestionService = async (questionId) => {
+export const deleteQuestionService = async (questionId, requestingUser = null) => {
     try {
-        const question = await QuizQuestion.findByPk(questionId);
+        const question = await QuizQuestion.findOne({
+            where: withTenantWhere({ question_id: questionId }, requestingUser)
+        });
 
         if (!question) {
             return {
@@ -324,15 +339,15 @@ export const deleteQuestionService = async (questionId) => {
         const { default: QuizAnswer } = await import('../models/QuizAnswer.js');
 
         await QuestionTag.destroy({
-            where: { question_id: questionId }
+            where: withTenantWhere({ question_id: questionId }, requestingUser)
         });
 
         await QuestionToQuiz.destroy({
-            where: { question_id: questionId }
+            where: withTenantWhere({ question_id: questionId }, requestingUser)
         });
 
         await QuizAnswer.destroy({
-            where: { question_id: questionId }
+            where: withTenantWhere({ question_id: questionId }, requestingUser)
         });
 
         // 4. Finally delete the question itself
@@ -357,16 +372,18 @@ export const deleteQuestionService = async (questionId) => {
     }
 };
 
-export const deleteQuestionsByQuizIdService = async (quizId) => {
+export const deleteQuestionsByQuizIdService = async (quizId, requestingUser = null) => {
     try {
         // Check if quiz exists
-        const quiz = await Quizzes.findByPk(quizId);
+        const quiz = await Quizzes.findOne({
+            where: withTenantWhere({ quiz_id: quizId }, requestingUser)
+        });
         if (!quiz) {
             return { status: 404, data: { error: true, message: "Quiz not found" } };
         }
 
         const deletedCount = await QuizQuestion.destroy({
-            where: { quiz_id: quizId }
+            where: withTenantWhere({ quiz_id: quizId }, requestingUser)
         });
 
         return {
@@ -388,8 +405,13 @@ export const deleteQuestionsByQuizIdService = async (quizId) => {
     }
 };
 
-export const bulkCreateQuestionsService = async (questionsData) => {
+export const bulkCreateQuestionsService = async (questionsData, requestingUser = null) => {
     try {
+        const tenantResult = requireTenantId(requestingUser);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant is required" } };
+        }
+
         // Validate all questions first
         for (const questionData of questionsData) {
             const { quiz_id, question_text, question_type, correct_answer } = questionData;
@@ -410,7 +432,9 @@ export const bulkCreateQuestionsService = async (questionsData) => {
             }
 
             // Check if quiz exists (only check for first unique quiz_id to avoid redundant queries)
-            const quiz = await Quizzes.findByPk(quiz_id);
+            const quiz = await Quizzes.findOne({
+                where: withTenantWhere({ quiz_id }, requestingUser)
+            });
             if (!quiz) {
                 return { status: 404, data: { error: true, message: `Quiz with ID ${quiz_id} not found` } };
             }
@@ -426,7 +450,8 @@ export const bulkCreateQuestionsService = async (questionsData) => {
             return {
                 ...questionData,
                 options: processedOptions,
-                points: questionData.points || 1.0
+                points: questionData.points || 1.0,
+                tenant_id: tenantResult.tenantId
             };
         });
 
@@ -452,7 +477,7 @@ export const bulkCreateQuestionsService = async (questionsData) => {
     }
 };
 
-export const getQuestionsByTagsService = async (tagIds, questionType = '', limit = undefined) => {
+export const getQuestionsByTagsService = async (tagIds, questionType = '', limit = undefined, requestingUser = null) => {
     try {
         // Import QuestionTag model
         const { default: QuestionTag } = await import('../models/QuestionTag.js');
@@ -469,14 +494,14 @@ export const getQuestionsByTagsService = async (tagIds, questionType = '', limit
 
         // Get questions that have at least one of the specified tags
         const questions = await QuizQuestion.findAll({
-            where: whereCondition,
+            where: withTenantWhere(whereCondition, requestingUser),
             include: [{
                 model: QuestionTag,
-                where: {
+                where: withTenantWhere({
                     tag_id: {
                         [Op.in]: tagIds
                     }
-                },
+                }, requestingUser),
                 include: [{
                     model: Tags,
                     attributes: ['tag_id', 'name']

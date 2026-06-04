@@ -6,6 +6,7 @@ import Quizzes from "../models/Quizzes.js";
 import MaterialQuizzes from "../models/MaterialQuizzes.js";
 import QuestionToQuiz from "../models/QuesionToQuiz.js";
 import { Op } from 'sequelize';
+import { requireTenantId, withTenantWhere } from '../utils/tenantScope.js';
 
 export const createTrainingMaterialService = async (materialData, user) => {
     try {
@@ -18,6 +19,11 @@ export const createTrainingMaterialService = async (materialData, user) => {
             created_by = user.user_id
         } = materialData;
 
+        const tenantResult = requireTenantId(user);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant is required" } };
+        }
+
         // Validation
         if (!title) return { status: 400, data: { error: true, message: "Title is required" } };
         if (!type) return { status: 400, data: { error: true, message: "Type is required" } };
@@ -28,7 +34,8 @@ export const createTrainingMaterialService = async (materialData, user) => {
             content_path,
             description,
             status,
-            created_by
+            created_by,
+            tenant_id: tenantResult.tenantId
         });
 
         return { 
@@ -51,9 +58,10 @@ export const createTrainingMaterialService = async (materialData, user) => {
     }
 };
 
-export const getAllTrainingMaterialsService = async () => {
+export const getAllTrainingMaterialsService = async (requestingUser = null) => {
     try {
         const materials = await TrainingMaterial.findAll({
+            where: withTenantWhere({}, requestingUser),
             include: [
                 {
                     model: User,
@@ -98,10 +106,10 @@ export const getAllTrainingMaterialsService = async () => {
     }
 };
 
-export const getTrainingMaterialByIdService = async (materialId) => {
+export const getTrainingMaterialByIdService = async (materialId, requestingUser = null) => {
     try {
         const material = await TrainingMaterial.findOne({
-            where: { material_id: materialId },
+            where: withTenantWhere({ material_id: materialId }, requestingUser),
             include: [
                 {
                     model: User,
@@ -154,9 +162,11 @@ export const getTrainingMaterialByIdService = async (materialId) => {
     }
 };
 
-export const updateTrainingMaterialService = async (materialId, updateData) => {
+export const updateTrainingMaterialService = async (materialId, updateData, requestingUser = null) => {
     try {
-        const material = await TrainingMaterial.findByPk(materialId);
+        const material = await TrainingMaterial.findOne({
+            where: withTenantWhere({ material_id: materialId }, requestingUser)
+        });
 
         if (!material) {
             return {
@@ -191,9 +201,11 @@ export const updateTrainingMaterialService = async (materialId, updateData) => {
     }
 };
 
-export const deleteTrainingMaterialService = async (materialId) => {
+export const deleteTrainingMaterialService = async (materialId, requestingUser = null) => {
     try {
-        const material = await TrainingMaterial.findByPk(materialId);
+        const material = await TrainingMaterial.findOne({
+            where: withTenantWhere({ material_id: materialId }, requestingUser)
+        });
 
         if (!material) {
             return {
@@ -227,9 +239,11 @@ export const deleteTrainingMaterialService = async (materialId) => {
     }
 };
 
-export const restoreTrainingMaterialService = async (materialId) => {
+export const restoreTrainingMaterialService = async (materialId, requestingUser = null) => {
     try {
-        const material = await TrainingMaterial.findByPk(materialId);
+        const material = await TrainingMaterial.findOne({
+            where: withTenantWhere({ material_id: materialId }, requestingUser)
+        });
 
         if (!material) {
             return {
@@ -263,10 +277,10 @@ export const restoreTrainingMaterialService = async (materialId) => {
     }
 };
 
-export const getArchivedTrainingMaterialsService = async () => {
+export const getArchivedTrainingMaterialsService = async (requestingUser = null) => {
     try {
         const materials = await TrainingMaterial.findAll({
-            where: { status: 'archived' },
+            where: withTenantWhere({ status: 'archived' }, requestingUser),
             include: [
                 {
                     model: User,
@@ -305,7 +319,7 @@ export const getArchivedTrainingMaterialsService = async () => {
     }
 };
 
-export const searchTrainingMaterialsService = async (query) => {
+export const searchTrainingMaterialsService = async (query, requestingUser = null) => {
     try {
         const { title, created_by, status } = query;
         const materialWhere = {};
@@ -326,7 +340,7 @@ export const searchTrainingMaterialsService = async (query) => {
         }
 
         const materials = await TrainingMaterial.findAll({
-            where: materialWhere,
+            where: withTenantWhere(materialWhere, requestingUser),
             include: [
                 {
                     model: User,
@@ -372,10 +386,17 @@ export const searchTrainingMaterialsService = async (query) => {
     }
 };
 
-export const attachQuizToMaterialService = async (materialId, quizId) => {
+export const attachQuizToMaterialService = async (materialId, quizId, requestingUser = null) => {
     try {
+        const tenantResult = requireTenantId(requestingUser);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant is required" } };
+        }
+
         // Check if material exists
-        const material = await TrainingMaterial.findByPk(materialId);
+        const material = await TrainingMaterial.findOne({
+            where: withTenantWhere({ material_id: materialId }, requestingUser)
+        });
         if (!material) {
             return {
                 status: 404,
@@ -387,7 +408,9 @@ export const attachQuizToMaterialService = async (materialId, quizId) => {
         }
 
         // Check if quiz exists
-        const quiz = await Quizzes.findByPk(quizId);
+        const quiz = await Quizzes.findOne({
+            where: withTenantWhere({ quiz_id: quizId }, requestingUser)
+        });
         if (!quiz) {
             return {
                 status: 404,
@@ -416,7 +439,8 @@ export const attachQuizToMaterialService = async (materialId, quizId) => {
         // Create association
         await MaterialQuizzes.create({
             material_id: materialId,
-            quiz_id: quizId
+            quiz_id: quizId,
+            tenant_id: tenantResult.tenantId
         });
 
         return {
@@ -438,10 +462,10 @@ export const attachQuizToMaterialService = async (materialId, quizId) => {
     }
 };
 
-export const detachQuizFromMaterialService = async (materialId, quizId) => {
+export const detachQuizFromMaterialService = async (materialId, quizId, requestingUser = null) => {
     try {
         const association = await MaterialQuizzes.findOne({
-            where: { material_id: materialId, quiz_id: quizId }
+            where: withTenantWhere({ material_id: materialId, quiz_id: quizId }, requestingUser)
         });
 
         if (!association) {
@@ -475,10 +499,11 @@ export const detachQuizFromMaterialService = async (materialId, quizId) => {
     }
 };
 
-export const getQuizzesBySharedTagsService = async (materialId) => {
+export const getQuizzesBySharedTagsService = async (materialId, requestingUser = null) => {
     try {
         // Get material with its tags
-        const material = await TrainingMaterial.findByPk(materialId, {
+        const material = await TrainingMaterial.findOne({
+            where: withTenantWhere({ material_id: materialId }, requestingUser),
             include: [
                 {
                     model: Tag,
@@ -532,9 +557,7 @@ export const getQuizzesBySharedTagsService = async (materialId) => {
                     ]
                 }
             ],
-            where: {
-                status: 'active'
-            },
+            where: withTenantWhere({ status: 'active' }, requestingUser),
             attributes: ['quiz_id', 'title', 'description', 'duration', 'passing_score'],
             group: ['Quizzes.quiz_id'],
             distinct: true

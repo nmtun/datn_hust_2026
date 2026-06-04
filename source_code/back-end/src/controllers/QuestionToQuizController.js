@@ -25,7 +25,7 @@ class QuestionToQuizController {
                 questionId, 
                 quizId, 
                 tagId, 
-                { questionOrder, pointsOverride, addedBy }
+                { questionOrder, pointsOverride, addedBy, requestingUser: req.user }
             );
 
             return res.status(result.success ? 200 : 400).json(result);
@@ -88,7 +88,7 @@ class QuestionToQuizController {
             const result = await QuestionToQuizService.autoAddQuestionsByTags(
                 quizId, 
                 tagIds, 
-                { maxQuestionsPerTag, addedBy }
+                { maxQuestionsPerTag, addedBy, requestingUser: req.user }
             );
 
             return res.status(result.success ? 200 : 400).json(result);

@@ -1,11 +1,13 @@
 import bcrypt from 'bcrypt';
 import sequelize from '../src/config/dbsetup.js';
 import '../src/models/associations.js';
+import Tenant from '../src/models/Tenant.js';
 import User from '../src/models/User.js';
 import Employee from '../src/models/Employee.js';
 import Department from '../src/models/Department.js';
 import Team from '../src/models/Team.js';
 import employees from './employees.js';
+import { DEFAULT_TENANT_CODE } from './tenants.js';
 
 const SALT_ROUNDS = 10;
 
@@ -57,7 +59,8 @@ const DEPARTMENT_MANAGER_EMAIL_BY_CODE = {
     TECH: 'tp3@company.com'
 };
 
-const buildUserPayload = (employeeData, password) => ({
+const buildUserPayload = (employeeData, password, tenantId) => ({
+    tenant_id: tenantId,
     personal_email: employeeData.personal_email,
     company_email: employeeData.company_email,
     password,
@@ -69,7 +72,8 @@ const buildUserPayload = (employeeData, password) => ({
     is_deleted: false
 });
 
-const buildEmployeePayload = (employeeData, userId) => ({
+const buildEmployeePayload = (employeeData, userId, tenantId) => ({
+    tenant_id: tenantId,
     user_id: userId,
     hire_date: employeeData.hire_date,
     position: employeeData.position,
@@ -89,7 +93,7 @@ const getUsersByEmailMap = async (transaction) => {
     return new Map(users.map((user) => [user.company_email, user]));
 };
 
-const upsertDepartments = async (transaction) => {
+const upsertDepartments = async (transaction, tenantId) => {
     const departmentsByCode = new Map();
     let created = 0;
     let updated = 0;
@@ -103,6 +107,7 @@ const upsertDepartments = async (transaction) => {
         if (!existingDepartment) {
             const department = await Department.create(
                 {
+                    tenant_id: tenantId,
                     name: seed.name,
                     code: seed.code,
                     description: seed.description,
@@ -121,6 +126,7 @@ const upsertDepartments = async (transaction) => {
 
         await existingDepartment.update(
             {
+                tenant_id: tenantId,
                 name: seed.name,
                 description: seed.description,
                 active: true,
@@ -160,7 +166,7 @@ const assignDepartmentManagers = async ({ transaction, departmentsByCode, usersB
     return assigned;
 };
 
-const upsertTeams = async ({ transaction, departmentsByCode, usersByEmail }) => {
+const upsertTeams = async ({ transaction, departmentsByCode, usersByEmail, tenantId }) => {
     const teamsByCode = new Map();
     let created = 0;
     let updated = 0;
@@ -174,6 +180,7 @@ const upsertTeams = async ({ transaction, departmentsByCode, usersByEmail }) => 
         const leaderUser = usersByEmail.get(seed.leader_email);
 
         const payload = {
+            tenant_id: tenantId,
             name: seed.name,
             code: seed.code,
             department_id: department.department_id,
@@ -271,7 +278,12 @@ const syncOrganizationStructure = async () => {
     const transaction = await sequelize.transaction();
 
     try {
-        const { departmentsByCode, created: departmentsCreated, updated: departmentsUpdated } = await upsertDepartments(transaction);
+        const tenant = await Tenant.findOne({ where: { tenant_code: DEFAULT_TENANT_CODE }, transaction });
+        if (!tenant) {
+            throw new Error(`Tenant not found: ${DEFAULT_TENANT_CODE}. Run seed:tenants first.`);
+        }
+
+        const { departmentsByCode, created: departmentsCreated, updated: departmentsUpdated } = await upsertDepartments(transaction, tenant.tenant_id);
         const usersByEmail = await getUsersByEmailMap(transaction);
         const departmentManagersAssigned = await assignDepartmentManagers({
             transaction,
@@ -281,7 +293,8 @@ const syncOrganizationStructure = async () => {
         const { teamsByCode, created: teamsCreated, updated: teamsUpdated } = await upsertTeams({
             transaction,
             departmentsByCode,
-            usersByEmail
+            usersByEmail,
+            tenantId: tenant.tenant_id
         });
         const employeeHierarchySynced = await syncEmployeeHierarchy({
             transaction,
@@ -315,6 +328,11 @@ const importEmployees = async () => {
         failed: 0
     };
 
+    const tenant = await Tenant.findOne({ where: { tenant_code: DEFAULT_TENANT_CODE } });
+    if (!tenant) {
+        throw new Error(`Tenant not found: ${DEFAULT_TENANT_CODE}. Run seed:tenants first.`);
+    }
+
     for (const employeeData of employees) {
         const transaction = await sequelize.transaction();
 
@@ -328,11 +346,11 @@ const importEmployees = async () => {
 
             if (!existingUser) {
                 const hashedPassword = await bcrypt.hash(employeeData.password, SALT_ROUNDS);
-                const userPayload = buildUserPayload(employeeData, hashedPassword);
+                const userPayload = buildUserPayload(employeeData, hashedPassword, tenant.tenant_id);
                 user = await User.create(userPayload, { transaction });
                 summary.usersCreated += 1;
             } else {
-                const userPayload = buildUserPayload(employeeData, existingUser.password);
+                const userPayload = buildUserPayload(employeeData, existingUser.password, tenant.tenant_id);
                 await existingUser.update(userPayload, { transaction });
                 user = existingUser;
                 summary.usersUpdated += 1;
@@ -343,7 +361,7 @@ const importEmployees = async () => {
                 transaction
             });
 
-            const employeePayload = buildEmployeePayload(employeeData, user.user_id);
+            const employeePayload = buildEmployeePayload(employeeData, user.user_id, tenant.tenant_id);
 
             if (!existingEmployeeInfo) {
                 await Employee.create(employeePayload, { transaction });
@@ -354,7 +372,7 @@ const importEmployees = async () => {
             }
 
             await transaction.commit();
-            console.log(`Imported: ${employeeData.company_email}`);
+            console.log(`Imported: ${employeeData.company_email} -> ${tenant.tenant_code}`);
         } catch (error) {
             await transaction.rollback();
             summary.failed += 1;

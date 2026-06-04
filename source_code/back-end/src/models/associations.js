@@ -1,4 +1,5 @@
 import User from "./User.js";
+import Tenant from "./Tenant.js";
 import Candidate from "./Candidate.js";
 import Employee from "./Employee.js";
 import JobDescription from "./JobDescription.js";
@@ -19,12 +20,15 @@ import Team from "./Team.js";
 import PerformancePeriod from "./PerformancePeriod.js";
 import Performance from "./Performance.js";
 import Compensation from "./Compensation.js";
-import HRForecast from "./HRForecast.js";
 import Project from "./Project.js";
 import Task from "./Task.js";
 import TaskComment from "./TaskComment.js";
 import TaskReview from "./TaskReview.js";
 import Notification from "./Notification.js";
+
+// Tenant ↔ User
+Tenant.hasMany(User, { foreignKey: "tenant_id", as: "users" });
+User.belongsTo(Tenant, { foreignKey: "tenant_id", as: "tenant" });
 
 // Define one-to-many associations between User and Candidate_Info
 User.hasMany(Candidate, { foreignKey: "user_id" });
@@ -240,10 +244,6 @@ User.hasMany(Compensation, { foreignKey: "user_id", as: "compensations" });
 // Compensation ↔ User (approver)
 Compensation.belongsTo(User, { foreignKey: "approved_by", as: "approver" });
 User.hasMany(Compensation, { foreignKey: "approved_by", as: "approvedCompensations" });
-
-// HRForecast ↔ Department
-HRForecast.belongsTo(Department, { foreignKey: "department_id", as: "department" });
-Department.hasMany(HRForecast, { foreignKey: "department_id", as: "forecasts" });
 
 // Project ↔ User (manager)
 Project.belongsTo(User, { foreignKey: "manager_id", as: "manager" });

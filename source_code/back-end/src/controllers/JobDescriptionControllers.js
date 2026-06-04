@@ -15,7 +15,7 @@ export const createJobDescription = async (req, res) => {
 
 export const getAllJobDescriptions = async (req, res) => {
     try {
-        const result = await jobDescriptionService.getAllJobDescriptionsService();
+        const result = await jobDescriptionService.getAllJobDescriptionsService(req.query);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error fetching job descriptions:", error);
@@ -26,7 +26,7 @@ export const getAllJobDescriptions = async (req, res) => {
 export const getJobDescriptionById = async (req, res) => {
     try {
         const jobId = req.params.id;
-        const result = await jobDescriptionService.getJobDescriptionByIdService(jobId);
+        const result = await jobDescriptionService.getJobDescriptionByIdService(jobId, req.query);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error fetching job description:", error);

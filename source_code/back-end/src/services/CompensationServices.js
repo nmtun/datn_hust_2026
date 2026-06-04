@@ -5,6 +5,7 @@ import Performance from '../models/Performance.js';
 import PerformancePeriod from '../models/PerformancePeriod.js';
 import User from '../models/User.js';
 import { createNotificationsForUsers } from './NotificationServices.js';
+import { requireTenantId, withTenantWhere } from '../utils/tenantScope.js';
 
 const userAttrs = ['user_id', 'full_name', 'company_email'];
 const COMPENSATION_NOTIFICATION_TYPE = 'compensation_recommendation';
@@ -158,12 +159,19 @@ const buildRecommendationReason = ({ year }) => {
     return `Kỳ đánh giá lương&thưởng năm ${year}`;
 };
 
-export const createCompensationService = async (data, approverId) => {
+export const createCompensationService = async (data, requestingUser = null) => {
     try {
         const { user_id, salary, bonus, effective_date, reason, comment } = data;
         if (!user_id || !effective_date) {
             return { status: 400, data: { error: true, message: "user_id and effective_date are required" } };
         }
+
+        const tenantResult = requireTenantId(requestingUser);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant is required" } };
+        }
+
+        const approverId = requestingUser?.user_id || null;
 
         const hasSalary = salary !== undefined && salary !== null;
         const hasBonus = bonus !== undefined && bonus !== null;
@@ -175,7 +183,7 @@ export const createCompensationService = async (data, approverId) => {
         let finalSalary = salary;
         if (!hasSalary) {
             const latestRecord = await Compensation.findOne({
-                where: { user_id },
+                where: withTenantWhere({ user_id }, requestingUser),
                 order: [['effective_date', 'DESC']]
             });
 
@@ -194,7 +202,10 @@ export const createCompensationService = async (data, approverId) => {
             reason,
             comment,
             evaluated_by: approverId,
-            approved_by: approverId, approved_at: new Date(), created_at: new Date()
+            approved_by: approverId,
+            approved_at: new Date(),
+            created_at: new Date(),
+            tenant_id: tenantResult.tenantId
         });
         return { status: 201, data: { error: false, message: "Compensation record created successfully", compensation: comp } };
     } catch (error) {
@@ -203,9 +214,10 @@ export const createCompensationService = async (data, approverId) => {
     }
 };
 
-export const getAllCompensationService = async () => {
+export const getAllCompensationService = async (requestingUser = null) => {
     try {
         const records = await Compensation.findAll({
+            where: withTenantWhere({}, requestingUser),
             include: [
                 {
                     model: User,
@@ -224,10 +236,10 @@ export const getAllCompensationService = async () => {
     }
 };
 
-export const getCompensationByEmployeeService = async (userId) => {
+export const getCompensationByEmployeeService = async (userId, requestingUser = null) => {
     try {
         const records = await Compensation.findAll({
-            where: { user_id: userId },
+            where: withTenantWhere({ user_id: userId }, requestingUser),
             include: [{ model: User, as: 'approver', attributes: userAttrs }],
             order: [['effective_date', 'DESC']]
         });
@@ -238,9 +250,11 @@ export const getCompensationByEmployeeService = async (userId) => {
     }
 };
 
-export const updateCompensationService = async (id, data) => {
+export const updateCompensationService = async (id, data, requestingUser = null) => {
     try {
-        const comp = await Compensation.findByPk(id);
+        const comp = await Compensation.findOne({
+            where: withTenantWhere({ comp_id: Number(id) }, requestingUser)
+        });
         if (!comp) return { status: 404, data: { error: true, message: "Compensation record not found" } };
 
         const allowed = ['salary', 'bonus', 'effective_date', 'reason', 'comment'];
@@ -256,10 +270,10 @@ export const updateCompensationService = async (id, data) => {
     }
 };
 
-export const getMyCompensationService = async (userId) => {
+export const getMyCompensationService = async (userId, requestingUser = null) => {
     try {
         const records = await Compensation.findAll({
-            where: { user_id: userId },
+            where: withTenantWhere({ user_id: userId }, requestingUser),
             include: [{ model: User, as: 'approver', attributes: userAttrs }],
             order: [['effective_date', 'DESC']]
         });
@@ -277,12 +291,12 @@ export const getCompensationRecommendationsService = async ({ year, requestingUs
         const endDate = `${targetYear}-12-31`;
 
         const employees = await User.findAll({
-            where: {
+            where: withTenantWhere({
                 role: { [Op.in]: ['employee', 'hr'] },
                 is_deleted: false,
                 status: 'active',
                 user_id: { [Op.ne]: requestingUser?.user_id }
-            },
+            }, requestingUser),
             attributes: userAttrs
         });
 
@@ -295,10 +309,10 @@ export const getCompensationRecommendationsService = async ({ year, requestingUs
         }
 
         const performanceRecords = await Performance.findAll({
-            where: {
+            where: withTenantWhere({
                 user_id: { [Op.in]: employeeIds },
                 review_date: { [Op.gte]: startDate, [Op.lte]: endDate }
-            },
+            }, requestingUser),
             include: [
                 {
                     model: PerformancePeriod,
@@ -319,7 +333,7 @@ export const getCompensationRecommendationsService = async ({ year, requestingUs
         }
 
         const compensationRecords = await Compensation.findAll({
-            where: { user_id: { [Op.in]: employeeIds } },
+            where: withTenantWhere({ user_id: { [Op.in]: employeeIds } }, requestingUser),
             order: [['effective_date', 'DESC'], ['comp_id', 'DESC']]
         });
 
@@ -425,11 +439,11 @@ export const saveCompensationRecommendationsService = async ({ year, recommendat
         }
 
         const employees = await User.findAll({
-            where: {
+            where: withTenantWhere({
                 user_id: { [Op.in]: employeeIds },
                 role: { [Op.ne]: 'manager' },
                 is_deleted: false
-            },
+            }, requestingUser),
             attributes: userAttrs
         });
         const employeesById = new Map(employees.map((employee) => [employee.user_id, employee]));

@@ -3,7 +3,7 @@ import * as tagService from "../services/TagServices.js";
 // Create new tag
 export const createTag = async (req, res) => {
     try {
-        const result = await tagService.createTagService(req.body);
+        const result = await tagService.createTagService(req.body, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         return res.status(500).json({
@@ -17,7 +17,7 @@ export const createTag = async (req, res) => {
 // Get all tags
 export const getAllTags = async (req, res) => {
     try {
-        const result = await tagService.getAllTagsService();
+        const result = await tagService.getAllTagsService(req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         return res.status(500).json({
@@ -32,7 +32,7 @@ export const getAllTags = async (req, res) => {
 export const getTagById = async (req, res) => {
     try {
         const { id } = req.params;
-        const result = await tagService.getTagByIdService(id);
+        const result = await tagService.getTagByIdService(id, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         return res.status(500).json({
@@ -47,7 +47,7 @@ export const getTagById = async (req, res) => {
 export const updateTag = async (req, res) => {
     try {
         const { id } = req.params;
-        const result = await tagService.updateTagService(id, req.body);
+        const result = await tagService.updateTagService(id, req.body, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         return res.status(500).json({
@@ -62,7 +62,7 @@ export const updateTag = async (req, res) => {
 export const deleteTag = async (req, res) => {
     try {
         const { id } = req.params;
-        const result = await tagService.deleteTagService(id);
+        const result = await tagService.deleteTagService(id, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         return res.status(500).json({
@@ -84,7 +84,7 @@ export const searchTags = async (req, res) => {
             });
         }
 
-        const result = await tagService.searchTagsService(q);
+        const result = await tagService.searchTagsService(q, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         return res.status(500).json({
@@ -108,7 +108,7 @@ export const assignTagsToMaterial = async (req, res) => {
             });
         }
 
-        const result = await tagService.assignTagsToMaterialService(materialId, tagIds);
+        const result = await tagService.assignTagsToMaterialService(materialId, tagIds, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         return res.status(500).json({
@@ -147,7 +147,7 @@ export const removeTagsFromMaterial = async (req, res) => {
 export const getMaterialsByTag = async (req, res) => {
     try {
         const { id } = req.params;
-        const result = await tagService.getMaterialsByTagService(id);
+        const result = await tagService.getMaterialsByTagService(id, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         return res.status(500).json({
@@ -171,7 +171,7 @@ export const assignTagsToQuestion = async (req, res) => {
             });
         }
 
-        const result = await tagService.assignTagsToQuestionService(questionId, tagIds);
+        const result = await tagService.assignTagsToQuestionService(questionId, tagIds, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         return res.status(500).json({

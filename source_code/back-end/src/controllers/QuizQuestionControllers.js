@@ -14,7 +14,7 @@ export const createQuestion = async (req, res) => {
 export const getQuestionsByQuizId = async (req, res) => {
     try {
         const quizId = req.params.quizId;
-        const result = await questionService.getQuestionsByQuizIdService(quizId);
+        const result = await questionService.getQuestionsByQuizIdService(quizId, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error fetching questions by quiz ID:", error);
@@ -25,7 +25,7 @@ export const getQuestionsByQuizId = async (req, res) => {
 export const getAllQuestions = async (req, res) => {
     try {
         const { search = '', questionType = '' } = req.query;
-        const result = await questionService.getAllQuestionsService(search, questionType);
+        const result = await questionService.getAllQuestionsService(search, questionType, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error fetching all questions:", error);
@@ -36,7 +36,7 @@ export const getAllQuestions = async (req, res) => {
 export const getQuestionById = async (req, res) => {
     try {
         const questionId = req.params.id;
-        const result = await questionService.getQuestionByIdService(questionId);
+        const result = await questionService.getQuestionByIdService(questionId, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error fetching question by ID:", error);
@@ -48,7 +48,7 @@ export const updateQuestion = async (req, res) => {
     try {
         const questionId = req.params.id;
         const updateData = req.body;
-        const result = await questionService.updateQuestionService(questionId, updateData);
+        const result = await questionService.updateQuestionService(questionId, updateData, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error updating question:", error);
@@ -59,7 +59,7 @@ export const updateQuestion = async (req, res) => {
 export const deleteQuestion = async (req, res) => {
     try {
         const questionId = req.params.id;
-        const result = await questionService.deleteQuestionService(questionId);
+        const result = await questionService.deleteQuestionService(questionId, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error deleting question:", error);
@@ -70,7 +70,7 @@ export const deleteQuestion = async (req, res) => {
 export const deleteQuestionsByQuizId = async (req, res) => {
     try {
         const quizId = req.params.quizId;
-        const result = await questionService.deleteQuestionsByQuizIdService(quizId);
+        const result = await questionService.deleteQuestionsByQuizIdService(quizId, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error deleting questions by quiz ID:", error);
@@ -89,7 +89,7 @@ export const bulkCreateQuestions = async (req, res) => {
             });
         }
 
-        const result = await questionService.bulkCreateQuestionsService(questionsData);
+        const result = await questionService.bulkCreateQuestionsService(questionsData, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error bulk creating questions:", error);
@@ -110,7 +110,7 @@ export const getQuestionsByTags = async (req, res) => {
 
         // Parse tagIds from comma-separated string to array
         const tagIdsArray = tagIds.split(',').map(id => parseInt(id.trim()));
-        const result = await questionService.getQuestionsByTagsService(tagIdsArray, questionType, limit ? parseInt(limit) : undefined);
+        const result = await questionService.getQuestionsByTagsService(tagIdsArray, questionType, limit ? parseInt(limit) : undefined, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error fetching questions by tags:", error);

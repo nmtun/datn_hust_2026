@@ -57,7 +57,7 @@ export const createTrainingMaterial = async (req, res) => {
 
 export const getAllTrainingMaterials = async (req, res) => {
     try {
-        const result = await trainingMaterialService.getAllTrainingMaterialsService();
+        const result = await trainingMaterialService.getAllTrainingMaterialsService(req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error fetching training materials:", error);
@@ -68,7 +68,7 @@ export const getAllTrainingMaterials = async (req, res) => {
 export const getTrainingMaterialById = async (req, res) => {
     try {
         const materialId = req.params.id;
-        const result = await trainingMaterialService.getTrainingMaterialByIdService(materialId);
+        const result = await trainingMaterialService.getTrainingMaterialByIdService(materialId, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error fetching training material by ID:", error);
@@ -82,7 +82,7 @@ export const updateTrainingMaterial = async (req, res) => {
         const updateData = req.body;
 
         // Lấy thông tin material hiện tại
-        const material = await trainingMaterialService.getTrainingMaterialByIdService(materialId);
+        const material = await trainingMaterialService.getTrainingMaterialByIdService(materialId, req.user);
         let existingFiles = [];
         if (material.data.material && material.data.material.content_path) {
             existingFiles = material.data.material.content_path.split(';').filter(f => f.trim());
@@ -142,7 +142,7 @@ export const updateTrainingMaterial = async (req, res) => {
         // Xóa filesToDelete khỏi updateData trước khi gửi đến service
         delete updateData.filesToDelete;
 
-        const result = await trainingMaterialService.updateTrainingMaterialService(materialId, updateData);
+        const result = await trainingMaterialService.updateTrainingMaterialService(materialId, updateData, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error updating training material:", error);
@@ -153,7 +153,7 @@ export const updateTrainingMaterial = async (req, res) => {
 export const deleteTrainingMaterial = async (req, res) => {
     try {
         const materialId = req.params.id;
-        const result = await trainingMaterialService.deleteTrainingMaterialService(materialId);
+        const result = await trainingMaterialService.deleteTrainingMaterialService(materialId, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error deleting training material:", error);
@@ -164,7 +164,7 @@ export const deleteTrainingMaterial = async (req, res) => {
 export const restoreTrainingMaterial = async (req, res) => {
     try {
         const materialId = req.params.id;
-        const result = await trainingMaterialService.restoreTrainingMaterialService(materialId);
+        const result = await trainingMaterialService.restoreTrainingMaterialService(materialId, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error restoring training material:", error);
@@ -174,7 +174,7 @@ export const restoreTrainingMaterial = async (req, res) => {
 
 export const getArchivedTrainingMaterials = async (req, res) => {
     try {
-        const result = await trainingMaterialService.getArchivedTrainingMaterialsService();
+        const result = await trainingMaterialService.getArchivedTrainingMaterialsService(req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error fetching archived training materials:", error);
@@ -185,7 +185,7 @@ export const getArchivedTrainingMaterials = async (req, res) => {
 export const searchTrainingMaterials = async (req, res) => {
     try {
         const query = req.query;
-        const result = await trainingMaterialService.searchTrainingMaterialsService(query);
+        const result = await trainingMaterialService.searchTrainingMaterialsService(query, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error searching training materials:", error);
@@ -205,7 +205,7 @@ export const attachQuizToMaterial = async (req, res) => {
             });
         }
 
-        const result = await trainingMaterialService.attachQuizToMaterialService(materialId, quizId);
+        const result = await trainingMaterialService.attachQuizToMaterialService(materialId, quizId, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error attaching quiz to material:", error);
@@ -216,7 +216,7 @@ export const attachQuizToMaterial = async (req, res) => {
 export const detachQuizFromMaterial = async (req, res) => {
     try {
         const { materialId, quizId } = req.params;
-        const result = await trainingMaterialService.detachQuizFromMaterialService(materialId, quizId);
+        const result = await trainingMaterialService.detachQuizFromMaterialService(materialId, quizId, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error detaching quiz from material:", error);
@@ -227,7 +227,7 @@ export const detachQuizFromMaterial = async (req, res) => {
 export const getQuizzesBySharedTags = async (req, res) => {
     try {
         const { materialId } = req.params;
-        const result = await trainingMaterialService.getQuizzesBySharedTagsService(materialId);
+        const result = await trainingMaterialService.getQuizzesBySharedTagsService(materialId, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error fetching quizzes by shared tags:", error);

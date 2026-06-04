@@ -254,28 +254,28 @@ function TrainingMaterialPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Quản lý Tài liệu Đào tạo</h1>
         </div>
-        <div className="flex space-x-4">
+        <div className="flex flex-wrap gap-3 sm:justify-end">
           <button
             onClick={() => router.push("/dashboard/hr/training-material/archived")}
-            className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            className="inline-flex w-full items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:w-auto"
           >
             <Archive className="w-5 h-5 mr-2" />
             Tài liệu đã lưu trữ
           </button>
           <button
             onClick={() => setIsTagManagementOpen(true)}
-            className="inline-flex items-center px-4 py-2 bg-purple-100 text-purple-700 text-sm font-medium rounded-md hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+            className="inline-flex w-full items-center justify-center px-4 py-2 bg-purple-100 text-purple-700 text-sm font-medium rounded-md hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:w-auto"
           >
             <TagIcon className="w-5 h-5 mr-2" />
             Quản lý Tags
           </button>
           <button
             onClick={handleCreateNew}
-            className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="inline-flex w-full items-center justify-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto"
           >
             <Plus className="w-5 h-5 mr-2" />
             Thêm Tài liệu Mới
@@ -285,8 +285,8 @@ function TrainingMaterialPage() {
 
       {/* Search */}
       <div className="mb-6">
-        <div className="flex gap-4">
-          <div className="flex-1 relative">
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
@@ -296,7 +296,7 @@ function TrainingMaterialPage() {
               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
-          <div className="flex-1 relative">
+          <div className="relative">
             <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
@@ -306,7 +306,7 @@ function TrainingMaterialPage() {
               className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
-          <div className="flex-1 relative">
+          <div className="relative">
             <BookOpen className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <select
               value={searchStatus}
@@ -323,13 +323,14 @@ function TrainingMaterialPage() {
       </div>
 
       {/* Training Materials Table */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className="bg-white shadow rounded-lg">
         {loading ? (
           <div className="flex justify-center items-center p-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
           </div>
         ) : (
-          <table className="min-w-full divide-y divide-gray-200">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[960px] divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -469,7 +470,8 @@ function TrainingMaterialPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
         )}
       </div>
 

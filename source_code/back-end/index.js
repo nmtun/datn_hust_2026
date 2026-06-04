@@ -30,12 +30,12 @@ import "./src/models/Team.js";
 import "./src/models/PerformancePeriod.js";
 import "./src/models/Performance.js";
 import "./src/models/Compensation.js";
-import "./src/models/HRForecast.js";
 import "./src/models/Project.js";
 import "./src/models/Task.js";
 import "./src/models/TaskComment.js";
 import "./src/models/TaskReview.js";
 import "./src/models/Notification.js";
+import "./src/models/Tenant.js";
 
 // Import routes here
 import UserRoutes from "./src/routes/UserRoutes.js";
@@ -53,11 +53,10 @@ import TeamRoutes from "./src/routes/TeamRoutes.js";
 import PerformancePeriodRoutes from "./src/routes/PerformancePeriodRoutes.js";
 import PerformanceRoutes from "./src/routes/PerformanceRoutes.js";
 import CompensationRoutes from "./src/routes/CompensationRoutes.js";
-import HRForecastRoutes from "./src/routes/HRForecastRoutes.js";
-import HRReportRoutes from "./src/routes/HRReportRoutes.js";
 import ProjectRoutes from "./src/routes/ProjectRoutes.js";
 import TaskRoutes from "./src/routes/TaskRoutes.js";
 import NotificationRoutes from "./src/routes/NotificationRoutes.js";
+import TenantRoutes from "./src/routes/TenantRoutes.js";
 import { startPerformanceReminderScheduler } from "./src/services/PerformancePeriodServices.js";
 
 dotenv.config();
@@ -112,11 +111,10 @@ app.use("/api/team", TeamRoutes);
 app.use("/api/performance-period", PerformancePeriodRoutes);
 app.use("/api/performance", PerformanceRoutes);
 app.use("/api/compensation", CompensationRoutes);
-app.use("/api/hr-forecast", HRForecastRoutes);
-app.use("/api/report", HRReportRoutes);
 app.use("/api/project", ProjectRoutes);
 app.use("/api/task", TaskRoutes);
 app.use("/api/notification", NotificationRoutes);
+app.use("/api/tenant", TenantRoutes);
 
 setupSocketServer(server);
 
@@ -125,7 +123,7 @@ setupSocketServer(server);
     try {
         // await sequelize.sync();                // tạo bảng nếu chưa có
         // await sequelize.sync({ alter: true }); // tạo bảng nếu chưa có và cập nhật bảng nếu có thay đổi trong model
-        // await sequelize.sync({ force: true }); // xóa bảng và tạo lại - dùng khi cần làm mới cơ sở dữ liệu, sẽ bị mất dữ liệu
+         await sequelize.sync({ force: true }); // xóa bảng và tạo lại - dùng khi cần làm mới cơ sở dữ liệu, sẽ bị mất dữ liệu
 
         server.listen(PORT, () => {
             console.log(`Truy cập local: http://localhost:${PORT}`);

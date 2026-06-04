@@ -44,7 +44,7 @@ function DashboardShell({
       <Sidebar onCollapse={(collapsed) => setIsSidebarCollapsed(collapsed)} />
       <div className={`flex-1 ${isSidebarCollapsed ? 'ml-16' : 'ml-64'} transition-all duration-300`}>
         <header className="sticky top-0 z-40 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 h-16 shadow-sm">
-          <div className="h-full px-6 flex items-center justify-end">
+          <div className="h-full page-container flex items-center justify-end">
             <div className="flex items-center space-x-4">
               <div className="relative" ref={panelRef}>
                 <button
@@ -126,8 +126,10 @@ function DashboardShell({
             </div>
           </div>
         </header>
-        <main className="p-6">
-          {children}
+        <main className="py-4 sm:py-6 lg:py-8 hd:py-10 mac:py-12 fhd:py-14">
+          <div className="page-container">
+            {children}
+          </div>
         </main>
       </div>
     </div>

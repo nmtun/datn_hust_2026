@@ -2,7 +2,7 @@ import * as compensationService from '../services/CompensationServices.js';
 
 export const createCompensation = async (req, res) => {
     try {
-        const result = await compensationService.createCompensationService(req.body, req.user.user_id);
+        const result = await compensationService.createCompensationService(req.body, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error creating compensation:", error);
@@ -12,7 +12,7 @@ export const createCompensation = async (req, res) => {
 
 export const getAllCompensation = async (req, res) => {
     try {
-        const result = await compensationService.getAllCompensationService();
+        const result = await compensationService.getAllCompensationService(req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error getting compensation:", error);
@@ -22,7 +22,7 @@ export const getAllCompensation = async (req, res) => {
 
 export const getCompensationByEmployee = async (req, res) => {
     try {
-        const result = await compensationService.getCompensationByEmployeeService(req.params.userId);
+        const result = await compensationService.getCompensationByEmployeeService(req.params.userId, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error getting employee compensation:", error);
@@ -32,7 +32,7 @@ export const getCompensationByEmployee = async (req, res) => {
 
 export const updateCompensation = async (req, res) => {
     try {
-        const result = await compensationService.updateCompensationService(req.params.id, req.body);
+        const result = await compensationService.updateCompensationService(req.params.id, req.body, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error updating compensation:", error);
@@ -42,7 +42,7 @@ export const updateCompensation = async (req, res) => {
 
 export const getMyCompensation = async (req, res) => {
     try {
-        const result = await compensationService.getMyCompensationService(req.user.user_id);
+        const result = await compensationService.getMyCompensationService(req.user.user_id, req.user);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error getting my compensation:", error);

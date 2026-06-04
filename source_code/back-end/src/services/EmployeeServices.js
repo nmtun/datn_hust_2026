@@ -5,6 +5,7 @@ import Department from '../models/Department.js';
 import Team from '../models/Team.js';
 import { Op } from 'sequelize';
 import { getLedTeamIds, getManagedDepartmentIds, getManagementTargetUserIds, resolveHierarchyRole } from './HierarchyServices.js';
+import { withTenantWhere } from '../utils/tenantScope.js';
 
 // Create employee service
 export const createEmployeeService = async (employeeData) => {
@@ -15,7 +16,7 @@ export const createEmployeeService = async (employeeData) => {
 export const getMyProfileService = async (userId) => {
     try {
         const user = await User.findOne({
-            where: { user_id: userId, is_deleted: false },
+            where: withTenantWhere({ user_id: userId, is_deleted: false }),
             attributes: { exclude: ['password'] },
             include: [
                 {
@@ -41,7 +42,9 @@ export const getMyProfileService = async (userId) => {
 // Update my profile (Employee: phone_number, address only)
 export const updateMyProfileService = async (userId, { phone_number, address }) => {
     try {
-        const user = await User.findOne({ where: { user_id: userId, is_deleted: false } });
+        const user = await User.findOne({
+            where: withTenantWhere({ user_id: userId, is_deleted: false })
+        });
         if (!user) return { status: 404, data: { error: true, message: "Employee not found" } };
 
         const updateData = {};
@@ -62,6 +65,9 @@ export const getAllEmployeesService = async (query = {}, requestingUser = null) 
         const { full_name, department_id, status } = query;
 
         const userWhere = { is_deleted: false, role: { [Op.in]: ['employee', 'manager', 'hr'] } };
+        if (requestingUser?.tenant_id !== undefined && requestingUser?.tenant_id !== null) {
+            userWhere.tenant_id = requestingUser.tenant_id;
+        }
         if (full_name) userWhere.full_name = { [Op.like]: `%${full_name}%` };
         if (status) userWhere.status = status;
 
@@ -165,7 +171,7 @@ export const getEmployeeByIdService = async (userId, requestingUser = null) => {
         }
 
         const user = await User.findOne({
-            where: { user_id: userId, is_deleted: false },
+            where: withTenantWhere({ user_id: userId, is_deleted: false }),
             attributes: { exclude: ['password'] },
             include: [
                 {
@@ -191,10 +197,14 @@ export const getEmployeeByIdService = async (userId, requestingUser = null) => {
 // Update employee info (HR)
 export const updateEmployeeService = async (userId, updateData) => {
     try {
-        const user = await User.findOne({ where: { user_id: userId, is_deleted: false } });
+        const user = await User.findOne({
+            where: withTenantWhere({ user_id: userId, is_deleted: false })
+        });
         if (!user) return { status: 404, data: { error: true, message: "Employee not found" } };
 
-        const employee = await Employee.findOne({ where: { user_id: userId } });
+        const employee = await Employee.findOne({
+            where: withTenantWhere({ user_id: userId })
+        });
 
         const userFields = ['full_name', 'phone_number', 'address', 'role'];
         const employeeFields = ['position', 'department_id', 'team_id', 'manager_id', 'hire_date', 'termination_date', 'employee_id_number'];
@@ -223,7 +233,9 @@ export const updateEmployeeStatusService = async (userId, status) => {
         if (!allowed.includes(status)) {
             return { status: 400, data: { error: true, message: "Invalid status. Must be: active, on_leave, terminated" } };
         }
-        const user = await User.findOne({ where: { user_id: userId, is_deleted: false } });
+        const user = await User.findOne({
+            where: withTenantWhere({ user_id: userId, is_deleted: false })
+        });
         if (!user) return { status: 404, data: { error: true, message: "Employee not found" } };
 
         await user.update({ status });
@@ -267,7 +279,7 @@ export const getMyTeamService = async (requestingUser) => {
         }
 
         const employees = await Employee.findAll({
-            where,
+            where: withTenantWhere(where),
             include: [
                 {
                     model: User,
@@ -292,10 +304,10 @@ export const getManagedEmployeesService = async (requestingUser) => {
         }
 
         const employees = await User.findAll({
-            where: {
+            where: withTenantWhere({
                 user_id: { [Op.in]: managedIds },
                 is_deleted: false
-            },
+            }),
             attributes: { exclude: ['password'] },
             include: [
                 {
