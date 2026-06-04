@@ -80,7 +80,7 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-            "frame-ancestors": ["'self'", "http://localhost:3000", "http://localhost:3001"], // Allow iframe from frontend
+            "frame-ancestors": ["'self'", "http://localhost:3000", "http://localhost:3001"],
         },
     },
 }));
