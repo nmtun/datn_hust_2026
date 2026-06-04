@@ -135,5 +135,3 @@ setupSocketServer(server);
         console.error("Lỗi khởi động server", error);
     }
 })();
-
-// thêm dòng này chỉ để test ci thôi hihi
