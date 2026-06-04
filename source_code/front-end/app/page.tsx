@@ -1,6 +1,8 @@
 import Image from "next/image";
+import {redirect} from "next/navigation";
 
 export default function Home() {
+  redirect("/auth/login");
   return (
     <div className="page-container font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen gap-16 py-8 sm:py-20">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
