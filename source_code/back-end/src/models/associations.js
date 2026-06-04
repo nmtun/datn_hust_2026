@@ -20,7 +20,6 @@ import Team from "./Team.js";
 import PerformancePeriod from "./PerformancePeriod.js";
 import Performance from "./Performance.js";
 import Compensation from "./Compensation.js";
-import HRForecast from "./HRForecast.js";
 import Project from "./Project.js";
 import Task from "./Task.js";
 import TaskComment from "./TaskComment.js";
@@ -245,10 +244,6 @@ User.hasMany(Compensation, { foreignKey: "user_id", as: "compensations" });
 // Compensation ↔ User (approver)
 Compensation.belongsTo(User, { foreignKey: "approved_by", as: "approver" });
 User.hasMany(Compensation, { foreignKey: "approved_by", as: "approvedCompensations" });
-
-// HRForecast ↔ Department
-HRForecast.belongsTo(Department, { foreignKey: "department_id", as: "department" });
-Department.hasMany(HRForecast, { foreignKey: "department_id", as: "forecasts" });
 
 // Project ↔ User (manager)
 Project.belongsTo(User, { foreignKey: "manager_id", as: "manager" });

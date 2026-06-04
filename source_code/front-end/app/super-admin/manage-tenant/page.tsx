@@ -414,7 +414,7 @@ function ManageTenantPage() {
 	};
 
 	return (
-		<div className="space-y-6">
+		<div className="page-container space-y-6 py-4 sm:py-6 lg:py-8">
 			<div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
 				<div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-cyan-50" />
 				<div className="relative grid gap-6 p-6 lg:grid-cols-[1.3fr_0.7fr] lg:p-8">

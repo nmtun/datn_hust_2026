@@ -65,7 +65,7 @@ export default function SuperAdminLoginPage() {
 			<div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.22),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.16),_transparent_30%),linear-gradient(180deg,#07111f_0%,#050b14_100%)]" />
 			<div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:72px_72px]" />
 
-			<div className="relative mx-auto flex min-h-screen max-w-7xl items-center px-6 py-10 lg:px-10">
+			<div className="relative page-container flex min-h-screen items-center py-10 sm:py-12">
 				<div className="grid w-full gap-10 lg:grid-cols-[1.05fr_0.95fr]">
 					<section className="flex flex-col justify-between rounded-[2rem] border border-white/10 bg-white/6 p-8 shadow-[0_20px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl lg:p-10">
 						<div>
