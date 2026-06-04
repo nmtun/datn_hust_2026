@@ -1,14 +1,20 @@
-name: Test VPS Connection
+name: Deploy Backend
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "source_code/backend/**"
+
   workflow_dispatch:
 
 jobs:
-  test:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: SSH to VPS
+      - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.2.0
 
         with:
@@ -17,6 +23,22 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
 
           script: |
-            whoami
-            hostname
-            pwd
+            set -e
+
+            cd /home/deploy/backend
+
+            echo "Pulling latest code..."
+            git pull origin main
+
+            echo "Installing dependencies..."
+            npm install
+
+            echo "Building project..."
+            npm run build
+
+            echo "Restarting service..."
+            pm2 restart backend || pm2 start dist/index.js --name backend
+
+            pm2 save
+
+            echo "Deployment done!"
