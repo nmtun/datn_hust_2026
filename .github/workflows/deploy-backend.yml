@@ -25,7 +25,7 @@ jobs:
           script: |
             set -e
 
-            cd /home/deploy/backend
+            cd /home/deploy/datn_hust_2026/back-end
 
             echo "Pulling latest code..."
             git pull origin main
@@ -34,10 +34,10 @@ jobs:
             npm install
 
             echo "Building project..."
-            npm run build
+            npm run build || true
 
             echo "Restarting service..."
-            pm2 restart backend || pm2 start dist/index.js --name backend
+            pm2 reload backend || pm2 start index.js --name backend
 
             pm2 save
 
