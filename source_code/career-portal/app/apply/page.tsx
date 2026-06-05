@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import React, { useState, useEffect, useRef } from 'react';
+import { Suspense } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -24,6 +25,30 @@ interface JobDescription {
 }
 
 export default function Apply() {
+  return (
+    <Suspense fallback={<ApplyLoading />}>
+      <ApplyContent />
+    </Suspense>
+  );
+}
+
+function ApplyLoading() {
+  return (
+    <div className="font-sans min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-grow pt-16">
+        <section className="py-12 bg-gray-50 dark:bg-gray-900">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-700 dark:text-gray-200">
+            Đang tải trang ứng tuyển...
+          </div>
+        </section>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+function ApplyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const formRef = useRef<HTMLDivElement>(null);
