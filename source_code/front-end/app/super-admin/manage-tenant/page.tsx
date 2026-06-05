@@ -10,6 +10,7 @@ import {
 	Eye,
 	MapPin,
 	Mail,
+	LogOut,
 	Phone,
 	Plus,
 	RotateCcw,
@@ -22,6 +23,7 @@ import {
 import Modal from "@/app/components/Modal";
 import { withAuth } from "@/app/middleware/withAuth";
 import { showToast } from "@/app/utils/toast";
+import { useAuth } from "@/app/context/AuthContext";
 import { tenantApi, TenantPayload, TenantRecord, TenantStatus } from "@/app/api/tenantApi";
 import { AdminProfile, userApi } from "@/app/api/userApi";
 
@@ -89,6 +91,7 @@ const formatDate = (value?: string) => (value ? new Date(value).toLocaleString("
 const normalize = (value: string) => value.trim().toLowerCase();
 
 function ManageTenantPage() {
+	const { logout } = useAuth();
 	const [tenants, setTenants] = useState<TenantRecord[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [search, setSearch] = useState("");
@@ -443,6 +446,13 @@ function ManageTenantPage() {
 								className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
 							>
 								Đặt lại bộ lọc
+							</button>
+							<button
+								onClick={logout}
+								className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
+							>
+								<LogOut className="h-4 w-4" />
+								Đăng xuất
 							</button>
 						</div>
 					</div>
