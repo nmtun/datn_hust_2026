@@ -62,7 +62,6 @@ jobs:
               cd source_code/back-end
 
               npm install
-              npm run build
 
               pm2 reload backend || pm2 start index.js --name backend
 
