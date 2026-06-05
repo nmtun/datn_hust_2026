@@ -17,6 +17,7 @@ jobs:
     outputs:
       frontend: ${{ steps.filter.outputs.frontend }}
       backend: ${{ steps.filter.outputs.backend }}
+      career_portal: ${{ steps.filter.outputs.career_portal }}
 
     steps:
       - name: Checkout repository
@@ -29,6 +30,9 @@ jobs:
           filters: |
             frontend:
               - 'source_code/front-end/**'
+
+            career_portal:
+              - 'source_code/career-portal/**'
 
             backend:
               - 'source_code/back-end/**'
@@ -77,6 +81,19 @@ jobs:
               npm run build
 
               pm2 reload frontend || pm2 start npm --name frontend -- start
+
+              cd ../..
+            fi
+
+            if [ "${{ needs.detect-changes.outputs.career_portal }}" = "true" ]; then
+              echo "=== Deploying Career Portal ==="
+
+              cd source_code/career-portal
+
+              npm install
+              npm run build
+
+              pm2 reload career-portal || pm2 start npm --name career-portal -- start
 
               cd ../..
             fi
