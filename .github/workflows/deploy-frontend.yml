@@ -28,7 +28,8 @@ jobs:
             cd /home/deploy/datn_hust_2026/source_code/front-end
 
             echo "Pulling latest code..."
-            git pull origin main
+            git fetch origin
+            git reset --hard origin/main
 
             echo "Installing dependencies..."
             npm install
