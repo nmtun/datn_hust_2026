@@ -135,5 +135,3 @@ setupSocketServer(server);
         console.error("Lỗi khởi động server", error);
     }
 })();
-
-// test workflow xem chạy không
