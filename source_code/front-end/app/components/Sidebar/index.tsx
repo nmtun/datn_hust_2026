@@ -166,7 +166,7 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
     const loadTenantSubdomain = async () => {
       if (!user?.tenant_id) {
         if (isMounted) {
-          setTenantSubdomain("TechCom");
+          setTenantSubdomain("tenanthub");
         }
         return;
       }
@@ -176,11 +176,11 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
         const subdomain = result?.tenant?.subdomain;
 
         if (isMounted) {
-          setTenantSubdomain(typeof subdomain === "string" && subdomain.trim() ? subdomain : "TechCom");
+          setTenantSubdomain(typeof subdomain === "string" && subdomain.trim() ? subdomain : "tenanthub");
         }
       } catch {
         if (isMounted) {
-          setTenantSubdomain("TechCom");
+          setTenantSubdomain("tenanthub");
         }
       }
     };
