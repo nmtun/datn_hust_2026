@@ -10,6 +10,7 @@ interface User {
   full_name: string;
   role: string;
   hierarchy_role?: string;
+  tenant_id?: number | null;
 }
 
 interface LoginCredentials {

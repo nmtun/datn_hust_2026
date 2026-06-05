@@ -1,10 +1,11 @@
 "use client";
 
+import { tenantApi } from "@/app/api/tenantApi";
 import { useAuth } from "@/app/context/AuthContext";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Users,
   UserCircle,
@@ -116,6 +117,7 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
   const { user } = useAuth();
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [tenantSubdomain, setTenantSubdomain] = useState("TechCom");
 
   const hierarchyRole = user?.hierarchy_role as keyof typeof hierarchyMenuItems | undefined;
   const baseRole = user?.role as keyof typeof menuItems;
@@ -158,6 +160,38 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
     onCollapse?.(collapsed);
   };
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadTenantSubdomain = async () => {
+      if (!user?.tenant_id) {
+        if (isMounted) {
+          setTenantSubdomain("TechCom");
+        }
+        return;
+      }
+
+      try {
+        const result = await tenantApi.getCurrent();
+        const subdomain = result?.tenant?.subdomain;
+
+        if (isMounted) {
+          setTenantSubdomain(typeof subdomain === "string" && subdomain.trim() ? subdomain : "TechCom");
+        }
+      } catch {
+        if (isMounted) {
+          setTenantSubdomain("TechCom");
+        }
+      }
+    };
+
+    loadTenantSubdomain();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.tenant_id]);
+
   return (
     <div className={`h-screen bg-white shadow-lg fixed left-0 top-0 transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'}`}>
       <div className="flex flex-col h-full relative">
@@ -179,14 +213,14 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
             <div className="w-10 h-10 relative">
               <Image 
                 src="/favicon.ico" 
-                alt="TechCom"
+                alt={tenantSubdomain}
                 fill
                 sizes="40px"
                 className="object-contain"
               />
             </div>
           ) : (
-            <h2 className="text-2xl font-bold text-indigo-600">TechCom</h2>
+            <h2 className="text-2xl font-bold text-indigo-600">{tenantSubdomain}</h2>
           )}
         </div>
 

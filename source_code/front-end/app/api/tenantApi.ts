@@ -31,6 +31,10 @@ export const tenantApi = {
         const response = await apiClient.get('/api/tenant/get-all', { params });
         return response.data;
     },
+    getCurrent: async () => {
+        const response = await apiClient.get('/api/tenant/me');
+        return response.data;
+    },
     getById: async (id: number, includeDeleted?: boolean) => {
         const response = await apiClient.get(`/api/tenant/get/${id}`, {
             params: includeDeleted ? { include_deleted: true } : undefined,
