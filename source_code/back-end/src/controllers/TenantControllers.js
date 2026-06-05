@@ -30,6 +30,21 @@ export const getTenantById = async (req, res) => {
     }
 };
 
+export const getTenantForCurrentUser = async (req, res) => {
+    try {
+        const tenantId = req.user?.tenant_id;
+        if (!tenantId) {
+            return res.status(400).json({ error: true, message: 'Tenant id is required' });
+        }
+
+        const result = await tenantService.getTenantByIdService(tenantId, false);
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error('Error getting current tenant:', error);
+        return res.status(500).json({ error: true, message: 'Internal server error' });
+    }
+};
+
 export const updateTenant = async (req, res) => {
     try {
         const result = await tenantService.updateTenantService(req.params.id, req.body);

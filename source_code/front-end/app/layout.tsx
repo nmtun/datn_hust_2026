@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TechComManagement",
-  description: "Hệ thống quản lý nội bộ TechCom",
+  title: "Tenanthub",
+  description: "Hệ thống quản lý doanh nghiệp toàn diện",
 };
 
 export default function RootLayout({
