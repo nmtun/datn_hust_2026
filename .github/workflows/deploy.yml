@@ -1,0 +1,87 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Detect changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'source_code/front-end/**'
+
+            backend:
+              - 'source_code/back-end/**'
+
+  deploy:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+
+          script: |
+            set -e
+
+            echo "=== Deploy Started ==="
+
+            cd /home/deploy/datn_hust_2026
+
+            echo "Updating repository..."
+            git fetch origin
+            git reset --hard origin/main
+
+            if [ "${{ needs.detect-changes.outputs.backend }}" = "true" ]; then
+              echo "=== Deploying Backend ==="
+
+              cd source_code/back-end
+
+              npm install
+              npm run build
+
+              pm2 reload backend || pm2 start index.js --name backend
+
+              cd ../..
+            fi
+
+            if [ "${{ needs.detect-changes.outputs.frontend }}" = "true" ]; then
+              echo "=== Deploying Frontend ==="
+
+              cd source_code/front-end
+
+              npm install
+              npm run build
+
+              pm2 reload frontend || pm2 start npm --name frontend -- start
+
+              cd ../..
+            fi
+
+            pm2 save
+
+            echo "=== Deployment Completed ==="
