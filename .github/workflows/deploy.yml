@@ -54,7 +54,7 @@ jobs:
 
             echo "=== Deploy Started ==="
 
-            cd /home/deploy/datn_hust_2026
+            cd /home/deploy/opt/datn_hust_2026
 
             echo "Updating repository..."
             git fetch origin
