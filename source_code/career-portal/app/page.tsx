@@ -10,8 +10,6 @@ export default function Home() {
       <main className="pt-16">
         <Hero />
         <Services />
-
-        {/* About Section */}
         <section id="about" className="py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="lg:grid lg:grid-cols-2 lg:gap-8 items-center">
