@@ -28,10 +28,10 @@ import {
 const menuItems = {
   hr: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Hồ sơ của tôi", href: "/dashboard/hr/profile", icon: UserCog },
+    { name: "Thông tin cá nhân", href: "/dashboard/hr/profile", icon: UserCog },
     { name: "Công việc", href: "/dashboard/hr/task", icon: ListTodo },
     { name: "Đánh giá của tôi", href: "/dashboard/employee/performance", icon: TrendingUp },
-    { name: "Mô tả công việc", href: "/dashboard/hr/job-description", icon: FileText },
+    { name: "Thông tin tuyển dụng", href: "/dashboard/hr/job-description", icon: FileText },
     { name: "Ứng viên", href: "/dashboard/hr/candidate", icon: Users },
     { name: "Nhân viên", href: "/dashboard/hr/employee", icon: UserCircle },
     { name: "Lương thưởng", href: "/dashboard/hr/compensation", icon: Wallet },
@@ -40,7 +40,7 @@ const menuItems = {
   ],
   manager: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Hồ sơ của tôi", href: "/dashboard/manager/profile", icon: UserCog },
+    { name: "Thông tin cá nhân", href: "/dashboard/manager/profile", icon: UserCog },
     { name: "Dự án & Công việc", href: "/dashboard/manager/task", icon: ListTodo },
     { name: "Phòng ban", href: "/dashboard/manager/department", icon: Building2 },
     { name: "Nhóm", href: "/dashboard/manager/team", icon: Users },
@@ -50,7 +50,7 @@ const menuItems = {
   ],
   employee: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Hồ sơ của tôi", href: "/dashboard/employee/profile", icon: UserCog },
+    { name: "Thông tin cá nhân", href: "/dashboard/employee/profile", icon: UserCog },
     { name: "Công việc", href: "/dashboard/employee/task", icon: ListTodo },
     { name: "Đánh giá hiệu suất", href: "/dashboard/employee/performance", icon: TrendingUp },
     { name: "Lương thưởng", href: "/dashboard/employee/compensation", icon: Wallet },
@@ -58,7 +58,7 @@ const menuItems = {
   ],
   tenant_admin: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Hồ sơ của tôi", href: "/dashboard/admin/profile", icon: UserCog },
+    { name: "Thông tin cá nhân", href: "/dashboard/admin/profile", icon: UserCog },
     { name: "Phòng ban", href: "/dashboard/admin/department", icon: Building2 },
     { name: "Nhóm", href: "/dashboard/admin/team", icon: Users },
     { name: "Quản lý tài khoản", href: "/dashboard/admin/manage-account", icon: Users },
@@ -68,7 +68,7 @@ const menuItems = {
 const hierarchyMenuItems = {
   department_head: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Hồ sơ của tôi", href: "/dashboard/employee/profile", icon: UserCog },
+    { name: "Thông tin cá nhân", href: "/dashboard/employee/profile", icon: UserCog },
     { name: "Quản lý công việc", href: "/dashboard/department-head/task", icon: ListTodo },
     { name: "Đánh giá của tôi", href: "/dashboard/employee/performance", icon: TrendingUp },
     { name: "Lương thưởng", href: "/dashboard/department-head/compensation", icon: Wallet },
@@ -78,7 +78,7 @@ const hierarchyMenuItems = {
   ],
   team_lead: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Hồ sơ của tôi", href: "/dashboard/employee/profile", icon: UserCog },
+    { name: "Thông tin cá nhân", href: "/dashboard/employee/profile", icon: UserCog },
     { name: "Quản lý công việc", href: "/dashboard/team-lead/task", icon: ListTodo },
     { name: "Đánh giá của tôi", href: "/dashboard/employee/performance", icon: TrendingUp },
     { name: "Lương thưởng", href: "/dashboard/team-lead/compensation", icon: Wallet },

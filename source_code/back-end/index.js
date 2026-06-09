@@ -122,7 +122,7 @@ setupSocketServer(server);
 (async () => {
     try {
         // await sequelize.sync();                // tạo bảng nếu chưa có
-         await sequelize.sync({ alter: true }); // tạo bảng nếu chưa có và cập nhật bảng nếu có thay đổi trong model
+        // await sequelize.sync({ alter: true }); // tạo bảng nếu chưa có và cập nhật bảng nếu có thay đổi trong model
         // await sequelize.sync({ force: true }); // xóa bảng và tạo lại - dùng khi cần làm mới cơ sở dữ liệu, sẽ bị mất dữ liệu
 
         server.listen(PORT, () => {
@@ -135,4 +135,3 @@ setupSocketServer(server);
         console.error("Lỗi khởi động server", error);
     }
 })();
-// test lại ci
