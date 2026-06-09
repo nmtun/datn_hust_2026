@@ -111,13 +111,16 @@ const roleLabels: Record<string, string> = {
 
 interface SidebarProps {
   onCollapse?: (collapsed: boolean) => void;
+  isMobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
-export default function Sidebar({ onCollapse }: SidebarProps) {
+export default function Sidebar({ onCollapse, isMobileOpen = false, onMobileClose }: SidebarProps) {
   const { user } = useAuth();
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [tenantSubdomain, setTenantSubdomain] = useState("TechCom");
+  const isDesktopCollapsed = isCollapsed && !isMobileOpen;
 
   const hierarchyRole = user?.hierarchy_role as keyof typeof hierarchyMenuItems | undefined;
   const baseRole = user?.role as keyof typeof menuItems;
@@ -193,14 +196,16 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
   }, [user?.tenant_id]);
 
   return (
-    <div className={`h-screen bg-white shadow-lg fixed left-0 top-0 transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'}`}>
+    <div
+      className={`fixed left-0 top-0 z-50 h-screen bg-white shadow-lg transition-all duration-300 w-64 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 ${isCollapsed ? 'lg:w-16' : 'lg:w-64'}`}
+    >
       <div className="flex flex-col h-full relative">
         {/* Toggle Button */}
         <button
           onClick={() => handleCollapse(!isCollapsed)}
-          className="absolute -right-3 top-1/2 -translate-y-1/2 bg-white rounded-full p-1 border shadow-md hover:bg-gray-50"
+          className="hidden lg:flex absolute -right-3 top-1/2 -translate-y-1/2 bg-white rounded-full p-1 border shadow-md hover:bg-gray-50"
         >
-          {isCollapsed ? (
+          {isDesktopCollapsed ? (
             <ChevronRight className="w-4 h-4 text-gray-600" />
           ) : (
             <ChevronLeft className="w-4 h-4 text-gray-600" />
@@ -208,8 +213,8 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
         </button>
         
         {/* Logo/Brand */}
-        <div className={`p-4 ${isCollapsed ? 'flex justify-center' : ''}`}>
-          {isCollapsed ? (
+        <div className={`p-4 ${isDesktopCollapsed ? 'flex justify-center' : ''}`}>
+          {isDesktopCollapsed ? (
             <div className="w-10 h-10 relative">
               <Image 
                 src="/favicon.ico" 
@@ -234,15 +239,16 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center ${!isCollapsed ? 'space-x-3' : 'justify-center'} px-3 py-2 my-1 rounded-lg transition-colors ${
+                onClick={() => onMobileClose?.()}
+                className={`flex items-center ${!isDesktopCollapsed ? 'space-x-3' : 'justify-center'} px-3 py-2 my-1 rounded-lg transition-colors ${
                   isActive
                     ? "bg-indigo-50 text-indigo-600"
                     : "text-gray-600 hover:bg-gray-50"
                 }`}
-                title={isCollapsed ? item.name : ""}
+                title={isDesktopCollapsed ? item.name : ""}
               >
                 <Icon className="min-w-[20px]" />
-                {!isCollapsed && <span className="font-medium">{item.name}</span>}
+                {!isDesktopCollapsed && <span className="font-medium">{item.name}</span>}
               </Link>
             );
           })}
@@ -250,16 +256,16 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
 
         {/* User Profile Section */}
         <div className="p-2 border-t">
-          <div className={`flex items-center ${!isCollapsed ? 'space-x-3' : 'justify-center'} px-3 py-2`}>
+          <div className={`flex items-center ${!isDesktopCollapsed ? 'space-x-3' : 'justify-center'} px-3 py-2`}>
             <div 
               className="min-w-[40px] h-10 rounded-full bg-indigo-100 flex items-center justify-center" 
-              title={isCollapsed ? user?.full_name : ""}
+              title={isDesktopCollapsed ? user?.full_name : ""}
             >
               <span className="text-indigo-600 font-semibold">
                 {user?.full_name?.charAt(0) || "U"}
               </span>
             </div>
-            {!isCollapsed && (
+            {!isDesktopCollapsed && (
               <div>
                 <p className="text-sm font-medium text-gray-700">{user?.full_name}</p>
                 <p className="text-xs text-gray-500 capitalize">{roleLabel}</p>

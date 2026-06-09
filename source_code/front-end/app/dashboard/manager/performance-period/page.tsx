@@ -73,7 +73,7 @@ function PerformancePeriodPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Kỳ đánh giá hiệu suất</h1>
         {canManagePeriod && (
           <button onClick={openCreate} className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
@@ -187,3 +187,4 @@ function PerformancePeriodPage() {
 }
 
 export default withAuth(PerformancePeriodPage);
+

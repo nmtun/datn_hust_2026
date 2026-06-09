@@ -294,9 +294,9 @@ function CandidatePage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Quản lý Ứng viên</h1>
-        <div className="flex space-x-4">
+        <div className="flex flex-wrap gap-3">
           <button
             onClick={() => router.push("/dashboard/hr/candidate/deleted")}
             className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
@@ -764,3 +764,4 @@ function CandidatePage() {
 }
 
 export default withAuth(CandidatePage);
+

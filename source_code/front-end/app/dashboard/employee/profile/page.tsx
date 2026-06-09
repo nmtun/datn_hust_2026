@@ -98,7 +98,7 @@ function MyProfilePage() {
   return (
     <div className="max-w-3xl mx-auto">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Hồ sơ của tôi</h1>
         {!isEditing ? (
           <button
@@ -284,3 +284,4 @@ function MyProfilePage() {
 }
 
 export default withAuth(MyProfilePage);
+

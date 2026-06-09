@@ -167,7 +167,7 @@ function ArchivedTrainingMaterialsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div className="flex items-center">
           <button
             onClick={() => router.push("/dashboard/hr/training-material")}

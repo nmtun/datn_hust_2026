@@ -213,7 +213,7 @@ function QuestionsPage() {
       <div>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold text-gray-900">Quản lý Câu hỏi</h1>
-          <div className="flex space-x-4">
+          <div className="flex flex-wrap gap-3">
             <button
               onClick={() => router.push('/dashboard/hr/quizzes')}
               className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 text-sm font-medium rounded-md hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -232,7 +232,7 @@ function QuestionsPage() {
         </div>
 
         {/* Search and Filter */}
-        <div className="flex space-x-4 mb-6">
+        <div className="flex flex-wrap gap-3 mb-6">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input

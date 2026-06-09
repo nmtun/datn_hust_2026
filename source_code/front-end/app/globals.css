@@ -32,4 +32,23 @@ body {
   .page-container {
     @apply w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 hd:max-w-[1280px] hd:px-10 mac:max-w-[1360px] mac:px-12 fhd:max-w-[1600px] fhd:px-16;
   }
+
+  .dashboard-main table {
+    @apply w-full;
+  }
+}
+
+@media (max-width: 1024px) {
+  .dashboard-main table {
+    display: block;
+    width: max-content;
+    min-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .dashboard-main th,
+  .dashboard-main td {
+    white-space: nowrap;
+  }
 }

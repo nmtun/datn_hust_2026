@@ -232,7 +232,7 @@ function EditQuestionPage() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div className="flex items-center">
           <button
             onClick={() => router.push(`/dashboard/hr/quizzes/${quizId}/questions`)}
@@ -270,7 +270,7 @@ function EditQuestionPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Loại Câu hỏi *
             </label>
-            <div className="flex space-x-4">
+            <div className="flex flex-wrap gap-3">
               <label className="flex items-center">
                 <input
                   type="radio"
@@ -397,7 +397,7 @@ function EditQuestionPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Đáp án đúng *
               </label>
-              <div className="flex space-x-4">
+              <div className="flex flex-wrap gap-3">
                 <label className="flex items-center">
                   <input
                     type="radio"
