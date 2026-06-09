@@ -210,7 +210,7 @@ function JobDescriptionPage() {
     <div>
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Quản lý Mô tả Công việc</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Quản lý Thông tin tuyển dụng</h1>
         <div className="flex space-x-4">
           <button
             onClick={() => router.push("/dashboard/hr/job-description/deleted")}
@@ -270,6 +270,12 @@ function JobDescriptionPage() {
         {loading ? (
           <div className="flex justify-center items-center p-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          </div>
+        ) : jobDescriptions.length === 0 ? (
+          <div className="text-center py-12">
+            <Briefcase className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy mô tả công việc nào</h3>
+            <p className="text-gray-500">Bắt đầu bằng cách tạo mô tả công việc đầu tiên của bạn.</p>
           </div>
         ) : (
           <table className="min-w-full divide-y divide-gray-200">

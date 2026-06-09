@@ -58,11 +58,6 @@ function HREmployeePage() {
     });
   };
 
-  const handleReset = () => {
-    setSearch(""); setFilterDept(""); setFilterStatus("");
-    fetchEmployees();
-  };
-
   const handleStatusChange = async (emp: EmployeeProfile, status: string) => {
     try {
       const res = await employeeApi.updateStatus(emp.user_id, status as any);
@@ -127,28 +122,47 @@ function HREmployeePage() {
       </div>
 
       {/* Search & Filter */}
-      <div className="bg-white shadow rounded-lg p-4 mb-6">
-        <div className="flex flex-wrap gap-3">
-          <div className="flex-1 min-w-[200px] relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input type="text" placeholder="Tìm theo tên..." value={search} onChange={e => setSearch(e.target.value)}
+      <div className="mb-6">
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Tìm theo tên..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleSearch()}
-              className="pl-9 pr-3 py-2 w-full border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            />
           </div>
-          <select value={filterDept} onChange={e => setFilterDept(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <option value="">Tất cả phòng ban</option>
-            {departments.map(d => <option key={d.department_id} value={d.department_id}>{d.name}</option>)}
-          </select>
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <option value="">Tất cả trạng thái</option>
-            <option value="active">Đang làm</option>
-            <option value="on_leave">Nghỉ phép</option>
-            <option value="terminated">Đã nghỉ</option>
-          </select>
-          <button onClick={handleSearch} className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700">Tìm kiếm</button>
-          <button onClick={handleReset} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200">Đặt lại</button>
+
+          <div className="relative">
+            <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+            <select
+              value={filterDept}
+              onChange={e => setFilterDept(e.target.value)}
+              className="pl-10 pr-10 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none"
+            >
+              <option value="">Tất cả phòng ban</option>
+              {departments.map(d => <option key={d.department_id} value={d.department_id}>{d.name}</option>)}
+            </select>
+          </div>
+
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+            <select
+              value={filterStatus}
+              onChange={e => setFilterStatus(e.target.value)}
+              className="pl-10 pr-10 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none"
+            >
+              <option value="">Tất cả trạng thái</option>
+              <option value="active">Đang làm</option>
+              <option value="on_leave">Nghỉ phép</option>
+              <option value="terminated">Đã nghỉ</option>
+            </select>
+          </div>
         </div>
       </div>
 
