@@ -221,7 +221,7 @@ function PerformancePage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">{titleByHierarchy[hierarchyRole] || "Quản lý đánh giá hiệu suất"}</h1>
         <button onClick={openCreate} className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
           <Plus className="w-4 h-4 mr-2" />Tạo đánh giá
@@ -324,3 +324,4 @@ function PerformancePage() {
 }
 
 export default withAuth(PerformancePage);
+

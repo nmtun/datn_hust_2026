@@ -116,7 +116,7 @@ function HREmployeePage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Quản lý nhân viên</h1>
         <span className="text-sm text-gray-500">{employees.length} nhân viên</span>
       </div>
@@ -339,3 +339,4 @@ function HREmployeePage() {
 }
 
 export default withAuth(HREmployeePage);
+

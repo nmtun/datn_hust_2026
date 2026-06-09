@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, LogOut } from "lucide-react";
+import { Bell, LogOut, Menu } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
 import { NotificationProvider, useNotifications } from "../context/NotificationContext";
@@ -23,6 +23,7 @@ function DashboardShell({
   const { logout } = useAuth();
   const { notifications, unreadCount, markAsRead, markAllAsRead, loading, refreshNotifications } = useNotifications();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
 
@@ -41,10 +42,31 @@ function DashboardShell({
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      <Sidebar onCollapse={(collapsed) => setIsSidebarCollapsed(collapsed)} />
-      <div className={`flex-1 ${isSidebarCollapsed ? 'ml-16' : 'ml-64'} transition-all duration-300`}>
+      <Sidebar
+        onCollapse={(collapsed) => setIsSidebarCollapsed(collapsed)}
+        isMobileOpen={isMobileSidebarOpen}
+        onMobileClose={() => setIsMobileSidebarOpen(false)}
+      />
+      {isMobileSidebarOpen && (
+        <button
+          type="button"
+          aria-label="Close sidebar"
+          onClick={() => setIsMobileSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+        />
+      )}
+      <div className={`flex-1 transition-all duration-300 ${isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
         <header className="sticky top-0 z-40 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 h-16 shadow-sm">
-          <div className="h-full page-container flex items-center justify-end">
+          <div className="h-full page-container flex items-center justify-between lg:justify-end">
+            <button
+              type="button"
+              onClick={() => setIsMobileSidebarOpen(true)}
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 text-gray-700"
+              aria-label="Open sidebar"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+
             <div className="flex items-center space-x-4">
               <div className="relative" ref={panelRef}>
                 <button
@@ -126,7 +148,7 @@ function DashboardShell({
             </div>
           </div>
         </header>
-        <main className="py-4 sm:py-6 lg:py-8 hd:py-10 mac:py-12 fhd:py-14">
+        <main className="dashboard-main py-4 sm:py-6 lg:py-8 hd:py-10 mac:py-12 fhd:py-14">
           <div className="page-container">
             {children}
           </div>
