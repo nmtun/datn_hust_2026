@@ -430,6 +430,11 @@ export const saveCompensationRecommendationsService = async ({ year, recommendat
             return { status: 400, data: { error: true, message: "Recommendations are required" } };
         }
 
+        const tenantResult = requireTenantId(requestingUser);
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant is required" } };
+        }
+
         const employeeIds = recommendations
             .map((item) => Number(item?.user_id))
             .filter((id) => Number.isInteger(id) && id > 0 && id !== requestingUser?.user_id);
@@ -484,6 +489,7 @@ export const saveCompensationRecommendationsService = async ({ year, recommendat
 
             try {
                 const created = await Compensation.create({
+                    tenant_id: tenantResult.tenantId,
                     user_id: userId,
                     salary: roundMoney(salaryValue),
                     bonus: roundMoney(Number.isFinite(bonusValue) ? bonusValue : 0),
