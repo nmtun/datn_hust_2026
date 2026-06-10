@@ -328,7 +328,7 @@ const TrainingMaterialForm: React.FC<TrainingMaterialFormProps> = ({
                 <p className="pl-1">hoặc kéo thả</p>
               </div>
               <p className="text-xs text-gray-500">
-                {formData.type === 'video' ? 'MP4' : formData.type === 'document' ? 'PDF, DOC, DOCX, PPT, PPTX' : 'PDF, DOC, DOCX, MP4, PPT, PPTX'} up to 50MB each (multiple files allowed)
+                {formData.type === 'video' ? 'MP4' : formData.type === 'document' ? 'PDF' : 'PDF, MP4'} up to 50MB each (multiple files allowed)
               </p>
             </div>
           </div>
