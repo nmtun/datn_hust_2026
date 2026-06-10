@@ -44,7 +44,7 @@ export default function Careers() {
         if (!result.error && result.jobs) {
           // Filter only active jobs
           const activeJobs = result.jobs.filter(
-            (job: JobDescription) => job.status === 'active' || job.status === 'published'
+            (job: JobDescription) => job.status === 'active'
           );
           setJobListings(activeJobs);
         } else {
