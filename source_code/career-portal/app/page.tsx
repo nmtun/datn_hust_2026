@@ -5,7 +5,6 @@ import Footer from './components/Footer';
 import { redirect } from 'next/dist/client/components/navigation';
 
 export default function Home() {
-  redirect("/careers");
   return (
     <div className="font-sans">
       <Header />
