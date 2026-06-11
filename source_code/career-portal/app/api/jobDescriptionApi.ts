@@ -2,21 +2,33 @@ import api from './axios';
 
 const resolveTenantSubdomain = () => {
   if (typeof window === 'undefined') return null;
+
   const hostname = window.location.hostname.toLowerCase();
 
-  if (!hostname || hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]') {
+  // localhost
+  if (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '[::1]'
+  ) {
     return null;
   }
 
+  // tenant.localhost
   if (hostname.endsWith('.localhost')) {
-    const parts = hostname.split('.');
-    return parts.length > 1 ? parts[0] : null;
+    return hostname.split('.')[0];
   }
 
-  const segments = hostname.split('.');
-  if (segments.length < 3) return null;
+  // production
+  const baseDomain = 'tenanthub.io.vn';
 
-  return segments[0] || null;
+  if (!hostname.endsWith(baseDomain)) {
+    return null;
+  }
+
+  const subdomain = hostname.replace(`.${baseDomain}`, '');
+
+  return subdomain || null;
 };
 
 const buildTenantParams = () => {
