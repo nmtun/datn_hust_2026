@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - develop
+
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Backend
+      - name: Validate Backend
+        run: |
+          cd source_code/back-end
+          npm ci
+
+      # Frontend
+      - name: Build Frontend
+        run: |
+          cd source_code/front-end
+          npm ci
+          npm run build
+
+      # Career Portal
+      - name: Build Career Portal
+        run: |
+          cd source_code/career-portal
+          npm ci
+          npm run build
