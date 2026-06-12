@@ -208,6 +208,25 @@ function QuestionsPage() {
     }
   };
 
+  const isCorrectAnswer = (
+    option: string,
+    question: QuizQuestion
+  ) => {
+    if (!question.correct_answer) return false;
+
+    if (question.question_type === "multiple_response") {
+      return question.correct_answer
+        .split(",")
+        .map(answer => answer.trim())
+        .includes(option.trim());
+    }
+
+    return (
+      option.trim() ===
+      question.correct_answer.trim()
+    );
+  };
+
   return (
     <div>
       <div>
@@ -272,97 +291,97 @@ function QuestionsPage() {
       ) : (
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Câu hỏi
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Quiz
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tags
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Loại
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Điểm
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Hành động
-                  </th>
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Câu hỏi
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Quiz
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tags
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Loại
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Điểm
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Hành động
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {questions.map((question) => (
+                <tr key={question.question_id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-medium text-gray-900 max-w-md truncate">
+                      {question.question_text}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900">
+                      {question.quizAssignments && question.quizAssignments.length > 0
+                        ? `${question.quizAssignments.length} quiz(s)`
+                        : 'Ngân hàng câu hỏi'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-wrap gap-1">
+                      {question.tags && question.tags.length > 0 ? (
+                        question.tags.map((tag) => (
+                          <span
+                            key={tag.tag_id}
+                            className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-md"
+                          >
+                            {tag.name}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-xs text-gray-400 italic">Không có tags</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getQuestionTypeColor(question.question_type)}`}>
+                      {getQuestionTypeLabel(question.question_type)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900">{question.points}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleView(question.question_id)}
+                        className="text-gray-400 hover:text-gray-500 p-1"
+                        title="Xem chi tiết"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleEdit(question.question_id)}
+                        className="text-blue-400 hover:text-blue-500 p-1"
+                        title="Chỉnh sửa"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(question)}
+                        disabled={deleteLoading === question.question_id}
+                        className="text-red-400 hover:text-red-500 p-1 disabled:opacity-50"
+                        title="Xóa"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {questions.map((question) => (
-                  <tr key={question.question_id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900 max-w-md truncate">
-                        {question.question_text}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
-                        {question.quizAssignments && question.quizAssignments.length > 0 
-                          ? `${question.quizAssignments.length} quiz(s)` 
-                          : 'Ngân hàng câu hỏi'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {question.tags && question.tags.length > 0 ? (
-                          question.tags.map((tag) => (
-                            <span
-                              key={tag.tag_id}
-                              className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-md"
-                            >
-                              {tag.name}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-xs text-gray-400 italic">Không có tags</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getQuestionTypeColor(question.question_type)}`}>
-                        {getQuestionTypeLabel(question.question_type)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{question.points}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleView(question.question_id)}
-                          className="text-gray-400 hover:text-gray-500 p-1"
-                          title="Xem chi tiết"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(question.question_id)}
-                          className="text-blue-400 hover:text-blue-500 p-1"
-                          title="Chỉnh sửa"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(question)}
-                          disabled={deleteLoading === question.question_id}
-                          className="text-red-400 hover:text-red-500 p-1 disabled:opacity-50"
-                          title="Xóa"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
@@ -426,24 +445,36 @@ function QuestionsPage() {
               </div>
             </div>
 
-            {selectedQuestion.options && (
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Lựa chọn</h3>
-                <ul className="space-y-2">
-                  {parseOptions(selectedQuestion.options).map((option: string, index: number) => (
-                    <li key={index} className="flex items-center space-x-2">
-                      {option === selectedQuestion.correct_answer ? (
-                        <CheckCircle className="w-4 h-4 text-green-600" />
-                      ) : (
-                        <XCircle className="w-4 h-4 text-red-600" />
-                      )}
-                      <span className={option === selectedQuestion.correct_answer ? 'text-green-700 font-medium' : 'text-gray-700'}>
-                        {option}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            {parseOptions(selectedQuestion.options).map(
+              (option: string, index: number) => {
+                const isCorrect = isCorrectAnswer(
+                  option,
+                  selectedQuestion
+                );
+
+                return (
+                  <li
+                    key={index}
+                    className="flex items-center space-x-2"
+                  >
+                    {isCorrect ? (
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                    ) : (
+                      <XCircle className="w-4 h-4 text-red-600" />
+                    )}
+
+                    <span
+                      className={
+                        isCorrect
+                          ? "text-green-700 font-medium"
+                          : "text-gray-700"
+                      }
+                    >
+                      {option}
+                    </span>
+                  </li>
+                );
+              }
             )}
 
             <div>

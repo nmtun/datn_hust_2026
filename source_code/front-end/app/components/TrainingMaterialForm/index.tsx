@@ -98,35 +98,19 @@ const TrainingMaterialForm: React.FC<TrainingMaterialFormProps> = ({
     if (formData.type === 'video') {
       allowedTypes = [
         'video/mp4',
-        'video/avi',
-        'video/quicktime',
-        'video/x-msvideo'
       ];
-      typeDescription = 'MP4, AVI, MOV';
+      typeDescription = 'MP4';
     } else if (formData.type === 'document') {
       allowedTypes = [
         'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'text/plain',
-        'application/vnd.ms-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation'
       ];
-      typeDescription = 'PDF, DOC, DOCX, TXT, PPT, PPTX';
+      typeDescription = 'PDF';
     } else { // both
       allowedTypes = [
         'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'video/mp4',
-        'video/avi',
-        'video/quicktime',
-        'video/x-msvideo',
-        'text/plain',
-        'application/vnd.ms-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation'
       ];
-      typeDescription = 'PDF, DOC, DOCX, MP4, AVI, MOV, TXT, PPT, PPTX';
+      typeDescription = 'PDF, MP4';
     }
 
     const validFiles: File[] = [];
@@ -322,7 +306,7 @@ const TrainingMaterialForm: React.FC<TrainingMaterialFormProps> = ({
                     multiple
                     className="sr-only"
                     onChange={handleFileChange}
-                    accept={formData.type === 'video' ? '.mp4,.avi,.mov' : formData.type === 'document' ? '.pdf,.doc,.docx,.ppt,.pptx' : '.pdf,.doc,.docx,.mp4,.avi,.mov,.ppt,.pptx'}
+                    accept={formData.type === 'video' ? '.mp4' : formData.type === 'document' ? '.pdf' : '.pdf,.mp4'}
                   />
                 </label>
                 <p className="pl-1">hoặc kéo thả</p>
