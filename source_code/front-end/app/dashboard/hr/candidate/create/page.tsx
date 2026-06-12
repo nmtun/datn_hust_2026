@@ -81,14 +81,9 @@ function CreateCandidatePage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const allowedTypes = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      ];
 
-      if (!allowedTypes.includes(file.type)) {
-        showToast.error('Only PDF, DOC, DOCX files are allowed');
+      if (file.type !== 'application/pdf') {
+        showToast.error('Only PDF files are allowed');
         return;
       }
 
@@ -129,7 +124,7 @@ function CreateCandidatePage() {
 
       // Prepare form data for API
       const apiFormData = new FormData();
-      
+
       // Add all form fields
       Object.entries(formData).forEach(([key, value]) => {
         if (value !== null && value !== undefined) {
@@ -146,7 +141,7 @@ function CreateCandidatePage() {
       apiFormData.append('apply_date', new Date().toISOString().split('T')[0]);
 
       const result = await candidateApi.create(apiFormData);
-      
+
       if (result.error) {
         throw new Error(result.message || 'Error creating candidate');
       }
@@ -323,7 +318,7 @@ function CreateCandidatePage() {
               </div>
             </div>
           )}
-          
+
           {/* CV Upload */}
           <div className="mt-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -334,7 +329,7 @@ function CreateCandidatePage() {
               <div className="mt-4">
                 <input
                   type="file"
-                  accept=".pdf,.doc,.docx"
+                  accept=".pdf,application/pdf"
                   onChange={handleFileChange}
                   className="hidden"
                   id="cv-upload"
@@ -384,9 +379,8 @@ function CreateCandidatePage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className={`px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
-              saving ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
+            className={`px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${saving ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
           >
             {saving ? (
               <>
