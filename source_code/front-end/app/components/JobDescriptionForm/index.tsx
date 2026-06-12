@@ -13,6 +13,13 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
   onSubmit,
   isLoading = false,
 }) => {
+  const labelClassName = 'block text-sm font-medium text-gray-700 mb-2';
+  const fieldClassName =
+    'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500';
+  const salaryFieldClassName = `${fieldClassName} pr-14`;
+  const submitButtonClassName =
+    'inline-flex justify-center rounded-md bg-indigo-600 py-2 px-4 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed';
+
   const [departments, setDepartments] = React.useState<Department[]>([]);
   const [departmentLoading, setDepartmentLoading] = React.useState(false);
 
@@ -59,6 +66,16 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (
+      (formData.salary_range_max || 0) <
+      (formData.salary_range_min || 0)
+    ) {
+      alert(
+        'Lương tối đa phải lớn hơn hoặc bằng lương tối thiểu'
+      );
+      return;
+    }
 
     if (!formData.department_id) {
       return;
@@ -113,13 +130,11 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
     return Number(value.replace(/[,.]/g, ''));
   };
 
-  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSalaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    const numericValue = value === '' ? 0 : parseCurrencyValue(value);
-    
-    if (name === 'salary_range_max' && numericValue < (formData.salary_range_min || 0)) {
-      return; // Don't update if max is less than min
-    }
+
+    const numericValue =
+      value === '' ? 0 : parseCurrencyValue(value);
 
     setFormData((prev) => ({
       ...prev,
@@ -127,11 +142,22 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
     }));
   };
 
+  const handlePositionChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = Number(e.target.value);
+
+    setFormData((prev) => ({
+      ...prev,
+      positions_count: value,
+    }));
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Title */}
       <div>
-        <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="title" className={labelClassName}>
           Tiêu đề công việc *
         </label>
         <input
@@ -141,14 +167,14 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
           value={formData.title}
           onChange={handleChange}
           required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          className={fieldClassName}
         />
       </div>
 
       {/* Basic Information - First Row */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <div>
-          <label htmlFor="employment_type" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="employment_type" className={labelClassName}>
             Loại hình làm việc *
           </label>
           <select
@@ -157,7 +183,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
             value={formData.employment_type}
             onChange={handleChange}
             required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className={fieldClassName}
           >
             <option value="full-time">Full Time</option>
             <option value="part-time">Part Time</option>
@@ -165,7 +191,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
         </div>
 
         <div>
-          <label htmlFor="type_of_work" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="type_of_work" className={labelClassName}>
             Loại công việc *
           </label>
           <select
@@ -174,7 +200,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
             value={formData.type_of_work}
             onChange={handleChange}
             required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className={fieldClassName}
           >
             <option value="on-site">On Site</option>
             <option value="remote">Remote</option>
@@ -183,7 +209,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
         </div>
 
         <div>
-          <label htmlFor="experience_level" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="experience_level" className={labelClassName}>
             Trình độ *
           </label>
           <select
@@ -192,7 +218,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
             value={formData.experience_level}
             onChange={handleChange}
             required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className={fieldClassName}
           >
             <option value="intern">Intern</option>
             <option value="fresher">Fresher</option>
@@ -206,7 +232,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
       {/* Basic Information - Second Row */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
         <div>
-          <label htmlFor="location" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="location" className={labelClassName}>
             Địa điểm *
           </label>
           <input
@@ -216,12 +242,12 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
             value={formData.location}
             onChange={handleChange}
             required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className={fieldClassName}
           />
         </div>
 
         <div>
-          <label htmlFor="department_id" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="department_id" className={labelClassName}>
             Phòng ban *
           </label>
           <select
@@ -230,7 +256,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
             value={formData.department_id ?? ''}
             onChange={handleChange}
             required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className={fieldClassName}
           >
             <option value="">{departmentLoading ? 'Loading departments...' : 'Select department'}</option>
             {departments.map((department) => (
@@ -242,7 +268,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
         </div>
 
         <div>
-          <label htmlFor="positions_count" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="positions_count" className={labelClassName}>
             Số lượng tuyển dụng *
           </label>
           <input
@@ -250,15 +276,15 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
             id="positions_count"
             name="positions_count"
             value={formData.positions_count}
-            onChange={handleNumberChange}
+            onChange={handlePositionChange}
             min="1"
             required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className={fieldClassName}
           />
         </div>
 
         <div>
-          <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="status" className={labelClassName}>
             Trạng thái *
           </label>
           <select
@@ -267,7 +293,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
             value={formData.status}
             onChange={handleChange}
             required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className={fieldClassName}
           >
             <option value="draft">Draft</option>
             <option value="active">Active</option>
@@ -280,19 +306,19 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
       {/* Salary Range */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div>
-          <label htmlFor="salary_range_min" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="salary_range_min" className={labelClassName}>
             Lương tối thiểu (VND) *
           </label>
-          <div className="mt-1 relative rounded-md shadow-sm">
+          <div className="relative rounded-md">
             <input
               type="text"
               id="salary_range_min"
               name="salary_range_min"
               value={formData.salary_range_min ? formatCurrency(formData.salary_range_min) : ''}
-              onChange={handleNumberChange}
+              onChange={handleSalaryChange}
               required
               placeholder="0"
-              className="block w-full rounded-md border-gray-300 pr-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              className={salaryFieldClassName}
             />
             <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
               <span className="text-gray-500 sm:text-sm">VND</span>
@@ -301,38 +327,38 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
         </div>
 
         <div>
-          <label htmlFor="salary_range_max" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="salary_range_max" className={labelClassName}>
             Lương tối đa (VND) *
           </label>
-          <div className="mt-1 relative rounded-md shadow-sm">
+          <div className="relative rounded-md">
             <input
               type="text"
               id="salary_range_max"
               name="salary_range_max"
               value={formData.salary_range_max ? formatCurrency(formData.salary_range_max) : ''}
-              onChange={handleNumberChange}
+              onChange={handleSalaryChange}
               required
               placeholder="0"
-              className="block w-full rounded-md border-gray-300 pr-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              className={salaryFieldClassName}
             />
             <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
               <span className="text-gray-500 sm:text-sm">VND</span>
             </div>
           </div>
-          {typeof formData.salary_range_max === 'number' && 
-           typeof formData.salary_range_min === 'number' && 
-           formData.salary_range_max < formData.salary_range_min && (
-            <p className="mt-1 text-sm text-red-600">
-              Lương tối đa phải lớn hơn hoặc bằng lương tối thiểu.
-            </p>
-          )}
+          {typeof formData.salary_range_max === 'number' &&
+            typeof formData.salary_range_min === 'number' &&
+            formData.salary_range_max < formData.salary_range_min && (
+              <p className="mt-1 text-sm text-red-600">
+                Lương tối đa phải lớn hơn hoặc bằng lương tối thiểu.
+              </p>
+            )}
         </div>
       </div>
 
       {/* Timeline */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div>
-          <label htmlFor="posting_date" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="posting_date" className={labelClassName}>
             Ngày đăng *
           </label>
           <input
@@ -342,12 +368,12 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
             value={formData.posting_date}
             onChange={handleChange}
             required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className={fieldClassName}
           />
         </div>
 
         <div>
-          <label htmlFor="closing_date" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="closing_date" className={labelClassName}>
             Ngày đóng
           </label>
           <input
@@ -356,14 +382,14 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
             name="closing_date"
             value={formData.closing_date || ''}
             onChange={handleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            className={fieldClassName}
           />
         </div>
       </div>
 
       {/* Description */}
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="description" className={labelClassName}>
           Mô tả công việc *
         </label>
         <textarea
@@ -373,13 +399,13 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
           onChange={handleChange}
           required
           rows={4}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          className={fieldClassName}
         />
       </div>
 
       {/* Requirements */}
       <div>
-        <label htmlFor="requirements" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="requirements" className={labelClassName}>
           Yêu cầu công việc *
         </label>
         <textarea
@@ -389,13 +415,13 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
           onChange={handleChange}
           required
           rows={4}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          className={fieldClassName}
         />
       </div>
 
       {/* Responsibilities */}
       <div>
-        <label htmlFor="responsibilities" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="responsibilities" className={labelClassName}>
           Trách nhiệm công việc *
         </label>
         <textarea
@@ -405,13 +431,13 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
           onChange={handleChange}
           required
           rows={4}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          className={fieldClassName}
         />
       </div>
 
       {/* Qualifications */}
       <div>
-        <label htmlFor="qualifications" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="qualifications" className={labelClassName}>
           Bằng cấp *
         </label>
         <textarea
@@ -421,7 +447,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
           onChange={handleChange}
           required
           rows={4}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          className={fieldClassName}
         />
       </div>
 
@@ -430,7 +456,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
         <button
           type="submit"
           disabled={isLoading}
-          className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className={submitButtonClassName}
         >
           {isLoading ? 'Saving...' : 'Save'}
         </button>
