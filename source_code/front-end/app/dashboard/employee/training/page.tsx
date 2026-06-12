@@ -136,44 +136,48 @@ function EmployeeTrainingPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {filteredMaterials.map((material) => (
-                  
-                  <div
-                    key={material.material_id}
-                    className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden cursor-pointer border border-gray-200"
-                    onClick={() =>
-                      router.push(
-                        `/dashboard/employee/training/${material.material_id}`
-                      )
-                    }
-                  >
-                    {/* Card Header */}
-                    <div className="bg-gradient-to-r from-indigo-500 to-indigo-600 p-6 text-white">
-                      <div className="flex items-start justify-between">
-                        <div className="text-4xl mb-2">
-                          {material.type === "video" ? (
-                            <Video className="w-10 h-10" />
-                          ) : material.type === "document" ? (
-                            <FileText className="w-10 h-10" />
-                          ) : (
-                            <BookOpen className="w-10 h-10" />
-                          )}
-                        </div>
-                        <span className="px-3 py-1 bg-white text-gray-900 rounded-full text-xs font-medium">
-                          {material.type === "video"
-                            ? "Video"
-                            : material.type === "document"
+              {filteredMaterials.map((material) => (
+                <div
+                  key={material.material_id}
+                  // THÊM flex flex-col h-full ĐỂ CARD LUÔN ĐẦY CHIỀU CAO CỦA GRID ROW
+                  className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden cursor-pointer border border-gray-200 flex flex-col h-full"
+                  onClick={() =>
+                    router.push(
+                      `/dashboard/employee/training/${material.material_id}`
+                    )
+                  }
+                >
+                  {/* Card Header (Thiết kế lại giống ảnh) */}
+                  <div className="bg-indigo-600 p-6 text-white flex flex-col justify-between min-h-[140px]">
+                    <div className="flex items-start justify-between">
+                      <div className="mb-2">
+                        {material.type === "video" ? (
+                          <Video className="w-8 h-8" />
+                        ) : material.type === "document" ? (
+                          <FileText className="w-8 h-8" />
+                        ) : (
+                          <BookOpen className="w-8 h-8" />
+                        )}
+                      </div>
+                      <span className="px-3 py-1 bg-white text-gray-900 rounded-full text-xs font-medium shrink-0 ml-2">
+                        {material.type === "video"
+                          ? "Video"
+                          : material.type === "document"
                             ? "Tài liệu"
                             : "Video & Tài liệu"}
-                        </span>
-                      </div>
-                      <h3 className="text-xl font-bold mb-2 line-clamp-2">
-                        {material.title}
-                      </h3>
+                      </span>
                     </div>
+                    <h3 className="text-xl font-bold line-clamp-2 mt-4">
+                      {material.title}
+                    </h3>
+                  </div>
 
-                    {/* Card Body */}
-                    <div className="p-6">
+                  {/* Card Body */}
+                  {/* THÊM flex flex-col flex-1 ĐỂ VÙNG NÀY CHIẾM TOÀN BỘ KHÔNG GIAN CÒN LẠI */}
+                  <div className="p-6 flex flex-col flex-1">
+                    
+                    {/* Phần nội dung bên trên (Mô tả, tags, quiz) */}
+                    <div className="flex-1">
                       {isMaterialCompleted(material) && (
                         <div className="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold mb-3">
                           Đã hoàn thành
@@ -190,13 +194,13 @@ function EmployeeTrainingPage() {
                           {material.tags.slice(0, 3).map((tag) => (
                             <span
                               key={tag.tag_id}
-                              className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
+                              className="px-2.5 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
                             >
                               {tag.name}
                             </span>
                           ))}
                           {material.tags.length > 3 && (
-                            <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                            <span className="px-2.5 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
                               +{material.tags.length - 3}
                             </span>
                           )}
@@ -205,29 +209,32 @@ function EmployeeTrainingPage() {
 
                       {/* Quiz Badge */}
                       {material.quizzes && material.quizzes.length > 0 && (
-                        <div className="flex items-center text-sm text-green-600 mb-4">
-                          <FileText className="w-5 h-5 mr-2" />
+                        <div className="flex items-center text-sm font-medium text-green-600 mb-4">
+                          <FileText className="w-4 h-4 mr-1.5" />
                           {material.quizzes.length} bài kiểm tra
                         </div>
                       )}
-
-                      {/* View Button */}
-                      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                        <span className="text-xs text-gray-500">
-                          Tạo bởi: {material.creator?.full_name || "Admin"}
-                        </span>
-                        <button className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-sm font-medium flex items-center">
-                          <Play className="w-4 h-4 mr-1" />
-                          Xem chi tiết
-                        </button>
-                      </div>
                     </div>
+
+                    {/* View Button Footer */}
+                    {/* THÊM mt-auto ĐỂ LUÔN ĐẨY FOOTER XUỐNG DƯỚI CÙNG CỦA CARD */}
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-auto">
+                      <span className="text-xs text-gray-500">
+                        Tạo bởi: {material.creator?.full_name || "Admin"}
+                      </span>
+                      <button className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-sm font-medium flex items-center">
+                        <Play className="w-4 h-4 mr-1" fill="currentColor" />
+                        Xem chi tiết
+                      </button>
+                    </div>
+
                   </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
