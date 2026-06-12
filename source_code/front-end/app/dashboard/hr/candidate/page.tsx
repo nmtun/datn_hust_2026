@@ -16,7 +16,6 @@ function CandidatePage() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
-  const [selectedCandidateInfo, setSelectedCandidateInfo] = useState<CandidateInfo | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
   const [evaluationCandidateInfo, setEvaluationCandidateInfo] = useState<CandidateInfo | null>(null);
@@ -155,11 +154,10 @@ function CandidatePage() {
     router.push(`/dashboard/hr/candidate/edit/${userId}`);
   };
 
-  const handleView = (userId: number, candidateInfo?: CandidateInfo) => {
+  const handleView = (userId: number) => {
     const candidate = candidates.find(c => c.user_id === userId);
     if (candidate) {
       setSelectedCandidate(candidate);
-      setSelectedCandidateInfo(candidateInfo || candidate.Candidate_Infos?.[0] || null);
       setIsViewModalOpen(true);
     }
   };
@@ -187,57 +185,198 @@ function CandidatePage() {
     return evaluationComment.name || '';
   };
 
-  const formatEvaluationComment = (value?: string) => {
-    if (!value) return '';
-    const normalized = value.replace(/\r\n/g, '\n').trim();
-    const parts = normalized.split(/(Điểm mạnh:|Điểm yếu:|Phân tích yêu cầu:|Kinh nghiệm)/g);
-    const output: string[] = [];
+  type EvaluationSectionTone = 'positive' | 'negative' | 'neutral';
 
-    if (parts[0]?.trim()) {
-      output.push(parts[0].trim());
+  interface EvaluationSection {
+    title: string;
+    tone: EvaluationSectionTone;
+    items: string[];
+  }
+
+  interface ParsedEvaluationComment {
+    intro: string;
+    sections: EvaluationSection[];
+  }
+
+  interface RequirementAnalysisItem {
+    sequence: string;
+    requirement: string;
+    cvEvidence: string;
+    conclusion: string;
+  }
+
+  const cleanEvaluationItem = (item: string) => {
+    return item
+      .replace(/^\d+[.)]\s*/, '')
+      .replace(/^[-•\s]+/, '')
+      .replace(/[.\s]+$/g, '')
+      .trim();
+  };
+
+  const parseEvaluationItems = (content: string, splitter: RegExp) => {
+    return content
+      .split(splitter)
+      .map(cleanEvaluationItem)
+      .filter(Boolean);
+  };
+
+  const parseRequirementAnalysisItem = (value: string): RequirementAnalysisItem | null => {
+    if (!value) return null;
+
+    const normalized = value.replace(/\r\n/g, ' ').replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!normalized) return null;
+
+    const match = normalized.match(
+      /^(?:\((\d+)\)|(\d+)[.)])?\s*(.*?)\s*-\s*Thông tin từ cv:\s*(.*?)\s*-\s*Kết luận:\s*(.*)$/i
+    );
+
+    if (!match) {
+      return null;
     }
 
-    for (let i = 1; i < parts.length; i += 2) {
-      const marker = parts[i];
-      const content = (parts[i + 1] || '').trim();
+    const sequence = match[1] || match[2] || '';
+    const requirement = cleanEvaluationItem(match[3] || '');
+    const cvEvidence = (match[4] || '').trim();
+    const conclusion = (match[5] || '').trim();
+
+    if (!requirement && !cvEvidence && !conclusion) {
+      return null;
+    }
+
+    return {
+      sequence,
+      requirement,
+      cvEvidence,
+      conclusion,
+    };
+  };
+
+  const parseEvaluationComment = (value?: string): ParsedEvaluationComment => {
+    if (!value) {
+      return { intro: '', sections: [] };
+    }
+
+    const normalized = value.replace(/\r\n/g, '\n').trim();
+    if (!normalized) {
+      return { intro: '', sections: [] };
+    }
+
+    const sectionConfig: Record<
+      string,
+      { title: string; tone: EvaluationSectionTone; splitter: RegExp }
+    > = {
+      'Điểm mạnh:': {
+        title: 'Điểm mạnh',
+        tone: 'positive',
+        splitter: /;|\n/,
+      },
+      'Điểm yếu:': {
+        title: 'Điểm yếu',
+        tone: 'negative',
+        splitter: /;|\n/,
+      },
+      'Phân tích yêu cầu:': {
+        title: 'Phân tích yêu cầu',
+        tone: 'neutral',
+        splitter: /\s\|\s|\n|;/,
+      },
+      'Kinh nghiệm:': {
+        title: 'Kinh nghiệm',
+        tone: 'neutral',
+        splitter: /;|\n/,
+      },
+    };
+
+    const parts = normalized
+      .split(/(Điểm mạnh:|Điểm yếu:|Phân tích yêu cầu:|Kinh nghiệm:?)/g)
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    if (parts.length === 0) {
+      return { intro: '', sections: [] };
+    }
+
+    let intro = '';
+    const sections: EvaluationSection[] = [];
+
+    const hasLeadingIntro = !/^(Điểm mạnh:|Điểm yếu:|Phân tích yêu cầu:|Kinh nghiệm:?)/.test(parts[0]);
+    if (hasLeadingIntro) {
+      intro = parts[0];
+    }
+
+    const startIndex = hasLeadingIntro ? 1 : 0;
+
+    for (let index = startIndex; index < parts.length; index += 2) {
+      const marker = parts[index];
+      const content = (parts[index + 1] || '').trim();
 
       if (!marker) continue;
 
-      if (marker === 'Điểm mạnh:' || marker === 'Điểm yếu:') {
-        const items = content
-          .split(';')
-          .map((item) => item.replace(/^[-•\s]+/, '').replace(/[.\s]+$/g, '').trim())
-          .filter(Boolean);
+      const normalizedMarker = marker.endsWith(':') ? marker : `${marker}:`;
+      const config = sectionConfig[normalizedMarker];
 
-        if (items.length > 0) {
-          output.push(`${marker}\n- ${items.join('\n- ')}`);
-        } else {
-          output.push(marker);
+      if (!config) {
+        const fallback = [marker, content].filter(Boolean).join(' ').trim();
+        if (fallback) {
+          sections.push({
+            title: 'Nhận xét',
+            tone: 'neutral',
+            items: [fallback],
+          });
         }
         continue;
       }
 
-      if (marker === 'Phân tích yêu cầu:') {
-        const items = content
-          .split(' | ')
-          .map((item) => item.trim())
-          .filter(Boolean);
-
-        if (items.length > 0) {
-          output.push(`${marker}\n- ${items.join('\n- ')}`);
-        } else {
-          output.push(marker);
-        }
-        continue;
-      }
-
-      const line = `${marker} ${content}`.trim();
-      if (line) {
-        output.push(line);
+      const items = parseEvaluationItems(content, config.splitter);
+      if (items.length > 0) {
+        sections.push({
+          title: config.title,
+          tone: config.tone,
+          items,
+        });
       }
     }
 
-    return output.join('\n\n');
+    if (sections.length === 0 && intro) {
+      const introItems = intro
+        .split('\n')
+        .map(cleanEvaluationItem)
+        .filter(Boolean);
+
+      if (introItems.length > 1) {
+        intro = '';
+        sections.push({
+          title: 'Nhận xét',
+          tone: 'neutral',
+          items: introItems,
+        });
+      }
+    }
+
+    return { intro, sections };
+  };
+
+  const getEvaluationSectionStyles = (tone: EvaluationSectionTone) => {
+    switch (tone) {
+      case 'positive':
+        return {
+          wrapper: 'border-emerald-200 bg-emerald-50',
+          dot: 'bg-emerald-500',
+          badge: 'bg-emerald-100 text-emerald-700',
+        };
+      case 'negative':
+        return {
+          wrapper: 'border-rose-200 bg-rose-50',
+          dot: 'bg-rose-500',
+          badge: 'bg-rose-100 text-rose-700',
+        };
+      default:
+        return {
+          wrapper: 'border-slate-200 bg-slate-50',
+          dot: 'bg-slate-500',
+          badge: 'bg-slate-200 text-slate-700',
+        };
+    }
   };
 
   const handleViewCV = (cvPath: string) => {
@@ -290,6 +429,11 @@ function CandidatePage() {
     ...candidate,
     candidateInfos: candidate.Candidate_Infos || []
   }));
+
+  const parsedEvaluationComment = parseEvaluationComment(
+    getEvaluationCommentText(evaluationCandidateInfo)
+  );
+  const evaluationModalTag = getEvaluationTag(evaluationCandidateInfo?.evaluation);
 
   return (
     <div>
@@ -395,7 +539,7 @@ function CandidatePage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {groupedCandidates.map((candidate, index) => (
+              {groupedCandidates.map((candidate) => (
                 <tr key={candidate.user_id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -416,7 +560,7 @@ function CandidatePage() {
                   <td className="px-6 py-4">
                     {candidate.candidateInfos.length > 0 ? (
                       <div className="space-y-2">
-                        {candidate.candidateInfos.map((candidateInfo, infoIndex) => {
+                        {candidate.candidateInfos.map((candidateInfo) => {
                           const evaluationTag = getEvaluationTag(candidateInfo.evaluation);
 
                           return (
@@ -459,7 +603,7 @@ function CandidatePage() {
                   <td className="px-6 py-4">
                     {candidate.candidateInfos.length > 0 ? (
                       <div className="space-y-2">
-                        {candidate.candidateInfos.map((candidateInfo, infoIndex) => (
+                        {candidate.candidateInfos.map((candidateInfo) => (
                           <div key={candidateInfo.candidate_info_id} className="py-1 flex items-center min-h-[28px]">
                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(candidateInfo.candidate_status)}`}>
                               {candidateInfo.candidate_status.charAt(0).toUpperCase() + candidateInfo.candidate_status.slice(1)}
@@ -474,7 +618,7 @@ function CandidatePage() {
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {candidate.candidateInfos.length > 0 ? (
                       <div className="space-y-2">
-                        {candidate.candidateInfos.map((candidateInfo, infoIndex) => (
+                        {candidate.candidateInfos.map((candidateInfo) => (
                           <div key={candidateInfo.candidate_info_id} className="py-1 flex items-center min-h-[28px]">
                             {candidateInfo.apply_date
                               ? new Date(candidateInfo.apply_date).toLocaleDateString()
@@ -490,7 +634,7 @@ function CandidatePage() {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end space-x-3">
                       <button
-                        onClick={() => handleView(candidate.user_id, candidate.candidateInfos[0])}
+                        onClick={() => handleView(candidate.user_id)}
                         className="text-gray-400 hover:text-gray-500"
                         title="Xem chi tiết">
                         <Eye className="w-5 h-5" />
@@ -627,7 +771,7 @@ function CandidatePage() {
                   Các đơn ứng tuyển ({selectedCandidate.Candidate_Infos.length})
                 </h3>
                 <div className="space-y-4">
-                  {selectedCandidate.Candidate_Infos.map((candidateInfo, index) => {
+                  {selectedCandidate.Candidate_Infos.map((candidateInfo) => {
                     const evaluationTag = getEvaluationTag(candidateInfo.evaluation);
 
                     return (
@@ -732,7 +876,7 @@ function CandidatePage() {
         }}
         title="Evaluation Comment"
       >
-        <div className="space-y-4">
+        <div className="space-y-5">
           {(getEvaluationCommentName(evaluationCandidateInfo) || evaluationCandidateInfo?.evaluation) && (
             <div className="grid grid-cols-2 gap-4">
               {getEvaluationCommentName(evaluationCandidateInfo) && (
@@ -744,17 +888,115 @@ function CandidatePage() {
               {evaluationCandidateInfo?.evaluation != null && (
                 <div>
                   <p className="text-sm font-medium text-gray-500">Điểm đánh giá</p>
-                  <p className="mt-1">{evaluationCandidateInfo.evaluation}/100</p>
+                  <p className="mt-1 flex flex-wrap items-center gap-2">
+                    <span>{evaluationCandidateInfo.evaluation}/100</span>
+                    {evaluationModalTag && (
+                      <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${evaluationModalTag.className}`}>
+                        {evaluationModalTag.label}
+                      </span>
+                    )}
+                  </p>
                 </div>
               )}
             </div>
           )}
           <div>
             <p className="text-sm font-medium text-gray-500">Bình luận đánh giá</p>
-            <div className="mt-2 p-4 bg-gray-50 rounded-md border border-gray-200">
-              <p className="text-sm text-gray-700 whitespace-pre-wrap leading-6">
-                {formatEvaluationComment(getEvaluationCommentText(evaluationCandidateInfo)) || 'No evaluation comment yet'}
-              </p>
+            <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-4">
+              {parsedEvaluationComment.intro && (
+                <p className="text-sm text-gray-700 whitespace-pre-wrap leading-6">
+                  {parsedEvaluationComment.intro}
+                </p>
+              )}
+
+              {parsedEvaluationComment.sections.length > 0 ? (
+                <div className={`space-y-3 ${parsedEvaluationComment.intro ? 'mt-4' : ''}`}>
+                  {parsedEvaluationComment.sections.map((section, sectionIndex) => {
+                    const sectionStyles = getEvaluationSectionStyles(section.tone);
+                    const isRequirementAnalysisSection = section.title === 'Phân tích yêu cầu';
+                    const requirementAnalysisItems = isRequirementAnalysisSection
+                      ? section.items
+                        .map(parseRequirementAnalysisItem)
+                        .filter((item): item is RequirementAnalysisItem => item !== null)
+                      : [];
+                    const hasStructuredRequirementAnalysis =
+                      requirementAnalysisItems.length > 0 &&
+                      requirementAnalysisItems.length === section.items.length;
+
+                    return (
+                      <div
+                        key={`${section.title}-${sectionIndex}`}
+                        className={`rounded-md border p-3 ${sectionStyles.wrapper}`}
+                      >
+                        {/* <div className="mb-2 flex items-center justify-between gap-2">
+                          <h4 className="text-sm font-semibold text-gray-800">{section.title}</h4>
+                          <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${sectionStyles.badge}`}>
+                            {section.items.length} ý
+                          </span>
+                        </div> */}
+
+                        {hasStructuredRequirementAnalysis ? (
+                          <div className="space-y-3">
+                            {requirementAnalysisItems.map((item, itemIndex) => {
+                              const displaySequence = item.sequence || String(itemIndex + 1);
+
+                              return (
+                                <div
+                                  key={`${section.title}-${sectionIndex}-${itemIndex}`}
+                                  className="rounded-md border border-slate-200 bg-white p-3"
+                                >
+                                  <div className="mb-2 flex items-center gap-2">
+                                    <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-indigo-100 px-2 text-xs font-semibold text-indigo-700">
+                                      {displaySequence}
+                                    </span>
+                                    <p className="text-sm font-semibold text-slate-800">
+                                      {item.requirement || `Yêu cầu ${displaySequence}`}
+                                    </p>
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <div className="rounded-md border border-blue-100 bg-blue-50 p-2.5">
+                                      <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                                        Thông tin từ CV
+                                      </p>
+                                      <p className="mt-1 text-sm leading-6 text-blue-900">
+                                        {item.cvEvidence || 'Chưa có thông tin'}
+                                      </p>
+                                    </div>
+
+                                    <div className="rounded-md border border-amber-100 bg-amber-50 p-2.5">
+                                      <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                                        Kết luận
+                                      </p>
+                                      <p className="mt-1 text-sm leading-6 text-amber-900">
+                                        {item.conclusion || 'Chưa có kết luận'}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <ul className="space-y-1.5">
+                            {section.items.map((item, itemIndex) => (
+                              <li
+                                key={`${section.title}-${sectionIndex}-${itemIndex}`}
+                                className="flex items-start gap-2 text-sm text-gray-700 leading-6"
+                              >
+                                <span className={`mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full ${sectionStyles.dot}`}></span>
+                                <span>{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : !parsedEvaluationComment.intro ? (
+                <p className="text-sm text-gray-500 italic">No evaluation comment yet</p>
+              ) : null}
             </div>
           </div>
         </div>
