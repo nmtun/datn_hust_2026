@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Save, User, Mail, Phone, MapPin, Building2, Calendar, FileText } from "lucide-react";
+import { ArrowLeft, User, Building2 } from "lucide-react";
 import { candidateApi, Candidate, CandidateInfo } from "@/app/api/candidateApi";
 import { jobDescriptionApi } from "@/app/api/jobDescriptionApi";
 import { showToast } from "@/app/utils/toast";
@@ -16,6 +16,174 @@ interface JobDescription {
   employment_type: string;
 }
 
+// --- BẮT ĐẦU: Các Type và Hàm Parse Evaluation Comment (Port từ CandidatePage) ---
+type EvaluationSectionTone = 'positive' | 'negative' | 'neutral';
+
+interface EvaluationSection {
+  title: string;
+  tone: EvaluationSectionTone;
+  items: string[];
+}
+
+interface ParsedEvaluationComment {
+  intro: string;
+  sections: EvaluationSection[];
+}
+
+interface RequirementAnalysisItem {
+  sequence: string;
+  requirement: string;
+  cvEvidence: string;
+  conclusion: string;
+}
+
+const cleanEvaluationItem = (item: string) => {
+  return item
+    .replace(/^\d+[.)]\s*/, '')
+    .replace(/^[-•\s]+/, '')
+    .replace(/[.\s]+$/g, '')
+    .trim();
+};
+
+const parseEvaluationItems = (content: string, splitter: RegExp) => {
+  return content
+    .split(splitter)
+    .map(cleanEvaluationItem)
+    .filter(Boolean);
+};
+
+const parseRequirementAnalysisItem = (value: string): RequirementAnalysisItem | null => {
+  if (!value) return null;
+
+  const normalized = value.replace(/\r\n/g, ' ').replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!normalized) return null;
+
+  const match = normalized.match(
+    /^(?:\((\d+)\)|(\d+)[.)])?\s*(.*?)\s*-\s*Thông tin từ cv:\s*(.*?)\s*-\s*Kết luận:\s*(.*)$/i
+  );
+
+  if (!match) {
+    return null;
+  }
+
+  const sequence = match[1] || match[2] || '';
+  const requirement = cleanEvaluationItem(match[3] || '');
+  const cvEvidence = (match[4] || '').trim();
+  const conclusion = (match[5] || '').trim();
+
+  if (!requirement && !cvEvidence && !conclusion) {
+    return null;
+  }
+
+  return {
+    sequence,
+    requirement,
+    cvEvidence,
+    conclusion,
+  };
+};
+
+const parseEvaluationComment = (value?: string): ParsedEvaluationComment => {
+  if (!value) {
+    return { intro: '', sections: [] };
+  }
+
+  const normalized = value.replace(/\r\n/g, '\n').trim();
+  if (!normalized) {
+    return { intro: '', sections: [] };
+  }
+
+  const sectionConfig: Record<
+    string,
+    { title: string; tone: EvaluationSectionTone; splitter: RegExp }
+  > = {
+    'Điểm mạnh:': { title: 'Điểm mạnh', tone: 'positive', splitter: /;|\n/ },
+    'Điểm yếu:': { title: 'Điểm yếu', tone: 'negative', splitter: /;|\n/ },
+    'Phân tích yêu cầu:': { title: 'Phân tích yêu cầu', tone: 'neutral', splitter: /\s\|\s|\n|;/ },
+    'Kinh nghiệm:': { title: 'Kinh nghiệm', tone: 'neutral', splitter: /;|\n/ },
+  };
+
+  const parts = normalized
+    .split(/(Điểm mạnh:|Điểm yếu:|Phân tích yêu cầu:|Kinh nghiệm:?)/g)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (parts.length === 0) {
+    return { intro: '', sections: [] };
+  }
+
+  let intro = '';
+  const sections: EvaluationSection[] = [];
+
+  const hasLeadingIntro = !/^(Điểm mạnh:|Điểm yếu:|Phân tích yêu cầu:|Kinh nghiệm:?)/.test(parts[0]);
+  if (hasLeadingIntro) {
+    intro = parts[0];
+  }
+
+  const startIndex = hasLeadingIntro ? 1 : 0;
+
+  for (let index = startIndex; index < parts.length; index += 2) {
+    const marker = parts[index];
+    const content = (parts[index + 1] || '').trim();
+
+    if (!marker) continue;
+
+    const normalizedMarker = marker.endsWith(':') ? marker : `${marker}:`;
+    const config = sectionConfig[normalizedMarker];
+
+    if (!config) {
+      const fallback = [marker, content].filter(Boolean).join(' ').trim();
+      if (fallback) {
+        sections.push({
+          title: 'Nhận xét',
+          tone: 'neutral',
+          items: [fallback],
+        });
+      }
+      continue;
+    }
+
+    const items = parseEvaluationItems(content, config.splitter);
+    if (items.length > 0) {
+      sections.push({
+        title: config.title,
+        tone: config.tone,
+        items,
+      });
+    }
+  }
+
+  if (sections.length === 0 && intro) {
+    const introItems = intro
+      .split('\n')
+      .map(cleanEvaluationItem)
+      .filter(Boolean);
+
+    if (introItems.length > 1) {
+      intro = '';
+      sections.push({
+        title: 'Nhận xét',
+        tone: 'neutral',
+        items: introItems,
+      });
+    }
+  }
+
+  return { intro, sections };
+};
+
+const getEvaluationSectionStyles = (tone: EvaluationSectionTone) => {
+  switch (tone) {
+    case 'positive':
+      return { wrapper: 'border-emerald-200 bg-emerald-50', dot: 'bg-emerald-500', badge: 'bg-emerald-100 text-emerald-700' };
+    case 'negative':
+      return { wrapper: 'border-rose-200 bg-rose-50', dot: 'bg-rose-500', badge: 'bg-rose-100 text-rose-700' };
+    default:
+      return { wrapper: 'border-slate-200 bg-slate-50', dot: 'bg-slate-500', badge: 'bg-slate-200 text-slate-700' };
+  }
+};
+// --- KẾT THÚC: Các Type và Hàm Parse ---
+
 function EditCandidatePage() {
   const router = useRouter();
   const params = useParams();
@@ -24,7 +192,7 @@ function EditCandidatePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [candidate, setCandidate] = useState<Candidate | null>(null);
-  const [jobDescriptions, setJobDescriptions] = useState<JobDescription[]>([]);
+  const [, setJobDescriptions] = useState<JobDescription[]>([]);
   const [expandedComments, setExpandedComments] = useState<Record<number, boolean>>({});
 
   // Form data state
@@ -113,7 +281,6 @@ function EditCandidatePage() {
       const result = await candidateApi.updateApplication(application.candidate_info_id, {
         candidate_status: application.candidate_status,
         evaluation: application.evaluation
-        // Note: cover_letter is now read-only and not updated
       });
 
       if (result.error) {
@@ -153,14 +320,12 @@ function EditCandidatePage() {
         const hasChanges = (
           app.candidate_status !== originalApp?.candidate_status ||
           app.evaluation !== originalApp?.evaluation
-          // Note: cover_letter is now read-only and not checked for changes
         );
 
         if (hasChanges && app.candidate_info_id) {
           return candidateApi.updateApplication(app.candidate_info_id, {
             candidate_status: app.candidate_status,
             evaluation: app.evaluation
-            // Note: cover_letter is now read-only and not updated
           });
         }
         return Promise.resolve({ error: false });
@@ -193,78 +358,6 @@ function EditCandidatePage() {
       ...prev,
       [key]: !prev[key]
     }));
-  };
-
-  const formatEvaluationComment = (value?: string) => {
-    if (!value) return '';
-    const normalized = value.replace(/\r\n/g, '\n').trim();
-    const parts = normalized.split(/(Diem manh:|Diem yeu:|Phan tich yeu cau:|Kinh nghiem)/g);
-    const output: string[] = [];
-
-    if (parts[0]?.trim()) {
-      output.push(parts[0].trim());
-    }
-
-    for (let i = 1; i < parts.length; i += 2) {
-      const marker = parts[i];
-      const content = (parts[i + 1] || '').trim();
-
-      if (!marker) continue;
-
-      if (marker === 'Diem manh:' || marker === 'Diem yeu:') {
-        const items = content
-          .split(';')
-          .map((item) => item.replace(/^[-•\s]+/, '').replace(/[.\s]+$/g, '').trim())
-          .filter(Boolean);
-
-        if (items.length > 0) {
-          output.push(`${marker}\n- ${items.join('\n- ')}`);
-        } else {
-          output.push(marker);
-        }
-        continue;
-      }
-
-      if (marker === 'Phan tich yeu cau:') {
-        const items = content
-          .split(' | ')
-          .map((item) => item.trim())
-          .filter(Boolean);
-
-        if (items.length > 0) {
-          output.push(`${marker}\n- ${items.join('\n- ')}`);
-        } else {
-          output.push(marker);
-        }
-        continue;
-      }
-
-      const line = `${marker} ${content}`.trim();
-      if (line) {
-        output.push(line);
-      }
-    }
-
-    return output.join('\n\n');
-  };
-
-  const getStatusColor = (status: CandidateInfo["candidate_status"]) => {
-    switch (status) {
-      case "new":
-        return "bg-blue-500 text-white";
-      case "screening":
-        return "bg-amber-500 text-white";
-      case "interview":
-        return "bg-purple-600 text-white";
-      case "offered":
-        return "bg-green-600 text-white";
-      case "hired":
-        return "bg-emerald-600 text-white";
-      case "rejected":
-        return "bg-red-600 text-white";
-      default:
-        return "bg-gray-500 text-white";
-    }
   };
 
   if (loading) {
@@ -391,10 +484,13 @@ function EditCandidatePage() {
                 const evaluationCommentName = typeof evaluationComment === "string"
                   ? ""
                   : evaluationComment?.name;
+                
                 const commentKey = application.candidate_info_id || index;
                 const isExpanded = Boolean(expandedComments[commentKey]);
-                const formattedComment = formatEvaluationComment(evaluationCommentText);
-                const hasLongComment = formattedComment.length > 260;
+                
+                // Sử dụng hàm parse từ CandidatePage
+                const parsedEvaluationComment = parseEvaluationComment(evaluationCommentText);
+                const hasSections = parsedEvaluationComment.sections.length > 0;
 
                 return (
                 <div key={application.candidate_info_id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
@@ -455,35 +551,112 @@ function EditCandidatePage() {
                     </div>
                   </div>
 
-                  {/* Evaluation Comment */}
+                  {/* Evaluation Comment Giao Diện Rich Text */}
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Nhận xét đánh giá
                     </label>
-                    <div className="p-4 bg-white rounded-md border border-gray-300 min-h-[80px]">
+                    <div className="p-4 bg-white rounded-md border border-gray-300">
                       {evaluationCommentName && (
-                        <p className="text-xs text-gray-500 mb-2">
+                        <p className="text-xs text-gray-500 mb-2 font-medium">
                           Ứng viên: {evaluationCommentName}
                         </p>
                       )}
-                      <p
-                        className="text-sm text-gray-700 whitespace-pre-wrap leading-6"
-                        style={!isExpanded ? {
-                          display: "-webkit-box",
-                          WebkitLineClamp: 4,
-                          WebkitBoxOrient: "vertical",
-                          overflow: "hidden"
-                        } : undefined}
-                      >
-                        {formattedComment || 'No evaluation comment yet'}
+
+                      {/* Hiển thị intro với line-clamp nếu thu gọn */}
+                      <p className={`text-sm text-gray-700 whitespace-pre-wrap leading-6 ${!isExpanded && hasSections ? 'line-clamp-3' : ''}`}>
+                        {parsedEvaluationComment.intro || (hasSections && !isExpanded ? 'Có các đánh giá chi tiết bên dưới...' : !hasSections ? 'Chưa có nhận xét' : '')}
                       </p>
-                      {hasLongComment && (
+
+                      {/* Chỉ render các block phân tích màu sắc khi ĐƯỢC XỔ RA */}
+                      {isExpanded && hasSections && (
+                        <div className={`space-y-3 ${parsedEvaluationComment.intro ? 'mt-4' : ''}`}>
+                          {parsedEvaluationComment.sections.map((section, sectionIndex) => {
+                            const sectionStyles = getEvaluationSectionStyles(section.tone);
+                            const isRequirementAnalysisSection = section.title === 'Phân tích yêu cầu';
+                            const requirementAnalysisItems = isRequirementAnalysisSection
+                              ? section.items
+                                .map(parseRequirementAnalysisItem)
+                                .filter((item): item is RequirementAnalysisItem => item !== null)
+                              : [];
+                            const hasStructuredRequirementAnalysis =
+                              requirementAnalysisItems.length > 0 &&
+                              requirementAnalysisItems.length === section.items.length;
+
+                            return (
+                              <div
+                                key={`${section.title}-${sectionIndex}`}
+                                className={`rounded-md border p-3 ${sectionStyles.wrapper}`}
+                              >
+                                {hasStructuredRequirementAnalysis ? (
+                                  <div className="space-y-3">
+                                    {requirementAnalysisItems.map((item, itemIndex) => {
+                                      const displaySequence = item.sequence || String(itemIndex + 1);
+
+                                      return (
+                                        <div
+                                          key={`${section.title}-${sectionIndex}-${itemIndex}`}
+                                          className="rounded-md border border-slate-200 bg-white p-3"
+                                        >
+                                          <div className="mb-2 flex items-center gap-2">
+                                            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-indigo-100 px-2 text-xs font-semibold text-indigo-700">
+                                              {displaySequence}
+                                            </span>
+                                            <p className="text-sm font-semibold text-slate-800">
+                                              {item.requirement || `Yêu cầu ${displaySequence}`}
+                                            </p>
+                                          </div>
+
+                                          <div className="space-y-2">
+                                            <div className="rounded-md border border-blue-100 bg-blue-50 p-2.5">
+                                              <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                                                Thông tin từ CV
+                                              </p>
+                                              <p className="mt-1 text-sm leading-6 text-blue-900">
+                                                {item.cvEvidence || 'Chưa có thông tin'}
+                                              </p>
+                                            </div>
+
+                                            <div className="rounded-md border border-amber-100 bg-amber-50 p-2.5">
+                                              <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                                                Kết luận
+                                              </p>
+                                              <p className="mt-1 text-sm leading-6 text-amber-900">
+                                                {item.conclusion || 'Chưa có kết luận'}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <ul className="space-y-1.5">
+                                    {section.items.map((item, itemIndex) => (
+                                      <li
+                                        key={`${section.title}-${sectionIndex}-${itemIndex}`}
+                                        className="flex items-start gap-2 text-sm text-gray-700 leading-6"
+                                      >
+                                        <span className={`mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full ${sectionStyles.dot}`}></span>
+                                        <span>{item}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Nút Xem thêm / Thu gọn */}
+                      {hasSections && (
                         <button
                           type="button"
                           onClick={() => toggleComment(commentKey)}
-                          className="mt-2 text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                          className="mt-3 text-xs font-medium text-indigo-600 hover:text-indigo-700 flex items-center"
                         >
-                          {isExpanded ? 'Thu gọn' : 'Xem thêm'}
+                          {isExpanded ? 'Thu gọn' : 'Xem chi tiết đánh giá'}
                         </button>
                       )}
                     </div>

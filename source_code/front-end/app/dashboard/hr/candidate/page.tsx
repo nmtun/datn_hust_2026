@@ -819,34 +819,34 @@ function CandidatePage() {
                           </div>
                         </div>
 
-                      {/* Applied Job */}
-                      {candidateInfo.Job_Description && (
-                        <div className="mb-4">
-                          <p className="text-sm font-medium text-gray-500">Vị trí ứng tuyển</p>
-                          <div className="mt-1 p-3 bg-white rounded-md border">
-                            <p className="font-medium">{candidateInfo.Job_Description.title}</p>
-                            <p className="text-sm text-gray-600">
-                              {candidateInfo.Job_Description.experience_level} · {candidateInfo.Job_Description.employment_type}
-                            </p>
+                        {/* Applied Job */}
+                        {candidateInfo.Job_Description && (
+                          <div className="mb-4">
+                            <p className="text-sm font-medium text-gray-500">Vị trí ứng tuyển</p>
+                            <div className="mt-1 p-3 bg-white rounded-md border">
+                              <p className="font-medium">{candidateInfo.Job_Description.title}</p>
+                              <p className="text-sm text-gray-600">
+                                {candidateInfo.Job_Description.experience_level} · {candidateInfo.Job_Description.employment_type}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
-                      {/* CV */}
-                      {candidateInfo.cv_file_path && (
-                        <div className="mb-4">
-                          <p className="text-sm font-medium text-gray-500">CV/Resume</p>
-                          <div className="mt-1">
-                            <button
-                              onClick={() => handleViewCV(candidateInfo.cv_file_path!)}
-                              className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                            >
-                              <Eye className="w-4 h-4 mr-2" />
-                              Xem CV
-                            </button>
+                        {/* CV */}
+                        {candidateInfo.cv_file_path && (
+                          <div className="mb-4">
+                            <p className="text-sm font-medium text-gray-500">CV/Resume</p>
+                            <div className="mt-1">
+                              <button
+                                onClick={() => handleViewCV(candidateInfo.cv_file_path!)}
+                                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                              >
+                                <Eye className="w-4 h-4 mr-2" />
+                                Xem CV
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
                         {/* Cover Letter */}
                         {candidateInfo.cover_letter && (
@@ -928,13 +928,6 @@ function CandidatePage() {
                         key={`${section.title}-${sectionIndex}`}
                         className={`rounded-md border p-3 ${sectionStyles.wrapper}`}
                       >
-                        {/* <div className="mb-2 flex items-center justify-between gap-2">
-                          <h4 className="text-sm font-semibold text-gray-800">{section.title}</h4>
-                          <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${sectionStyles.badge}`}>
-                            {section.items.length} ý
-                          </span>
-                        </div> */}
-
                         {hasStructuredRequirementAnalysis ? (
                           <div className="space-y-3">
                             {requirementAnalysisItems.map((item, itemIndex) => {
