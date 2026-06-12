@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
-import { FileText, Upload, X } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
 import { TrainingMaterial } from '@/app/api/trainingMaterialApi';
 
 interface TrainingMaterialFormProps {
@@ -14,6 +14,15 @@ const TrainingMaterialForm: React.FC<TrainingMaterialFormProps> = ({
   onSubmit,
   isLoading = false,
 }) => {
+  // Đồng bộ style class từ JobDescriptionForm
+  const labelClassName = 'block text-sm font-medium text-gray-700 mb-2';
+  const fieldClassName =
+    'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500';
+  const submitButtonClassName =
+    'inline-flex justify-center rounded-md bg-indigo-600 py-2 px-4 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed';
+  const cancelButtonClassName =
+    'inline-flex justify-center rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2';
+
   const [formData, setFormData] = React.useState({
     title: initialData?.title || '',
     description: initialData?.description || '',
@@ -65,7 +74,7 @@ const TrainingMaterialForm: React.FC<TrainingMaterialFormProps> = ({
     submitFormData.append('status', formData.status);
 
     if (contentFiles.length > 0) {
-      contentFiles.forEach((file, index) => {
+      contentFiles.forEach((file) => {
         submitFormData.append('files', file);
       });
     }
@@ -202,7 +211,7 @@ const TrainingMaterialForm: React.FC<TrainingMaterialFormProps> = ({
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Title */}
       <div>
-        <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="title" className={labelClassName}>
           Tiêu đề *
         </label>
         <input
@@ -212,52 +221,54 @@ const TrainingMaterialForm: React.FC<TrainingMaterialFormProps> = ({
           value={formData.title}
           onChange={handleChange}
           required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          className={fieldClassName}
           placeholder="Enter training material title"
         />
       </div>
 
-      {/* Type */}
-      <div>
-        <label htmlFor="type" className="block text-sm font-medium text-gray-700">
-          Loại *
-        </label>
-        <select
-          id="type"
-          name="type"
-          value={formData.type}
-          onChange={handleChange}
-          required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-        >
-          <option value="document">Document</option>
-          <option value="video">Video</option>
-          <option value="both">Video & Document</option>
-        </select>
-      </div>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {/* Type */}
+        <div>
+          <label htmlFor="type" className={labelClassName}>
+            Loại *
+          </label>
+          <select
+            id="type"
+            name="type"
+            value={formData.type}
+            onChange={handleChange}
+            required
+            className={fieldClassName}
+          >
+            <option value="document">Document</option>
+            <option value="video">Video</option>
+            <option value="both">Video & Document</option>
+          </select>
+        </div>
 
-      {/* Status */}
-      <div>
-        <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-          Status *
-        </label>
-        <select
-          id="status"
-          name="status"
-          value={formData.status}
-          onChange={handleChange}
-          required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-        >
-          <option value="draft">Draft</option>
-          <option value="active">Active</option>
-          <option value="archived">Archived</option>
-        </select>
+        {/* Status */}
+        <div>
+          <label htmlFor="status" className={labelClassName}>
+            Status *
+          </label>
+          <select
+            id="status"
+            name="status"
+            value={formData.status}
+            onChange={handleChange}
+            required
+            className={fieldClassName}
+          >
+            <option value="draft">Draft</option>
+            <option value="active">Active</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
       </div>
 
       {/* Description */}
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="description" className={labelClassName}>
           Mô tả *
         </label>
         <textarea
@@ -267,14 +278,14 @@ const TrainingMaterialForm: React.FC<TrainingMaterialFormProps> = ({
           onChange={handleChange}
           required
           rows={4}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          className={fieldClassName}
           placeholder="Enter training material description"
         />
       </div>
 
       {/* Content File */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">
+        <label className={labelClassName}>
           File Nội Dung {!initialData?.content_path && '*'}
         </label>
         
@@ -293,7 +304,7 @@ const TrainingMaterialForm: React.FC<TrainingMaterialFormProps> = ({
           >
             <div className="space-y-1 text-center">
               <Upload className="mx-auto h-12 w-12 text-gray-400" />
-              <div className="flex text-sm text-gray-600">
+              <div className="flex text-sm text-gray-600 justify-center">
                 <label
                   htmlFor="content-upload"
                   className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
@@ -396,18 +407,18 @@ const TrainingMaterialForm: React.FC<TrainingMaterialFormProps> = ({
         <button
           type="button"
           onClick={() => window.history.back()}
-          className="inline-flex justify-center rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          className={cancelButtonClassName}
         >
           Hủy
         </button>
         <button
           type="submit"
           disabled={isLoading}
-          className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className={submitButtonClassName}
         >
           {isLoading ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block align-middle" />
               Đang lưu...
             </>
           ) : (
