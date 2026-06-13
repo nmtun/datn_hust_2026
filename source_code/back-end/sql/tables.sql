@@ -94,41 +94,6 @@ CREATE TABLE Job_Descriptions (
   FOREIGN KEY (created_by) REFERENCES Users(user_id)
 );
 
-CREATE TABLE Interviews (
-  interview_id INT AUTO_INCREMENT PRIMARY KEY,
-  tenant_id INT NOT NULL,
-  user_id INT NOT NULL,
-  job_id INT NOT NULL,
-  schedule_time DATETIME NOT NULL,
-  end_time DATETIME,
-  interview_type ENUM('initial', 'technical', 'hr', 'final') NOT NULL,
-  location VARCHAR(255),
-  status ENUM('scheduled', 'completed', 'canceled', 'rescheduled', 'no_show') NOT NULL,
-  feedback TEXT,
-  score FLOAT,
-  interviewer_id INT NOT NULL,
-  created_at DATETIME NOT NULL,
-  updated_at DATETIME,
-  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
-  FOREIGN KEY (user_id) REFERENCES Users(user_id),
-  FOREIGN KEY (job_id) REFERENCES Job_Descriptions(job_id),
-  FOREIGN KEY (interviewer_id) REFERENCES Users(user_id)
-);
-
-CREATE TABLE Interview_Panels (
-  panel_id INT AUTO_INCREMENT PRIMARY KEY,
-  tenant_id INT NOT NULL,
-  interview_id INT NOT NULL,
-  interviewer_id INT NOT NULL,
-  role ENUM('lead', 'technical', 'hr', 'observer') NOT NULL,
-  feedback TEXT,
-  individual_score FLOAT,
-  created_at DATETIME NOT NULL,
-  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
-  FOREIGN KEY (interview_id) REFERENCES Interviews(interview_id),
-  FOREIGN KEY (interviewer_id) REFERENCES Users(user_id)
-);
-
 -- ------------------ Module Đào tạo ------------------
 
 CREATE TABLE Training_Materials (
@@ -314,19 +279,6 @@ CREATE TABLE Compensation (
   FOREIGN KEY (user_id) REFERENCES Users(user_id),
   FOREIGN KEY (evaluated_by) REFERENCES Users(user_id),
   FOREIGN KEY (approved_by) REFERENCES Users(user_id)
-);
-
-CREATE TABLE HR_Forecasts (
-  forecast_id INT AUTO_INCREMENT PRIMARY KEY,
-  tenant_id INT NOT NULL,
-  period VARCHAR(100),
-  department_id INT,
-  current_headcount INT,
-  predicted_needs INT,
-  creation_date DATE,
-  notes TEXT,
-  FOREIGN KEY (tenant_id) REFERENCES Tenants(tenant_id),
-  FOREIGN KEY (department_id) REFERENCES Departments(department_id)
 );
 
 -- ------------------ Module Dự án & Quản lý công việc ------------------
