@@ -93,7 +93,8 @@ export const updateMyProfile = async (req, res) => {
 
 export const getAllEmployees = async (req, res) => {
     try {
-        const result = await employeeService.getAllEmployeesService(req.query, req.user);
+        const { page = '1', limit = '10' } = req.query;
+        const result = await employeeService.getAllEmployeesService(req.query, req.user, page, limit);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error getting employees:", error);
