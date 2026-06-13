@@ -24,8 +24,8 @@ export const getQuestionsByQuizId = async (req, res) => {
 
 export const getAllQuestions = async (req, res) => {
     try {
-        const { search = '', questionType = '' } = req.query;
-        const result = await questionService.getAllQuestionsService(search, questionType, req.user);
+        const { search = '', questionType = '', page = '1', limit = '10' } = req.query;
+        const result = await questionService.getAllQuestionsService(search, questionType, req.user, page, limit);
         return res.status(result.status).json(result.data);
     } catch (error) {
         console.error("Error fetching all questions:", error);

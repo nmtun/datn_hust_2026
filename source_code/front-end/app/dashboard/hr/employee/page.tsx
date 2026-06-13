@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useState, useEffect } from "react";
-import { Search, User, Eye, Edit2, ChevronDown, X, Save, Building2, Users, Briefcase, Calendar, Mail, Phone, MapPin } from "lucide-react";
+import { Search, User, Eye, Edit2, ChevronDown, Save, Building2, Users, Briefcase, Calendar, Mail, Phone, MapPin } from "lucide-react";
 import { employeeApi, EmployeeProfile } from "@/app/api/employeeApi";
 import { departmentApi, Department } from "@/app/api/departmentApi";
 import { teamApi, Team } from "@/app/api/teamApi";
@@ -25,6 +25,11 @@ function HREmployeePage() {
   const [filterDept, setFilterDept] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
 
+  // States cho phân trang
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 10;
+
   const [viewEmployee, setViewEmployee] = useState<EmployeeProfile | null>(null);
   const [editEmployee, setEditEmployee] = useState<EmployeeProfile | null>(null);
   const [editForm, setEditForm] = useState<any>({});
@@ -32,7 +37,7 @@ function HREmployeePage() {
 
   useEffect(() => {
     fetchDepartments();
-    fetchEmployees();
+    fetchEmployeesData(1);
   }, []);
 
   const fetchDepartments = async () => {
@@ -40,22 +45,42 @@ function HREmployeePage() {
     if (!res.error) setDepartments(res.departments || []);
   };
 
-  const fetchEmployees = async (params?: any) => {
+  const fetchEmployeesData = async (pageToFetch: number = currentPage) => {
     setLoading(true);
     try {
+      const params = {
+        full_name: search || undefined,
+        department_id: filterDept ? Number(filterDept) : undefined,
+        status: filterStatus || undefined,
+        page: pageToFetch,
+        limit: limit
+      };
+      
       const res = await employeeApi.getAll(params);
-      if (!res.error) setEmployees(res.employees || []);
-      else showToast.error(res.message || "Lỗi tải danh sách nhân viên");
-    } catch { showToast.error("Lỗi kết nối"); }
-    finally { setLoading(false); }
+      
+      if (!res.error) {
+        setEmployees(res.employees || []);
+        if (res.pagination) {
+          setTotalPages(res.pagination.totalPages);
+        }
+      } else {
+        showToast.error(res.message || "Lỗi tải danh sách nhân viên");
+      }
+    } catch { 
+      showToast.error("Lỗi kết nối"); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const handleSearch = () => {
-    fetchEmployees({
-      full_name: search || undefined,
-      department_id: filterDept ? Number(filterDept) : undefined,
-      status: filterStatus || undefined,
-    });
+    setCurrentPage(1);
+    fetchEmployeesData(1);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    fetchEmployeesData(newPage);
   };
 
   const handleStatusChange = async (emp: EmployeeProfile, status: string) => {
@@ -63,7 +88,8 @@ function HREmployeePage() {
       const res = await employeeApi.updateStatus(emp.user_id, status as any);
       if (res.error) { showToast.error(res.message); return; }
       showToast.success("Cập nhật trạng thái thành công");
-      fetchEmployees({ full_name: search || undefined, department_id: filterDept ? Number(filterDept) : undefined, status: filterStatus || undefined });
+      // Load lại trang hiện tại
+      fetchEmployeesData(currentPage);
     } catch { showToast.error("Lỗi cập nhật trạng thái"); }
   };
 
@@ -106,7 +132,8 @@ function HREmployeePage() {
       if (res.error) { showToast.error(res.message); return; }
       showToast.success("Cập nhật nhân viên thành công");
       setEditEmployee(null);
-      fetchEmployees();
+      // Load lại trang hiện tại
+      fetchEmployeesData(currentPage);
     } catch { showToast.error("Lỗi cập nhật"); }
     finally { setSaving(false); }
   };
@@ -118,7 +145,6 @@ function HREmployeePage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Quản lý nhân viên</h1>
-        <span className="text-sm text-gray-500">{employees.length} nhân viên</span>
       </div>
 
       {/* Search & Filter */}
@@ -149,96 +175,155 @@ function HREmployeePage() {
             </select>
           </div>
 
-          <div className="relative">
-            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
-            <select
-              value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value)}
-              className="pl-10 pr-10 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none"
+          <div className="relative flex gap-2">
+            <div className="relative flex-1">
+              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+              <select
+                value={filterStatus}
+                onChange={e => setFilterStatus(e.target.value)}
+                className="pl-10 pr-10 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none"
+              >
+                <option value="">Tất cả trạng thái</option>
+                <option value="active">Đang làm</option>
+                <option value="on_leave">Nghỉ phép</option>
+                <option value="terminated">Đã nghỉ</option>
+              </select>
+            </div>
+            <button
+              onClick={handleSearch}
+              className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              <option value="">Tất cả trạng thái</option>
-              <option value="active">Đang làm</option>
-              <option value="on_leave">Nghỉ phép</option>
-              <option value="terminated">Đã nghỉ</option>
-            </select>
+              Lọc
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        {loading ? (
-          <div className="flex justify-center items-center p-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
-          </div>
-        ) : (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                {["Nhân viên", "Liên hệ", "Chức vụ / Phòng ban", "Trạng thái", "Hành động"].map(h => (
-                  <th key={h} className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {employees.map(e => (
-                <tr key={e.user_id} className="hover:bg-gray-50">
-                  <td className="px-5 py-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="h-9 w-9 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                        <span className="text-sm font-semibold text-indigo-700">{e.full_name?.charAt(0)?.toUpperCase()}</span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{e.full_name}</p>
-                        {emp(e)?.employee_id_number && (
-                          <p className="text-xs text-gray-400">{emp(e)!.employee_id_number}</p>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-4">
-                    <p className="text-sm text-gray-700">{e.personal_email}</p>
-                    <p className="text-xs text-gray-400">{e.phone_number || "—"}</p>
-                  </td>
-                  <td className="px-5 py-4">
-                    <p className="text-sm text-gray-800">{emp(e)?.position || <span className="text-gray-400">—</span>}</p>
-                    {emp(e)?.department && (
-                      <span className="inline-flex items-center text-xs text-gray-500 mt-0.5">
-                        <Building2 className="w-3 h-3 mr-1" />{emp(e)!.department!.name}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-5 py-4">
-                    <div className="relative group">
-                      <select value={e.status}
-                        onChange={ev => handleStatusChange(e, ev.target.value)}
-                        className={`text-xs font-semibold rounded-full px-2 py-1 border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 ${STATUS_COLORS[e.status] || "bg-gray-100 text-gray-700"}`}>
-                        <option value="active">Đang làm</option>
-                        <option value="on_leave">Nghỉ phép</option>
-                        <option value="terminated">Đã nghỉ</option>
-                      </select>
-                    </div>
-                  </td>
-                  <td className="px-5 py-4">
-                    <div className="flex items-center space-x-3">
-                      <button onClick={() => setViewEmployee(e)} className="text-gray-400 hover:text-indigo-600" title="Xem chi tiết">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => openEdit(e)} className="text-gray-400 hover:text-blue-600" title="Chỉnh sửa">
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+      {/* Table & Pagination Container */}
+      <div className="bg-white shadow rounded-lg overflow-hidden flex flex-col">
+        <div className="overflow-x-auto">
+          {loading ? (
+            <div className="flex justify-center items-center p-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+            </div>
+          ) : (
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  {["Nhân viên", "Liên hệ", "Chức vụ / Phòng ban", "Trạng thái", "Hành động"].map(h => (
+                    <th key={h} className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-        {!loading && employees.length === 0 && (
-          <div className="text-center py-12">
-            <User className="mx-auto h-10 w-10 text-gray-300" />
-            <p className="mt-2 text-sm text-gray-500">Không tìm thấy nhân viên nào</p>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {employees.map(e => (
+                  <tr key={e.user_id} className="hover:bg-gray-50">
+                    <td className="px-5 py-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-9 w-9 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                          <span className="text-sm font-semibold text-indigo-700">{e.full_name?.charAt(0)?.toUpperCase()}</span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{e.full_name}</p>
+                          {emp(e)?.employee_id_number && (
+                            <p className="text-xs text-gray-400">{emp(e)!.employee_id_number}</p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <p className="text-sm text-gray-700">{e.personal_email}</p>
+                      <p className="text-xs text-gray-400">{e.phone_number || "—"}</p>
+                    </td>
+                    <td className="px-5 py-4">
+                      <p className="text-sm text-gray-800">{emp(e)?.position || <span className="text-gray-400">—</span>}</p>
+                      {emp(e)?.department && (
+                        <span className="inline-flex items-center text-xs text-gray-500 mt-0.5">
+                          <Building2 className="w-3 h-3 mr-1" />{emp(e)!.department!.name}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="relative group">
+                        <select value={e.status}
+                          onChange={ev => handleStatusChange(e, ev.target.value)}
+                          className={`text-xs font-semibold rounded-full px-2 py-1 border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 ${STATUS_COLORS[e.status] || "bg-gray-100 text-gray-700"}`}>
+                          <option value="active">Đang làm</option>
+                          <option value="on_leave">Nghỉ phép</option>
+                          <option value="terminated">Đã nghỉ</option>
+                        </select>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex items-center space-x-3">
+                        <button onClick={() => setViewEmployee(e)} className="text-gray-400 hover:text-indigo-600" title="Xem chi tiết">
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => openEdit(e)} className="text-gray-400 hover:text-blue-600" title="Chỉnh sửa">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          {!loading && employees.length === 0 && (
+            <div className="text-center py-12">
+              <User className="mx-auto h-10 w-10 text-gray-300" />
+              <p className="mt-2 text-sm text-gray-500">Không tìm thấy nhân viên nào</p>
+            </div>
+          )}
+        </div>
+
+        {/* Pagination Controls */}
+        {!loading && employees.length > 0 && totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+            <div className="flex justify-between flex-1 sm:hidden">
+              <button
+                onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+                disabled={currentPage === 1}
+                className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+              >
+                Trước
+              </button>
+              <button
+                onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="relative inline-flex items-center px-4 py-2 ml-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+              >
+                Sau
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Trang <span className="font-medium">{currentPage}</span> / <span className="font-medium">{totalPages}</span>
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                  <button
+                    onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    <span className="sr-only">Previous</span>
+                    &laquo; Trước
+                  </button>
+                  <button
+                    onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    <span className="sr-only">Next</span>
+                    Sau &raquo;
+                  </button>
+                </nav>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -339,4 +424,3 @@ function HREmployeePage() {
 }
 
 export default withAuth(HREmployeePage);
-

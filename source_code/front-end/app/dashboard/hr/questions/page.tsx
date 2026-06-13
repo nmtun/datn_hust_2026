@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { Search, Plus, Edit2, Eye, Trash2, BookOpen, Filter, CheckCircle, XCircle } from "lucide-react";
+import { Search, Plus, Edit2, Eye, Trash2, BookOpen, CheckCircle, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { questionApi, QuizQuestion, quizApi, Quiz } from "@/app/api/quizApi";
@@ -15,8 +15,17 @@ function QuestionsPage() {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // States cho Phân trang
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 10; // Số lượng câu hỏi trên mỗi trang
+
   const [selectedQuestion, setSelectedQuestion] = useState<QuizQuestion | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [questionToDelete, setQuestionToDelete] = useState<QuizQuestion | null>(null);
 
   const useDebounce = (value: string, delay: number) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
@@ -34,28 +43,39 @@ function QuestionsPage() {
     return debouncedValue;
   };
 
-  // Debounce search values
   const debouncedSearchText = useDebounce(searchText, 500);
   const debouncedSearchType = useDebounce(searchType, 500);
 
+  // Lấy danh sách Quizzes (cho mục đích tham chiếu nếu cần)
   useEffect(() => {
+    const fetchQuizzes = async () => {
+      try {
+        const result = await quizApi.getAll();
+        if (result && !result.error && Array.isArray(result.quizzes)) {
+          setQuizzes(result.quizzes);
+        }
+      } catch (error) {
+        console.error("Error fetching quizzes:", error);
+      }
+    };
     fetchQuizzes();
-    fetchQuestions();
   }, []);
 
-  // Effect for handling search with debounced values
+  // Reset về trang 1 mỗi khi đổi bộ lọc tìm kiếm
   useEffect(() => {
-    const performSearch = async () => {
-      if (!debouncedSearchText && !debouncedSearchType) {
-        fetchQuestions();
-        return;
-      }
+    setCurrentPage(1);
+  }, [debouncedSearchText, debouncedSearchType]);
 
+  // Logic gọi API gộp: xử lý cả load lần đầu, tìm kiếm và chuyển trang
+  useEffect(() => {
+    const fetchQuestionsData = async () => {
       try {
         setLoading(true);
         const params = {
           search: debouncedSearchText.trim() || undefined,
           questionType: debouncedSearchType.trim() || undefined,
+          page: currentPage,
+          limit: limit,
         };
 
         const result = await questionApi.getAll(params);
@@ -73,58 +93,22 @@ function QuestionsPage() {
           console.error("Invalid question data format:", questionData);
           setQuestions([]);
         }
+
+        // Cập nhật tổng số trang từ backend trả về
+        if (result.pagination) {
+          setTotalPages(result.pagination.totalPages);
+        }
       } catch (error) {
-        console.error("Error searching questions:", error);
+        console.error("Error fetching questions:", error);
         setQuestions([]);
-        showToast.error('Error searching questions');
+        showToast.error('Error fetching questions');
       } finally {
         setLoading(false);
       }
     };
 
-    performSearch();
-  }, [debouncedSearchText, debouncedSearchType]);
-
-  const fetchQuizzes = async () => {
-    try {
-      const result = await quizApi.getAll();
-      if (result && !result.error && Array.isArray(result.quizzes)) {
-        setQuizzes(result.quizzes);
-      }
-    } catch (error) {
-      console.error("Error fetching quizzes:", error);
-    }
-  };
-
-  const fetchQuestions = async () => {
-    try {
-      setLoading(true);
-      const result = await questionApi.getAll();
-
-      if (!result || result.error) {
-        console.error("API Error:", result?.message || "Unknown error");
-        setQuestions([]);
-        return;
-      }
-
-      const questionData = result.questions;
-      if (Array.isArray(questionData)) {
-        setQuestions(questionData);
-      } else {
-        console.error("Invalid question data format:", questionData);
-        setQuestions([]);
-      }
-    } catch (error) {
-      console.error("Error fetching questions:", error);
-      setQuestions([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [questionToDelete, setQuestionToDelete] = useState<QuizQuestion | null>(null);
+    fetchQuestionsData();
+  }, [debouncedSearchText, debouncedSearchType, currentPage]);
 
   const handleDeleteClick = (question: QuizQuestion) => {
     setQuestionToDelete(question);
@@ -142,10 +126,8 @@ function QuestionsPage() {
         throw new Error(result.message || 'Error deleting question');
       }
 
-      // Refresh the list
-      await fetchQuestions();
-
-      // Show success message
+      // Xóa thành công thì reset lại trang 1 để cập nhật danh sách
+      setCurrentPage(1);
       showToast.success('Question deleted successfully');
     } catch (error: any) {
       console.error("Error deleting question:", error);
@@ -208,10 +190,7 @@ function QuestionsPage() {
     }
   };
 
-  const isCorrectAnswer = (
-    option: string,
-    question: QuizQuestion
-  ) => {
+  const isCorrectAnswer = (option: string, question: QuizQuestion) => {
     if (!question.correct_answer) return false;
 
     if (question.question_type === "multiple_response") {
@@ -221,10 +200,7 @@ function QuestionsPage() {
         .includes(option.trim());
     }
 
-    return (
-      option.trim() ===
-      question.correct_answer.trim()
-    );
+    return option.trim() === question.correct_answer.trim();
   };
 
   return (
@@ -289,99 +265,122 @@ function QuestionsPage() {
           <p className="text-gray-500">Bắt đầu bằng cách tạo câu hỏi đầu tiên của bạn.</p>
         </div>
       ) : (
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Câu hỏi
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Quiz
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tags
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Loại
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Điểm
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Hành động
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {questions.map((question) => (
-                <tr key={question.question_id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900 max-w-md truncate">
-                      {question.question_text}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900">
-                      {question.quizAssignments && question.quizAssignments.length > 0
-                        ? `${question.quizAssignments.length} quiz(s)`
-                        : 'Ngân hàng câu hỏi'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-wrap gap-1">
-                      {question.tags && question.tags.length > 0 ? (
-                        question.tags.map((tag) => (
-                          <span
-                            key={tag.tag_id}
-                            className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-md"
-                          >
-                            {tag.name}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-xs text-gray-400 italic">Không có tags</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getQuestionTypeColor(question.question_type)}`}>
-                      {getQuestionTypeLabel(question.question_type)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900">{question.points}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleView(question.question_id)}
-                        className="text-gray-400 hover:text-gray-500 p-1"
-                        title="Xem chi tiết"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(question.question_id)}
-                        className="text-blue-400 hover:text-blue-500 p-1"
-                        title="Chỉnh sửa"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(question)}
-                        disabled={deleteLoading === question.question_id}
-                        className="text-red-400 hover:text-red-500 p-1 disabled:opacity-50"
-                        title="Xóa"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+        <div className="bg-white shadow rounded-lg overflow-hidden flex flex-col">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Câu hỏi</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quiz</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tags</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Điểm</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {questions.map((question) => (
+                  <tr key={question.question_id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-medium text-gray-900 max-w-md truncate">
+                        {question.question_text}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900">
+                        {question.quizAssignments && question.quizAssignments.length > 0
+                          ? `${question.quizAssignments.length} quiz(s)`
+                          : 'Ngân hàng câu hỏi'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-1">
+                        {question.tags && question.tags.length > 0 ? (
+                          question.tags.map((tag) => (
+                            <span key={tag.tag_id} className="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-md">
+                              {tag.name}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">Không có tags</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getQuestionTypeColor(question.question_type)}`}>
+                        {getQuestionTypeLabel(question.question_type)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900">{question.points}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex space-x-2">
+                        <button onClick={() => handleView(question.question_id)} className="text-gray-400 hover:text-gray-500 p-1" title="Xem chi tiết">
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleEdit(question.question_id)} className="text-blue-400 hover:text-blue-500 p-1" title="Chỉnh sửa">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDeleteClick(question)} disabled={deleteLoading === question.question_id} className="text-red-400 hover:text-red-500 p-1 disabled:opacity-50" title="Xóa">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+              <div className="flex justify-between flex-1 sm:hidden">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Trước
+                </button>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="relative inline-flex items-center px-4 py-2 ml-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Sau
+                </button>
+              </div>
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    Trang <span className="font-medium">{currentPage}</span> / <span className="font-medium">{totalPages}</span>
+                  </p>
+                </div>
+                <div>
+                  <nav className="relative z-0 inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      <span className="sr-only">Previous</span>
+                      &laquo; Trước
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      <span className="sr-only">Next</span>
+                      Sau &raquo;
+                    </button>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -419,10 +418,7 @@ function QuestionsPage() {
               <div className="flex flex-wrap gap-2">
                 {selectedQuestion.tags && selectedQuestion.tags.length > 0 ? (
                   selectedQuestion.tags.map((tag) => (
-                    <span
-                      key={tag.tag_id}
-                      className="inline-flex px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-md"
-                    >
+                    <span key={tag.tag_id} className="inline-flex px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-md">
                       {tag.name}
                     </span>
                   ))
@@ -445,37 +441,23 @@ function QuestionsPage() {
               </div>
             </div>
 
-            {parseOptions(selectedQuestion.options).map(
-              (option: string, index: number) => {
-                const isCorrect = isCorrectAnswer(
-                  option,
-                  selectedQuestion
-                );
-
+            <ul className="space-y-2">
+              {parseOptions(selectedQuestion.options).map((option: string, index: number) => {
+                const isCorrect = isCorrectAnswer(option, selectedQuestion);
                 return (
-                  <li
-                    key={index}
-                    className="flex items-center space-x-2"
-                  >
+                  <li key={index} className="flex items-center space-x-2">
                     {isCorrect ? (
                       <CheckCircle className="w-4 h-4 text-green-600" />
                     ) : (
                       <XCircle className="w-4 h-4 text-red-600" />
                     )}
-
-                    <span
-                      className={
-                        isCorrect
-                          ? "text-green-700 font-medium"
-                          : "text-gray-700"
-                      }
-                    >
+                    <span className={isCorrect ? "text-green-700 font-medium" : "text-gray-700"}>
                       {option}
                     </span>
                   </li>
                 );
-              }
-            )}
+              })}
+            </ul>
 
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Đáp án đúng</h3>

@@ -60,7 +60,7 @@ export const updateMyProfileService = async (userId, { phone_number, address }) 
 };
 
 // Get all employees (HR)
-export const getAllEmployeesService = async (query = {}, requestingUser = null) => {
+export const getAllEmployeesService = async (query = {}, requestingUser = null, page = '1', limit = '10') => {
     try {
         const { full_name, department_id, status } = query;
 
@@ -128,7 +128,11 @@ export const getAllEmployeesService = async (query = {}, requestingUser = null) 
             }
         }
 
-        const employees = await User.findAll({
+        const parsedPage = parseInt(page, 10);
+        const parsedLimit = parseInt(limit, 10);
+        const offset = (parsedPage - 1) * parsedLimit;
+
+        const { count, rows: employees } = await User.findAndCountAll({
             where: userWhere,
             attributes: { exclude: ['password'] },
             include: [
@@ -144,10 +148,25 @@ export const getAllEmployeesService = async (query = {}, requestingUser = null) 
                     ]
                 }
             ],
-            order: [['full_name', 'ASC']]
+            order: [['full_name', 'ASC']],
+            limit: parsedLimit,
+            offset: offset,
+            distinct: true
         });
-        return { status: 200, data: { error: false, message: "Employees retrieved successfully", employees } };
-    } catch (error) {
+        return { 
+            status: 200, 
+            data: { 
+                error: false, 
+                message: "Employees retrieved successfully", 
+                employees,
+                pagination: {
+                    totalItems: count,
+                    totalPages: Math.ceil(count / parsedLimit),
+                    currentPage: parsedPage,
+                    limit: parsedLimit
+                }
+            } 
+        };    } catch (error) {
         console.error('Error in getAllEmployeesService:', error);
         return { status: 500, data: { error: true, message: "Internal server error", details: error.message } };
     }
