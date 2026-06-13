@@ -144,7 +144,7 @@ export const getQuestionsByQuizIdService = async (quizId, requestingUser = null)
     }
 };
 
-export const getAllQuestionsService = async (search = '', questionType = '', requestingUser = null) => {
+export const getAllQuestionsService = async (search = '', questionType = '', requestingUser = null, page = '1', limit = '10') => {
     try {
         // Import Tag model
         const { default: Tag } = await import('../models/Tag.js');
@@ -158,8 +158,12 @@ export const getAllQuestionsService = async (search = '', questionType = '', req
         if (questionType) {
             whereClause.question_type = questionType;
         }
+        
+        const parsedPage = parseInt(page, 10);
+        const parsedLimit = parseInt(limit, 10);
+        const offset = (parsedPage - 1) * parsedLimit;
 
-        const questions = await QuizQuestion.findAll({
+        const { count, rows: questions } = await QuizQuestion.findAndCountAll({
             where: withTenantWhere(whereClause, requestingUser),
             include: [
                 {
@@ -171,10 +175,13 @@ export const getAllQuestionsService = async (search = '', questionType = '', req
                     model: Tag,
                     as: 'tags',
                     attributes: ['tag_id', 'name'],
-                    through: { attributes: [] } // Exclude junction table attributes
+                    through: { attributes: [] }
                 }
             ],
-            order: [['question_id', 'DESC']]
+            order: [['question_id', 'DESC']],
+            limit: parsedLimit,
+            offset: offset,
+            distinct: true
         });
 
         return {
@@ -182,7 +189,13 @@ export const getAllQuestionsService = async (search = '', questionType = '', req
             data: {
                 error: false,
                 message: "Questions retrieved successfully",
-                questions
+                questions,
+                pagination: {
+                    totalItems: count,
+                    totalPages: Math.ceil(count / parsedLimit),
+                    currentPage: parsedPage,
+                    limit: parsedLimit
+                }
             }
         };
     } catch (error) {
