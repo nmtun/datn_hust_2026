@@ -2,25 +2,48 @@
 
 import { useEffect, useState } from "react";
 import UpdateDialog from "../components/UpdateDialog";
-import { APP_VERSION, IS_DESKTOP } from "../lib/version";
+import {
+    getCurrentDesktopVersion,
+    IS_DESKTOP,
+    isVersionNewer,
+} from "../lib/version";
+
+type DesktopUpdatePayload = {
+    version: string;
+    force: boolean;
+    title: string;
+    description: string;
+    downloadUrl: string;
+};
 
 export default function DesktopUpdateProvider({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const [update, setUpdate] = useState<any>(null);
+    const [update, setUpdate] = useState<DesktopUpdatePayload | null>(null);
 
     useEffect(() => {
         if (!IS_DESKTOP) return;
 
         async function checkVersion() {
-            const res = await fetch("/api/desktop/version");
+            try {
+                const res = await fetch("/api/desktop/version", {
+                    cache: "no-store",
+                });
 
-            const latest = await res.json();
+                if (!res.ok) {
+                    return;
+                }
 
-            if (latest.version !== APP_VERSION) {
-                setUpdate(latest);
+                const latest = (await res.json()) as DesktopUpdatePayload;
+                const currentVersion = getCurrentDesktopVersion();
+
+                if (isVersionNewer(latest.version, currentVersion)) {
+                    setUpdate(latest);
+                }
+            } catch {
+                // Silently ignore update-check errors to avoid blocking app usage.
             }
         }
 
@@ -37,6 +60,7 @@ export default function DesktopUpdateProvider({
                     title={update.title}
                     description={update.description}
                     url={update.downloadUrl}
+                    onClose={() => setUpdate(null)}
                 />
             )}
         </>

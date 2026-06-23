@@ -38,6 +38,12 @@ const Data = () => {
                 {item.name}
               </Link>
             ))}
+            <Link
+              href="/api/desktop/download"
+              className="inline-block mt-4 px-5 py-3 text-white bg-blue font-medium leafbutton"
+            >
+              Tải Desktop App
+            </Link>
             <div className="mt-4"></div>
           </div>
         </div>

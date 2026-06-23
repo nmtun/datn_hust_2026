@@ -6,6 +6,7 @@ type Props = {
     description: string;
     url: string;
     force: boolean;
+    onClose?: () => void;
 };
 
 export default function UpdateDialog(props: Props) {
@@ -38,14 +39,14 @@ export default function UpdateDialog(props: Props) {
                 </p>
 
                 <button
-                    onClick={() => window.open(props.url)}
+                    onClick={() => window.open(props.url, "_blank")}
                 >
                     Tải ngay
                 </button>
 
                 {!props.force && (
                     <button
-                        onClick={() => location.reload()}
+                        onClick={props.onClose}
                     >
                         Để sau
                     </button>
