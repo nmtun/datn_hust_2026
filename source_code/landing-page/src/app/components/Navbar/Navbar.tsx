@@ -55,6 +55,15 @@ const Navbar = () => {
                             </div>
                         </div>
 
+                        <div className="hidden lg:block">
+                            <Link
+                                href="/api/desktop/download"
+                                className="inline-block text-white bg-blue font-medium py-3 px-6 leafbutton"
+                            >
+                                Tải Desktop App
+                            </Link>
+                        </div>
+
 
                         {/* DRAWER FOR MOBILE VIEW */}
 

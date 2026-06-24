@@ -1,12 +1,2 @@
-Khi khách tạo tk -> ứng viên với status là "Mới"
-
-role -> tiếng anh hoặc số 
-
-sửa lại usecase và phân ra cụ thể 
-admin có chức năng tạo tk cho nhân viên 
-luồng cho guest nộp cv -> be
-
-hạn nộp báo cáo 22/6
-
-tạo user -> check email -> 1-nhiều
-thuật toán lập lịch: hopcroft_karp hoặc ghép cặp hungary
+Lệnh build pake
+    pake https://workspace.tenanthub.io.vn --name "TenantHub" --icon ./icon.png --width 1400 --height 900 --hide-title-bar --app-version "1.0.0"
