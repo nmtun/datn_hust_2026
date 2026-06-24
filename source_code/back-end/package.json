@@ -11,7 +11,8 @@
     "seed:employees": "node seed-data/import-employees.js",
     "seed:compensations": "node seed-data/import-compensations.js",
     "seed:performances": "node seed-data/import-performances.js",
-    "seed:all": "npm run seed:tenants && npm run seed:admins && npm run seed:employees && npm run seed:compensations && npm run seed:performances"
+    "seed:modules": "node seed-data/import-modules.js",
+    "seed:all": "npm run seed:tenants && npm run seed:admins && npm run seed:employees && npm run seed:compensations && npm run seed:performances && npm run seed:modules"
   },
   "keywords": [],
   "author": "",
