@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import UpdateDialog from "../components/UpdateDialog";
 import {
-    getCurrentDesktopVersion,
-    IS_DESKTOP,
+    getDesktopRuntimeInfo,
     isVersionNewer,
 } from "../lib/version";
 
@@ -24,7 +23,13 @@ export default function DesktopUpdateProvider({
     const [update, setUpdate] = useState<DesktopUpdatePayload | null>(null);
 
     useEffect(() => {
-        if (!IS_DESKTOP) return;
+        const runtimeInfo = getDesktopRuntimeInfo();
+
+        if (!runtimeInfo.isDesktop || !runtimeInfo.version) {
+            return;
+        }
+
+        const currentVersion = runtimeInfo.version;
 
         async function checkVersion() {
             try {
@@ -37,7 +42,6 @@ export default function DesktopUpdateProvider({
                 }
 
                 const latest = (await res.json()) as DesktopUpdatePayload;
-                const currentVersion = getCurrentDesktopVersion();
 
                 if (isVersionNewer(latest.version, currentVersion)) {
                     setUpdate(latest);
