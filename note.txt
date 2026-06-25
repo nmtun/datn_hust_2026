@@ -1,2 +1,2 @@
 Lệnh build pake
-    pake https://workspace.tenanthub.io.vn --name "TenantHub" --icon ./icon.png --width 1920 --height 1080 --hide-title-bar --app-version "1.0.0"
+    pake "https://workspace.tenanthub.io.vn?desktop=true&desktopVersion=1.0.1" --name "TenantHub" --icon ./icon.png --width 1920 --height 1080 --hide-title-bar --app-version "1.0.1"
