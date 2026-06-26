@@ -2,6 +2,12 @@ export const APP_VERSION = "1.0.0";
 
 const VERSION_PATTERN = /(\d+\.\d+\.\d+(?:\.\d+)?)/;
 
+type TauriGlobal = {
+    app?: {
+        getVersion?: (() => Promise<string>) | (() => string);
+    };
+};
+
 function readVersionFromQuery(params: URLSearchParams): string | null {
     const rawVersion = params.get("desktopVersion") ?? params.get("appVersion");
     const matched = rawVersion?.match(VERSION_PATTERN);
@@ -29,6 +35,36 @@ function hasDesktopUserAgent(userAgent: string): boolean {
     return /(pake|tauri|electron|tenant.?hubdesktop)/i.test(userAgent);
 }
 
+function getTauriGlobal(): TauriGlobal | null {
+    if (typeof window === "undefined") {
+        return null;
+    }
+
+    const value = (window as typeof window & { __TAURI__?: TauriGlobal }).__TAURI__;
+    return value ?? null;
+}
+
+function hasTauriGlobal(): boolean {
+    return getTauriGlobal() !== null;
+}
+
+async function readVersionFromTauriGlobal(): Promise<string | null> {
+    const tauriGlobal = getTauriGlobal();
+    const getVersion = tauriGlobal?.app?.getVersion;
+
+    if (typeof getVersion !== "function") {
+        return null;
+    }
+
+    try {
+        const rawVersion = await Promise.resolve(getVersion());
+        const matched = `${rawVersion}`.match(VERSION_PATTERN);
+        return matched?.[1] ?? null;
+    } catch {
+        return null;
+    }
+}
+
 export type DesktopRuntimeInfo = {
     isDesktop: boolean;
     version: string | null;
@@ -47,11 +83,30 @@ export function getDesktopRuntimeInfo(): DesktopRuntimeInfo {
     const desktopFlag = (params.get("desktop") ?? "").toLowerCase() === "true";
     const queryVersion = readVersionFromQuery(params);
     const userAgentVersion = readVersionFromUserAgent(userAgent);
-    const isDesktop = desktopFlag || queryVersion !== null || hasDesktopUserAgent(userAgent);
+    const isDesktop =
+        desktopFlag ||
+        queryVersion !== null ||
+        hasDesktopUserAgent(userAgent) ||
+        hasTauriGlobal();
 
     return {
         isDesktop,
         version: queryVersion ?? userAgentVersion,
+    };
+}
+
+export async function resolveDesktopRuntimeInfo(): Promise<DesktopRuntimeInfo> {
+    const runtimeInfo = getDesktopRuntimeInfo();
+
+    if (runtimeInfo.version !== null || !runtimeInfo.isDesktop) {
+        return runtimeInfo;
+    }
+
+    const tauriVersion = await readVersionFromTauriGlobal();
+
+    return {
+        isDesktop: runtimeInfo.isDesktop || tauriVersion !== null,
+        version: tauriVersion,
     };
 }
 

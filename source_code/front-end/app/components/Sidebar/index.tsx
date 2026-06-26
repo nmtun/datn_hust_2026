@@ -197,9 +197,9 @@ export default function Sidebar({ onCollapse, isMobileOpen = false, onMobileClos
 
   return (
     <div
-      className={`fixed left-0 top-0 z-50 h-screen bg-white shadow-lg transition-all duration-300 w-64 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 ${isCollapsed ? 'lg:w-16' : 'lg:w-64'}`}
+      className={`fixed inset-y-0 left-0 z-50 w-64 max-w-[86vw] bg-white shadow-lg transition-all duration-300 ${isMobileOpen ? 'max-lg:translate-x-0' : 'max-lg:-translate-x-full'} ${isCollapsed ? 'lg:w-16' : 'lg:w-64'}`}
     >
-      <div className="flex flex-col h-full relative">
+      <div className="relative flex h-[100dvh] min-h-[100vh] flex-col overflow-visible">
         {/* Toggle Button */}
         <button
           onClick={() => handleCollapse(!isCollapsed)}
@@ -213,7 +213,7 @@ export default function Sidebar({ onCollapse, isMobileOpen = false, onMobileClos
         </button>
         
         {/* Logo/Brand */}
-        <div className={`p-4 ${isDesktopCollapsed ? 'flex justify-center' : ''}`}>
+        <div className={`shrink-0 p-4 ${isDesktopCollapsed ? 'flex justify-center' : ''}`}>
           {isDesktopCollapsed ? (
             <div className="w-10 h-10 relative">
               <Image 
@@ -225,12 +225,12 @@ export default function Sidebar({ onCollapse, isMobileOpen = false, onMobileClos
               />
             </div>
           ) : (
-            <h2 className="text-2xl font-bold text-indigo-600">{tenantSubdomain}</h2>
+            <h2 className="text-2xl font-bold text-indigo-600 truncate">{tenantSubdomain}</h2>
           )}
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex-1 px-2">
+        <nav className="flex-1 overflow-y-auto px-2 pb-3">
           {userMenuItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
@@ -255,7 +255,7 @@ export default function Sidebar({ onCollapse, isMobileOpen = false, onMobileClos
         </nav>
 
         {/* User Profile Section */}
-        <div className="p-2 border-t">
+        <div className="shrink-0 border-t p-2">
           <div className={`flex items-center ${!isDesktopCollapsed ? 'space-x-3' : 'justify-center'} px-3 py-2`}>
             <div 
               className="min-w-[40px] h-10 rounded-full bg-indigo-100 flex items-center justify-center" 

@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import UpdateDialog from "../components/UpdateDialog";
 import {
-    getDesktopRuntimeInfo,
     isVersionNewer,
+    resolveDesktopRuntimeInfo,
 } from "../lib/version";
 
 type DesktopUpdatePayload = {
@@ -23,16 +23,16 @@ export default function DesktopUpdateProvider({
     const [update, setUpdate] = useState<DesktopUpdatePayload | null>(null);
 
     useEffect(() => {
-        const runtimeInfo = getDesktopRuntimeInfo();
-
-        if (!runtimeInfo.isDesktop || !runtimeInfo.version) {
-            return;
-        }
-
-        const currentVersion = runtimeInfo.version;
+        let mounted = true;
 
         async function checkVersion() {
             try {
+                const runtimeInfo = await resolveDesktopRuntimeInfo();
+
+                if (!runtimeInfo.isDesktop) {
+                    return;
+                }
+
                 const res = await fetch("/api/desktop/version", {
                     cache: "no-store",
                 });
@@ -42,6 +42,20 @@ export default function DesktopUpdateProvider({
                 }
 
                 const latest = (await res.json()) as DesktopUpdatePayload;
+                const currentVersion = runtimeInfo.version;
+
+                if (!mounted) {
+                    return;
+                }
+
+                // If desktop runtime version cannot be inferred, still prompt update.
+                if (!currentVersion) {
+                    if (latest.version !== "0.0.0") {
+                        setUpdate(latest);
+                    }
+
+                    return;
+                }
 
                 if (isVersionNewer(latest.version, currentVersion)) {
                     setUpdate(latest);
@@ -52,6 +66,10 @@ export default function DesktopUpdateProvider({
         }
 
         checkVersion();
+
+        return () => {
+            mounted = false;
+        };
     }, []);
 
     return (
