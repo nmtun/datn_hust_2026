@@ -41,7 +41,7 @@ function DashboardShell({
   const recentNotifications = useMemo(() => notifications, [notifications]);
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-[100dvh] bg-gray-100">
       <Sidebar
         onCollapse={(collapsed) => setIsSidebarCollapsed(collapsed)}
         isMobileOpen={isMobileSidebarOpen}

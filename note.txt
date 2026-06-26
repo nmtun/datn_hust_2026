@@ -1,2 +1,8 @@
 Lệnh build pake
-    pake "https://workspace.tenanthub.io.vn?desktop=true&desktopVersion=1.0.1" --name "TenantHub" --icon ./icon.png --width 1920 --height 1080 --hide-title-bar --app-version "1.0.1"
+    pake "https://workspace.tenanthub.io.vn?desktop=true" --name "TenantHub" --icon ./icon.png --width 1920 --height 1080 --app-version "1.0.0"
+
+Clean build 
+    $PakeSrc = Join-Path $env:LOCALAPPDATA "Volta\tools\image\packages\pake-cli\node_modules\pake-cli\src-tauri"
+    Remove-Item (Join-Path $PakeSrc ".pake") -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item (Join-Path $PakeSrc "target") -Recurse -Force -ErrorAction SilentlyContinue
+    npm cache clean --force
