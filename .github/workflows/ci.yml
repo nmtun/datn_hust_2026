@@ -4,39 +4,62 @@ on:
   push:
     branches:
       - develop
-
   pull_request:
     branches:
       - develop
 
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+      career_portal: ${{ steps.filter.outputs.career_portal }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'source_code/front-end/**'
+
+            backend:
+              - 'source_code/back-end/**'
+
+            career_portal:
+              - 'source_code/career-portal/**'
+
   validate:
+    needs: detect-changes
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      # Backend
+          
       - name: Validate Backend
+        if: needs.detect-changes.outputs.backend == 'true'
         run: |
           cd source_code/back-end
           npm ci
 
-      # Frontend
       - name: Build Frontend
+        if: needs.detect-changes.outputs.frontend == 'true'
         run: |
           cd source_code/front-end
           npm ci
           npm run build
 
-      # Career Portal
       - name: Build Career Portal
+        if: needs.detect-changes.outputs.career_portal == 'true'
         run: |
           cd source_code/career-portal
           npm ci
