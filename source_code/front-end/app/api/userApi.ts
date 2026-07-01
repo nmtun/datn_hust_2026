@@ -61,5 +61,9 @@ export const userApi = {
     restore: async (id: number) => {
         const response = await apiClient.post(`/api/user/restore/${id}`);
         return response.data;
+    },
+    changePassword: async (data: { oldPassword: string; newPassword: string }) => {
+        const response = await apiClient.put('/api/user/change-password', data);
+        return response.data;
     }
 };  
