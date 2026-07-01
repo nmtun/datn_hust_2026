@@ -542,3 +542,27 @@ export const createSuperAdminService = async (data) => {
         }
     }
 }
+
+export const changePasswordService = async(data) => {
+    const { user_id, old_password, new_password } = data;
+    if (!old_password || !new_password) {
+        return { status: 400, data: { error: true, message: "Missing required fields: user_id, old_password, new_password" } };
+    }
+
+    const user = await User.findOne({ where: { user_id, is_deleted: false } });
+    if (!user) {
+        return { status: 404, data: { error: true, message: "User not found" } };
+    }
+
+    const isMatch = await bcrypt.compare(old_password, user.password);
+    if (!isMatch) {
+        return { status: 400, data: { error: true, message: "Old password is incorrect" } };
+    }
+
+    const hashedNewPassword = await bcrypt.hash(new_password, 10);
+    await user.update({ password: hashedNewPassword });
+    return {
+        status: 200,
+        data: { error: false, message: "Password changed successfully" }
+    };
+}

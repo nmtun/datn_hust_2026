@@ -10,10 +10,13 @@ import {
   Save,
   X,
   Shield,
+  Lock,
+  Key,
 } from "lucide-react";
 import { userApi, AdminProfile } from "@/app/api/userApi";
 import { showToast } from "@/app/utils/toast";
 import { withAuth } from "@/app/middleware/withAuth";
+import Modal from "@/app/components/Modal";
 
 function AdminProfilePage() {
   const [profile, setProfile] = useState<AdminProfile | null>(null);
@@ -21,6 +24,15 @@ function AdminProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editForm, setEditForm] = useState({ phone_number: "", address: "" });
+
+  // State cho chức năng đổi mật khẩu
+  const [showPwdModal, setShowPwdModal] = useState(false);
+  const [isChangingPwd, setIsChangingPwd] = useState(false);
+  const [pwdForm, setPwdForm] = useState({
+    old_password: "",
+    new_password: "",
+    confirm_password: "",
+  });
 
   useEffect(() => {
     fetchProfile();
@@ -74,6 +86,42 @@ function AdminProfilePage() {
     }
   };
 
+  // Xử lý đổi mật khẩu
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (pwdForm.new_password !== pwdForm.confirm_password) {
+      showToast.error("Mật khẩu xác nhận không khớp");
+      return;
+    }
+    if (pwdForm.new_password.length < 6) {
+      showToast.error("Mật khẩu mới phải có ít nhất 6 ký tự");
+      return;
+    }
+
+    try {
+      setIsChangingPwd(true);
+      
+      const result = await userApi.changePassword({
+        oldPassword: pwdForm.old_password,
+        newPassword: pwdForm.new_password,
+      });
+      
+      if (result.error) {
+        showToast.error(result.message || "Đổi mật khẩu thất bại");
+        return;
+      }
+
+      showToast.success("Đổi mật khẩu thành công");
+      setShowPwdModal(false);
+      setPwdForm({ old_password: "", new_password: "", confirm_password: "" });
+    } catch {
+      showToast.error("Đã xảy ra lỗi, vui lòng thử lại sau");
+    } finally {
+      setIsChangingPwd(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "active":
@@ -122,13 +170,22 @@ function AdminProfilePage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Hồ sơ của tôi</h1>
         {!isEditing ? (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            <Edit2 className="w-4 h-4 mr-2" />
-            Chỉnh sửa
-          </button>
+          <div className="flex space-x-3">
+            <button
+              onClick={() => setShowPwdModal(true)}
+              className="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-sm"
+            >
+              <Lock className="w-4 h-4 mr-2" />
+              Đổi mật khẩu
+            </button>
+            <button
+              onClick={() => setIsEditing(true)}
+              className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              <Edit2 className="w-4 h-4 mr-2" />
+              Chỉnh sửa
+            </button>
+          </div>
         ) : (
           <div className="flex space-x-3">
             <button
@@ -251,6 +308,88 @@ function AdminProfilePage() {
           </p>
         )}
       </div>
+
+      {/* Modal Đổi mật khẩu */}
+      <Modal
+        isOpen={showPwdModal}
+        onClose={() => setShowPwdModal(false)}
+        title="Đổi mật khẩu"
+      >
+        <form onSubmit={handleChangePassword} className="space-y-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Mật khẩu hiện tại</label>
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <Key className="h-4 w-4 text-gray-400" />
+              </div>
+              <input
+                type="password"
+                required
+                value={pwdForm.old_password}
+                onChange={(e) => setPwdForm({ ...pwdForm, old_password: e.target.value })}
+                className="block w-full rounded-md border border-gray-300 py-2 pl-10 pr-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                placeholder="Nhập mật khẩu hiện tại"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Mật khẩu mới</label>
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <Lock className="h-4 w-4 text-gray-400" />
+              </div>
+              <input
+                type="password"
+                required
+                value={pwdForm.new_password}
+                onChange={(e) => setPwdForm({ ...pwdForm, new_password: e.target.value })}
+                className="block w-full rounded-md border border-gray-300 py-2 pl-10 pr-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                placeholder="Nhập mật khẩu mới"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Xác nhận mật khẩu mới</label>
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <Lock className="h-4 w-4 text-gray-400" />
+              </div>
+              <input
+                type="password"
+                required
+                value={pwdForm.confirm_password}
+                onChange={(e) => setPwdForm({ ...pwdForm, confirm_password: e.target.value })}
+                className="block w-full rounded-md border border-gray-300 py-2 pl-10 pr-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                placeholder="Xác nhận lại mật khẩu mới"
+              />
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end space-x-3 border-t pt-4">
+            <button
+              type="button"
+              onClick={() => setShowPwdModal(false)}
+              className="rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              disabled={isChangingPwd}
+              className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {isChangingPwd ? (
+                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              Lưu mật khẩu
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
