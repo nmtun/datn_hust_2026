@@ -18,6 +18,8 @@ router.put('/profile/update', authenticate, authorize('tenant_admin'), userContr
 
 router.post('/create-superadmin', userController.createSuperAdmin);
 
+router.put('/change-password', authenticate, authorize('tenant_admin', 'employee', 'hr', 'manager'), userController.changePassword);
+
 // test route for authentication
 router.get("/test-auth", authenticate, (req, res) => {
     res.status(200).json({ message: "Authentication successful", user: req.user });

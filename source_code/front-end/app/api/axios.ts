@@ -42,12 +42,18 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Nếu lỗi là 401 Unauthorized, chuyển hướng người dùng đến trang đăng nhập
-    if (isBrowser && error.response && error.response.status === 401) {
-      // Xóa token và chuyển hướng đến trang đăng nhập
+    const isLoginRequest =
+      error.config?.url?.includes("/api/user/login");
+
+    if (
+      isBrowser &&
+      error.response?.status === 401 &&
+      !isLoginRequest
+    ) {
       clearStoredAuth();
-      window.location.href = '/auth/login';
+      window.location.href = "/auth/login";
     }
+
     return Promise.reject(error);
   }
 );

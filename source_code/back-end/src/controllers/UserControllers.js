@@ -292,3 +292,15 @@ export const createSuperAdmin = async (req, res) => {
         return res.status(500).json({ error: true, message: "Internal server error" });
     }
 };
+
+export const changePassword = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const { oldPassword, newPassword } = req.body;
+        const result = await userService.changePasswordService({ user_id: userId, old_password: oldPassword, new_password: newPassword });
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error changing password:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
