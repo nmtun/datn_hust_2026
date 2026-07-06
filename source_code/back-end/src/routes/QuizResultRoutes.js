@@ -7,7 +7,7 @@ const router = express.Router();
 // Submit quiz result (employee)
 router.post('/submit', authenticate, quizResultController.submitQuizResult);
 
-// Get current user's quiz results (employee)
+// Get current user quiz results (employee)
 router.get('/my-results', authenticate, quizResultController.getQuizResultsByUser);
 
 // Get specific quiz result by ID (employee)

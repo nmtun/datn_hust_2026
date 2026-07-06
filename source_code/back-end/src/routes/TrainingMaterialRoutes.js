@@ -12,13 +12,9 @@ const upload = multer({
         fileSize: 50 * 1024 * 1024, // 50MB limit
     },
     fileFilter: (req, file, cb) => {
-        // Chấp nhận các loại file: pdf, doc, docx, ppt, pptx, mp4, avi, mov, etc.
+        // Chấp nhận các loại file: pdf, mp4
         const allowedMimes = [
             'application/pdf',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'application/vnd.ms-powerpoint',
-            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
             'video/mp4',
         ];
         

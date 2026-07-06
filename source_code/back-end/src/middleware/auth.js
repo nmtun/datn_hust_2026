@@ -36,7 +36,7 @@ export const authenticate = (req, res, next) => {
     }
 };
 
-// Optional auth: decode token when present, but still allow anonymous requests.
+// xác thực tùy chọn -> nếu có token thì xác thực, không có token thì bỏ qua - phục vụ cho nộp cv và get jds
 export const authenticateOptional = (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
