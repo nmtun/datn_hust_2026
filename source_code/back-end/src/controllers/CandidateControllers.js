@@ -286,6 +286,7 @@ export const createCompanyEmail = async (req, res) => {
         // Gửi email thông báo company_email và password
         const candidate = result.data.candidate;
         const personalEmail = candidate.personal_email;
+        const tenantCode = candidate.tenant?.tenant_code || null;
 
         if (personalEmail) {
             const subject = 'Chào mừng bạn đến với công ty - Đây là thông tin đăng nhập của bạn';

@@ -4,6 +4,7 @@ import User from '../models/User.js';
 import JobDescription from '../models/JobDescription.js';
 import Department from '../models/Department.js';
 import Employee from '../models/Employee.js';
+import Tenant from '../models/Tenant.js';
 import * as userService from './UserServices.js';
 import { createNotificationsForUsers } from './NotificationServices.js';
 import bcrypt from 'bcrypt';
@@ -970,144 +971,156 @@ export const createCompanyEmailService = async (candidateId, companyEmail, passw
         }
 
         const transaction = await User.sequelize.transaction();
+        let transactionFinished = false;
+        let candidate = null;
 
         try {
-        // Kiểm tra candidate exists
-        const candidate = await User.findOne({
-            where: withTenantWhere({
-                user_id: candidateId,
-                is_deleted: false
-            }),
-            include: [
-                {
-                    model: Candidate,
-                    where: withTenantWhere({ candidate_status: 'hired' }),
-                    include: [
-                        {
-                            model: JobDescription,
-                            attributes: ['job_id', 'title', 'experience_level', 'employment_type', 'department_id'],
-                            include: [
-                                {
-                                    model: Department,
-                                    as: 'department',
-                                    attributes: ['department_id', 'name', 'code'],
-                                    required: false
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ],
-            transaction
-        });
+            // Kiểm tra candidate exists
+            candidate = await User.findOne({
+                where: withTenantWhere({
+                    user_id: candidateId,
+                    is_deleted: false
+                }),
+                include: [
+                    {
+                        model: Candidate,
+                        where: withTenantWhere({ candidate_status: 'hired' }),
+                        include: [
+                            {
+                                model: JobDescription,
+                                attributes: ['job_id', 'title', 'experience_level', 'employment_type', 'department_id'],
+                                include: [
+                                    {
+                                        model: Department,
+                                        as: 'department',
+                                        attributes: ['department_id', 'name', 'code'],
+                                        required: false
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                transaction
+            });
 
-        if (!candidate) {
-            await transaction.rollback();
-            return {
-                status: 404,
-                data: {
-                    error: true,
-                    message: "Hired candidate not found"
-                }
-            };
-        }
-
-        // Kiểm tra company_email đã tồn tại chưa
-        const existingEmailUser = await User.findOne({
-            where: withTenantWhere({
-                company_email: companyEmail,
-                is_deleted: false
-            }),
-            transaction
-        });
-
-        if (existingEmailUser && existingEmailUser.user_id !== Number(candidateId)) {
-            await transaction.rollback();
-            return {
-                status: 400,
-                data: {
-                    error: true,
-                    message: "Company email already exists"
-                }
-            };
-        }
-
-        // Nếu đã có company_email khác với email nhập vào thì chặn
-        if (candidate.company_email && candidate.company_email !== companyEmail) {
-            await transaction.rollback();
-            return {
-                status: 400,
-                data: {
-                    error: true,
-                    message: "Candidate already has a company email"
-                }
-            };
-        }
-
-        const hiredCandidateInfos = candidate.Candidate_Infos || [];
-        const hiredJobs = hiredCandidateInfos
-            .map((info) => info?.Job_Description)
-            .filter(Boolean);
-
-        const targetRole = hiredJobs.some((job) => isHrDepartment(job.department))
-            ? 'hr'
-            : 'employee';
-
-        const hiredCandidateInfo = hiredCandidateInfos.find((info) => info?.Job_Description) || null;
-        const hiredJob = hiredCandidateInfo?.Job_Description;
-
-        // Chỉ cập nhật thông tin đăng nhập khi candidate chưa có company_email
-        if (!candidate.company_email) {
-            const saltRounds = 10;
-            const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-            await candidate.update({
-                company_email: companyEmail,
-                password: hashedPassword,
-                role: targetRole
-            }, { transaction });
-        } else if (candidate.role !== targetRole) {
-            await candidate.update({ role: targetRole }, { transaction });
-        }
-
-        // Đảm bảo có bản ghi Employee_Info tương ứng (idempotent)
-        const existingEmployeeInfo = await Employee.findOne({
-            where: withTenantWhere({ user_id: candidate.user_id }),
-            transaction
-        });
-
-        if (!existingEmployeeInfo) {
-            const resolvedPosition = resolveEmployeePositionFromJob(hiredJob);
-
-            await Employee.create({
-                user_id: candidate.user_id,
-                hire_date: new Date(),
-                position: resolvedPosition,
-                department_id: hiredJob?.department_id || null,
-                tenant_id: candidate.tenant_id
-            }, { transaction });
-        } else {
-            const resolvedPosition = resolveEmployeePositionFromJob(hiredJob);
-            const resolvedDepartmentId = hiredJob?.department_id || null;
-
-            const employeeUpdateData = {};
-
-            if (existingEmployeeInfo.position !== resolvedPosition) {
-                employeeUpdateData.position = resolvedPosition;
+            if (!candidate) {
+                await transaction.rollback();
+                transactionFinished = true;
+                return {
+                    status: 404,
+                    data: {
+                        error: true,
+                        message: "Hired candidate not found"
+                    }
+                };
             }
 
-            if (!existingEmployeeInfo.department_id && resolvedDepartmentId) {
-                employeeUpdateData.department_id = resolvedDepartmentId;
+            // Kiểm tra company_email đã tồn tại chưa
+            const existingEmailUser = await User.findOne({
+                where: withTenantWhere({
+                    company_email: companyEmail,
+                    is_deleted: false
+                }),
+                transaction
+            });
+
+            if (existingEmailUser && existingEmailUser.user_id !== Number(candidateId)) {
+                await transaction.rollback();
+                transactionFinished = true;
+                return {
+                    status: 400,
+                    data: {
+                        error: true,
+                        message: "Company email already exists"
+                    }
+                };
             }
 
-            if (Object.keys(employeeUpdateData).length > 0) {
-                await existingEmployeeInfo.update(employeeUpdateData, { transaction });
+            // Nếu đã có company_email khác với email nhập vào thì chặn
+            if (candidate.company_email && candidate.company_email !== companyEmail) {
+                await transaction.rollback();
+                transactionFinished = true;
+                return {
+                    status: 400,
+                    data: {
+                        error: true,
+                        message: "Candidate already has a company email"
+                    }
+                };
             }
+
+            const hiredCandidateInfos = candidate.Candidate_Infos || [];
+            const hiredJobs = hiredCandidateInfos
+                .map((info) => info?.Job_Description)
+                .filter(Boolean);
+
+            const targetRole = hiredJobs.some((job) => isHrDepartment(job.department))
+                ? 'hr'
+                : 'employee';
+
+            const hiredCandidateInfo = hiredCandidateInfos.find((info) => info?.Job_Description) || null;
+            const hiredJob = hiredCandidateInfo?.Job_Description;
+
+            // Chỉ cập nhật thông tin đăng nhập khi candidate chưa có company_email
+            if (!candidate.company_email) {
+                const saltRounds = 10;
+                const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+                await candidate.update({
+                    company_email: companyEmail,
+                    password: hashedPassword,
+                    role: targetRole
+                }, { transaction });
+            } else if (candidate.role !== targetRole) {
+                await candidate.update({ role: targetRole }, { transaction });
+            }
+
+            // Đảm bảo có bản ghi Employee_Info tương ứng (idempotent)
+            const existingEmployeeInfo = await Employee.findOne({
+                where: withTenantWhere({ user_id: candidate.user_id }),
+                transaction
+            });
+
+            if (!existingEmployeeInfo) {
+                const resolvedPosition = resolveEmployeePositionFromJob(hiredJob);
+
+                await Employee.create({
+                    user_id: candidate.user_id,
+                    hire_date: new Date(),
+                    position: resolvedPosition,
+                    department_id: hiredJob?.department_id || null,
+                    tenant_id: candidate.tenant_id
+                }, { transaction });
+            } else {
+                const resolvedPosition = resolveEmployeePositionFromJob(hiredJob);
+                const resolvedDepartmentId = hiredJob?.department_id || null;
+
+                const employeeUpdateData = {};
+
+                if (existingEmployeeInfo.position !== resolvedPosition) {
+                    employeeUpdateData.position = resolvedPosition;
+                }
+
+                if (!existingEmployeeInfo.department_id && resolvedDepartmentId) {
+                    employeeUpdateData.department_id = resolvedDepartmentId;
+                }
+
+                if (Object.keys(employeeUpdateData).length > 0) {
+                    await existingEmployeeInfo.update(employeeUpdateData, { transaction });
+                }
+            }
+
+            await transaction.commit();
+            transactionFinished = true;
+        } catch (txError) {
+            if (!transactionFinished && transaction.finished !== 'rollback' && transaction.finished !== 'commit') {
+                await transaction.rollback();
+            }
+            throw txError;
         }
 
-        await transaction.commit();
-
-        // Lấy dữ liệu đã cập nhật
+        // Lấy dữ liệu đã cập nhật sau khi transaction đã kết thúc
         const updatedCandidate = await User.findOne({
             where: withTenantWhere({ user_id: candidateId }),
             attributes: { exclude: ['password'] }, // Không trả về password
@@ -1125,6 +1138,11 @@ export const createCompanyEmailService = async (candidateId, companyEmail, passw
                 {
                     model: Employee,
                     as: 'Employee_Info'
+                },
+                {
+                    model: Tenant,
+                    as: 'tenant',
+                    attributes: ['tenant_id', 'tenant_code']
                 }
             ]
         });
@@ -1137,10 +1155,6 @@ export const createCompanyEmailService = async (candidateId, companyEmail, passw
                 candidate: updatedCandidate
             }
         };
-        } catch (txError) {
-            await transaction.rollback();
-            throw txError;
-        }
     } catch (error) {
         console.error('Error in createCompanyEmailService:', error);
         return {
