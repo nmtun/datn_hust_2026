@@ -27,6 +27,11 @@ export interface CandidateInfo {
   };
 }
 
+export interface UpdateCandidateApplicationPayload extends Partial<CandidateInfo> {
+  interview_time?: string;
+  basic_salary?: number | string;
+}
+
 export interface EmployeeInfo {
   employee_info_id: number;
   position: string;
@@ -107,7 +112,7 @@ export const candidateApi = {
     return response.data;
   },
 
-  updateApplication: async (candidateInfoId: number, data: Partial<CandidateInfo>) => {
+  updateApplication: async (candidateInfoId: number, data: UpdateCandidateApplicationPayload) => {
     const response = await apiClient.put(`/api/candidate/application/${candidateInfoId}`, data);
     return response.data;
   },
