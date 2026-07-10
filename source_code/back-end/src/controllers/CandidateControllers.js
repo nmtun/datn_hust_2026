@@ -277,7 +277,7 @@ export const createCompanyEmail = async (req, res) => {
             });
         }
 
-        const result = await candidateService.createCompanyEmailService(candidateId, company_email, password);
+        const result = await candidateService.createCompanyEmailService(candidateId, company_email, password, req.user);
 
         if (result.status !== 200) {
             return res.status(result.status).json(result.data);

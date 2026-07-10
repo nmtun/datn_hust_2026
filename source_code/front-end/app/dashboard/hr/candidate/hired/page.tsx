@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
   Search, 
-  Plus, 
   Edit2, 
   Eye, 
   User, 
@@ -14,10 +13,10 @@ import {
   ArrowLeft,
   Building2,
   Send,
-  Key,
   Copy
 } from "lucide-react";
 import { candidateApi, Candidate, CandidateInfo } from "@/app/api/candidateApi";
+import { compensationApi } from "@/app/api/compensationApi";
 import { showToast } from "@/app/utils/toast";
 import Modal from "@/app/components/Modal";
 import { withAuth } from "@/app/middleware/withAuth";
@@ -31,13 +30,22 @@ function HiredCandidatesPage() {
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isCreateEmailModalOpen, setIsCreateEmailModalOpen] = useState(false);
+  const [isCreateSalaryModalOpen, setIsCreateSalaryModalOpen] = useState(false);
   const [createEmailLoading, setCreateEmailLoading] = useState(false);
+  const [createSalaryLoading, setCreateSalaryLoading] = useState(false);
   
   // Form data for creating company email
   const [emailFormData, setEmailFormData] = useState({
     company_email: "",
     password: "",
     confirmPassword: ""
+  });
+
+  const [salaryFormData, setSalaryFormData] = useState({
+    salary: "",
+    bonus: "",
+    reason: "",
+    comment: ""
   });
 
   const useDebounce = (value: string, delay: number) => {
@@ -167,6 +175,24 @@ function HiredCandidatesPage() {
     setIsCreateEmailModalOpen(true);
   };
 
+  const openCreateSalaryModal = (candidate: Candidate) => {
+    setSelectedCandidate(candidate);
+
+    const hiredJob = candidate.Candidate_Infos?.find(info => info.candidate_status === 'hired')?.Job_Description;
+    const suggestedSalary = hiredJob?.salary_range_min != null ? String(hiredJob.salary_range_min) : "";
+    const suggestedReason = hiredJob?.title
+      ? `Khởi tạo lương thưởng cho vị trí ${hiredJob.title}`
+      : "Khởi tạo lương thưởng lần đầu cho ứng viên";
+
+    setSalaryFormData({
+      salary: suggestedSalary,
+      bonus: "0",
+      reason: suggestedReason,
+      comment: "Bản ghi lương thưởng khởi tạo mới"
+    });
+    setIsCreateSalaryModalOpen(true);
+  };
+
   const generateDefaultCompanyEmail = (fullName: string) => {
     // Chuyển đổi tên thành format email (ví dụ: Nguyen Van A -> nguyen.van.a@company.com)
     const name = fullName
@@ -202,6 +228,67 @@ function HiredCandidatesPage() {
     } catch (error) {
       console.error('Failed to copy password:', error);
       showToast.error('Failed to copy password');
+    }
+  };
+
+  const handleSalaryFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setSalaryFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmitSalaryCreate = async () => {
+    if (!selectedCandidate) return;
+
+    if (!salaryFormData.salary.trim()) {
+      showToast.error('Please enter salary');
+      return;
+    }
+
+    const parsedSalary = Number(salaryFormData.salary);
+    if (!Number.isFinite(parsedSalary) || parsedSalary <= 0) {
+      showToast.error('Salary must be a valid positive number');
+      return;
+    }
+
+    try {
+      setCreateSalaryLoading(true);
+
+      const payload: any = {
+        user_id: selectedCandidate.user_id,
+        salary: parsedSalary,
+        effective_date: new Date().toISOString().slice(0, 10),
+      };
+
+      if (salaryFormData.bonus.trim() !== '') {
+        const parsedBonus = Number(salaryFormData.bonus);
+        if (!Number.isFinite(parsedBonus) || parsedBonus < 0) {
+          showToast.error('Bonus must be a valid non-negative number');
+          return;
+        }
+        payload.bonus = parsedBonus;
+      }
+
+      if (salaryFormData.reason.trim()) payload.reason = salaryFormData.reason.trim();
+      if (salaryFormData.comment.trim()) payload.comment = salaryFormData.comment.trim();
+
+      const result = await compensationApi.create(payload);
+
+      if (result.error) {
+        throw new Error(result.message || 'Error creating salary');
+      }
+
+      showToast.success('Tạo mới lương thưởng thành công');
+      setIsCreateSalaryModalOpen(false);
+      setSalaryFormData({ salary: '', bonus: '', reason: '', comment: '' });
+      await fetchHiredCandidates();
+    } catch (error: any) {
+      console.error('Error creating salary:', error);
+      showToast.error(error.message || 'Error creating salary');
+    } finally {
+      setCreateSalaryLoading(false);
     }
   };
 
@@ -251,6 +338,9 @@ function HiredCandidatesPage() {
         password: "",
         confirmPassword: ""
       });
+
+      // Mở popup tạo mới lương thưởng ngay sau khi tạo mail công ty thành công
+      openCreateSalaryModal(selectedCandidate);
     } catch (error: any) {
       console.error("Error creating company email:", error);
       showToast.error(error.message || 'Error creating company email');
@@ -262,7 +352,7 @@ function HiredCandidatesPage() {
   const handleViewCV = (cvPath: string) => {
     if (cvPath) {
       const fileName = cvPath.split(/[/\\]/).pop();
-      const viewUrl = `${process.env.NEXT_PUBLIC_API_URL}/uploads/${fileName}`;
+      const viewUrl = `${process.env.NEXT_PUBLIC_API_URL}/uploads/cvs/${fileName}`;
       window.open(viewUrl, '_blank');
     }
   };
@@ -426,6 +516,15 @@ function HiredCandidatesPage() {
                             <Send className="w-5 h-5" />
                           </button>
                         )}
+                        {candidate.company_email && (
+                          <button
+                            onClick={() => openCreateSalaryModal(candidate)}
+                            className="text-amber-600 hover:text-amber-500"
+                            title="Create salary"
+                          >
+                            <Edit2 className="w-5 h-5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -550,6 +649,102 @@ function HiredCandidatesPage() {
             )}
           </div>
         )}
+      </Modal>
+
+      {/* Create Salary Modal */}
+      <Modal
+        isOpen={isCreateSalaryModalOpen}
+        onClose={() => setIsCreateSalaryModalOpen(false)}
+        title={`Tạo mới lương thưởng - ${selectedCandidate?.full_name}`}
+      >
+        <div className="space-y-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-amber-800 mb-2">Lưu ý:</h4>
+            <ul className="text-sm text-amber-700 space-y-1">
+              <li>- HR sẽ tạo một bản ghi lương thưởng mới cho ứng viên</li>
+              <li>- Đây là lần khởi tạo đầu tiên vì ứng viên chưa có dữ liệu lương thưởng trước đó</li>
+            </ul>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Mức lương khởi tạo *
+            </label>
+            <input
+              type="number"
+              name="salary"
+              value={salaryFormData.salary}
+              onChange={handleSalaryFormChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Nhập mức lương khởi tạo"
+              min="0"
+              step="0.01"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Thưởng khởi tạo
+            </label>
+            <input
+              type="number"
+              name="bonus"
+              value={salaryFormData.bonus}
+              onChange={handleSalaryFormChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Nhập mức thưởng khởi tạo"
+              min="0"
+              step="0.01"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Lý do khởi tạo
+            </label>
+            <textarea
+              name="reason"
+              value={salaryFormData.reason}
+              onChange={handleSalaryFormChange}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Nhập lý do khởi tạo"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Ghi chú khởi tạo
+            </label>
+            <textarea
+              name="comment"
+              value={salaryFormData.comment}
+              onChange={handleSalaryFormChange}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Ghi chú thêm nếu có"
+            />
+          </div>
+
+          <div className="flex justify-end space-x-4 pt-4">
+            <button
+              onClick={() => setIsCreateSalaryModalOpen(false)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            >
+              Hủy
+            </button>
+            <button
+              onClick={handleSubmitSalaryCreate}
+              disabled={createSalaryLoading}
+              className={`px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 ${
+                createSalaryLoading ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              {createSalaryLoading ? 'Đang tạo...' : 'Tạo lương thưởng'}
+            </button>
+          </div>
+        </div>
       </Modal>
 
       {/* Create Company Email Modal */}

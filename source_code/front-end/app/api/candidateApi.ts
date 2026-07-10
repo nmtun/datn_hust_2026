@@ -19,6 +19,8 @@ export interface CandidateInfo {
     experience_level: string;
     employment_type: string;
     department_id?: number;
+    salary_range_min?: number | string;
+    salary_range_max?: number | string;
     department?: {
       department_id: number;
       name: string;

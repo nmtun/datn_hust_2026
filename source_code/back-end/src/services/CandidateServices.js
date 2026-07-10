@@ -1150,7 +1150,7 @@ export const updateCandidateApplicationService = async (candidateInfoId, updateD
     }
 };
 
-export const createCompanyEmailService = async (candidateId, companyEmail, password) => {
+export const createCompanyEmailService = async (candidateId, companyEmail, password, requestingUser = null) => {
     try {
         const tenantResult = requireTenantId();
         if (!tenantResult.ok) {
@@ -1297,6 +1297,7 @@ export const createCompanyEmailService = async (candidateId, companyEmail, passw
                     await existingEmployeeInfo.update(employeeUpdateData, { transaction });
                 }
             }
+
 
             await transaction.commit();
             transactionFinished = true;
