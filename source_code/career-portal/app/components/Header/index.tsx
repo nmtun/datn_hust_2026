@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import LoginButton from '../Login';
 
 const Header = () => {
   const aboutLink = '/#about';
@@ -29,9 +30,7 @@ const Header = () => {
             </Link>
           </nav>
           <div className="hidden md:block">
-            <Link href="/careers" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-              Tham gia cùng chúng tôi
-            </Link>
+            <LoginButton />
           </div>
           <div className="md:hidden flex items-center">
             {/* Mobile menu button (simplified for this example) */}

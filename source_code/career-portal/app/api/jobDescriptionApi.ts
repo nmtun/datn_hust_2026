@@ -11,7 +11,8 @@ const resolveTenantSubdomain = () => {
     hostname === '127.0.0.1' ||
     hostname === '[::1]'
   ) {
-    return null;
+    // return null;
+    return process.env.NEXT_PUBLIC_DEFAULT_TENANT || null;
   }
 
   // tenant.localhost
