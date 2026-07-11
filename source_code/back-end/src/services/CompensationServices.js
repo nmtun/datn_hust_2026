@@ -106,6 +106,39 @@ const roundMoney = (value) => {
     return Math.round(value * 100) / 100;
 };
 
+const parseOptionalNumber = (value) => {
+    if (value === undefined || value === null || value === '') {
+        return null;
+    }
+
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+};
+
+const resolveRecommendationSalary = ({ requestedSalary, currentSalary, percent }) => {
+    if (Number.isFinite(requestedSalary)) {
+        return roundMoney(requestedSalary);
+    }
+
+    if (Number.isFinite(currentSalary) && Number.isFinite(percent)) {
+        return roundMoney(currentSalary + (currentSalary * percent / 100));
+    }
+
+    return Number.isFinite(currentSalary) ? roundMoney(currentSalary) : null;
+};
+
+const resolveRecommendationBonus = ({ requestedBonus, currentSalary, bonusMonths }) => {
+    if (Number.isFinite(requestedBonus)) {
+        return roundMoney(requestedBonus);
+    }
+
+    if (Number.isFinite(currentSalary) && Number.isFinite(bonusMonths)) {
+        return roundMoney(currentSalary * bonusMonths);
+    }
+
+    return 0;
+};
+
 const buildPerformanceCommentPrompt = ({ employeeName, year, averageRating, reviews }) => {
     const reviewLines = reviews.map((review, index) => {
         const periodName = safeString(review.period?.period_name) || `Đánh giá ${index + 1}`;
@@ -471,17 +504,26 @@ export const saveCompensationRecommendationsService = async ({ year, recommendat
                 continue;
             }
 
-            const salaryValue = Number(item?.recommended_salary);
+            const currentSalary = parseOptionalNumber(item?.current_salary);
+            const salaryValue = resolveRecommendationSalary({
+                requestedSalary: parseOptionalNumber(item?.recommended_salary),
+                currentSalary,
+                percent: parseOptionalNumber(item?.salary_increase_percent)
+            });
             if (!Number.isFinite(salaryValue)) {
                 summary.skipped += 1;
                 continue;
             }
 
-            const bonusValue = Number(item?.recommended_bonus ?? 0);
+            const bonusValue = resolveRecommendationBonus({
+                requestedBonus: parseOptionalNumber(item?.recommended_bonus),
+                currentSalary,
+                bonusMonths: parseOptionalNumber(item?.bonus_months)
+            });
             const aiComment = safeString(item?.ai_comment);
             const managerComment = safeString(item?.comment);
             const finalComment = managerComment || aiComment;
-            const reason = buildRecommendationReason({
+            const reason = safeString(item?.reason) || buildRecommendationReason({
                 year: targetYear,
                 recommendedSalary: salaryValue,
                 recommendedBonus: bonusValue

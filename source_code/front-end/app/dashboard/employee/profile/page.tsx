@@ -23,6 +23,23 @@ import { withAuth } from "@/app/middleware/withAuth";
 import Modal from "@/app/components/Modal";
 import { userApi } from "@/app/api/userApi";
 
+const getLevelLabel = (level?: string) => {
+  switch (level) {
+    case "intern":
+      return "Thực tập sinh";
+    case "fresher":
+      return "Fresher";
+    case "mid":
+      return "Middle";
+    case "senior":
+      return "Senior";
+    case "manager":
+      return "Manager";
+    default:
+      return "Chưa cập nhật";
+  }
+};
+
 function MyProfilePage() {
   const [profile, setProfile] = useState<EmployeeProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -224,6 +241,9 @@ function MyProfilePage() {
                 <Shield className="w-3.5 h-3.5 mr-1" />
                 {profile.role}
               </span>
+              <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-50 text-indigo-700">
+                Level: {getLevelLabel(emp?.experience_level)}
+              </span>
             </div>
           </div>
         </div>
@@ -308,6 +328,15 @@ function MyProfilePage() {
               <div>
                 <p className="text-xs text-gray-500">Chức vụ</p>
                 <p className="text-sm font-medium text-gray-900 mt-0.5">{emp.position || "Chưa cập nhật"}</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <Shield className="w-5 h-5 text-gray-400 mt-0.5" />
+              <div>
+                <p className="text-xs text-gray-500">Level</p>
+                <p className="text-sm font-medium text-gray-900 mt-0.5">
+                  {getLevelLabel(emp.experience_level)}
+                </p>
               </div>
             </div>
             <div className="flex items-start space-x-3">

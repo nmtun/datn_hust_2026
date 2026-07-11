@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { DollarSign, Gift, Calendar, User, FileText, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { compensationApi, Compensation } from "@/app/api/compensationApi";
 import { showToast } from "@/app/utils/toast";
+import { formatVnd } from "@/app/utils/money";
 import Modal from "@/app/components/Modal";
 import { withAuth } from "@/app/middleware/withAuth";
 
@@ -33,10 +34,7 @@ function MyCompensationPage() {
     }
   };
 
-  const formatCurrency = (amount?: number) => {
-    if (amount == null) return "—";
-    return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
-  };
+  const formatCurrency = (amount?: number) => formatVnd(amount);
 
   const getSalaryChange = (index: number) => {
     if (index >= compensations.length - 1) return null;
