@@ -44,22 +44,6 @@ const emptyRecommendationEditorForm: RecommendationEditorForm = {
   comment: "",
 };
 
-const formatEditableNumber = (value?: number | null) => (value == null ? "" : String(value));
-
-const parseEditableNumber = (value: string) => {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : null;
-};
-
-const getAiCommentPreview = (comment?: string | null, maxLength = 52) => {
-  if (!comment) return "—";
-  const compact = comment.replace(/\s+/g, " ").trim();
-  if (compact.length <= maxLength) return compact;
-  return `${compact.slice(0, maxLength).trimEnd()}…`;
-};
-
 type TrendDirection = "up" | "down" | "flat";
 
 type TrendMeta = {
@@ -131,50 +115,20 @@ const getSalaryTrendMeta = (value?: number | null): TrendMeta => {
   };
 };
 
-const getRatingTrendMeta = (rating: number): TrendMeta => {
-  const barWidth = clamp((rating / 5) * 100, 8, 100);
+const formatEditableNumber = (value?: number | null) => (value == null ? "" : String(value));
 
-  if (rating >= 4.25) {
-    return {
-      direction: "up",
-      label: "Tốt lên",
-      detail: `${rating.toFixed(2)}/5`,
-      badgeClass: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200",
-      barClass: "bg-emerald-500",
-      barWidth,
-    };
-  }
+const parseEditableNumber = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : null;
+};
 
-  if (rating >= 3.5) {
-    return {
-      direction: "flat",
-      label: "Ổn định",
-      detail: `${rating.toFixed(2)}/5`,
-      badgeClass: "bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-200",
-      barClass: "bg-sky-500",
-      barWidth,
-    };
-  }
-
-  if (rating >= 3) {
-    return {
-      direction: "down",
-      label: "Cần cải thiện",
-      detail: `${rating.toFixed(2)}/5`,
-      badgeClass: "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200",
-      barClass: "bg-amber-500",
-      barWidth,
-    };
-  }
-
-  return {
-    direction: "down",
-    label: "Kém đi",
-    detail: `${rating.toFixed(2)}/5`,
-    badgeClass: "bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200",
-    barClass: "bg-rose-500",
-    barWidth,
-  };
+const getAiCommentPreview = (comment?: string | null, maxLength = 52) => {
+  if (!comment) return "—";
+  const compact = comment.replace(/\s+/g, " ").trim();
+  if (compact.length <= maxLength) return compact;
+  return `${compact.slice(0, maxLength).trimEnd()}…`;
 };
 
 function CompensationPage() {
@@ -843,7 +797,6 @@ function CompensationPage() {
                     {[
                       "Nhân viên",
                       "Điểm TB",
-                      "Xu hướng",
                       "Lương hiện tại",
                       "Lương đề xuất",
                       "Thưởng",
@@ -863,8 +816,6 @@ function CompensationPage() {
                     const avgLabel = item.rating_count
                       ? `${item.average_rating.toFixed(2)} (${item.rating_count})`
                       : "—";
-                    const ratingTrend = getRatingTrendMeta(item.average_rating);
-                    const salaryTrend = getSalaryTrendMeta(item.salary_increase_percent);
                     const bonusLabel = item.bonus_months
                       ? `${item.bonus_months} tháng`
                       : "0 tháng";
@@ -876,47 +827,7 @@ function CompensationPage() {
                           <div className="text-xs text-gray-400">{item.company_email || "—"}</div>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700">
-                          <div className="space-y-2 min-w-[140px]">
-                            <div className="font-medium text-gray-900">{avgLabel}</div>
-                            <div className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium ${ratingTrend.badgeClass}`}>
-                              {ratingTrend.direction === "up" ? (
-                                <ArrowUpRight className="h-3.5 w-3.5" />
-                              ) : ratingTrend.direction === "down" ? (
-                                <ArrowDownRight className="h-3.5 w-3.5" />
-                              ) : (
-                                <Minus className="h-3.5 w-3.5" />
-                              )}
-                              {ratingTrend.label}
-                            </div>
-                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
-                              <div
-                                className={`h-full rounded-full ${ratingTrend.barClass}`}
-                                style={{ width: `${ratingTrend.barWidth}%` }}
-                              />
-                            </div>
-                            <p className="text-xs text-gray-500">Điểm trung bình hiện tại</p>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">
-                          <div className="space-y-2 min-w-[150px]">
-                            <div className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium ${salaryTrend.badgeClass}`}>
-                              {salaryTrend.direction === "up" ? (
-                                <ArrowUpRight className="h-3.5 w-3.5" />
-                              ) : salaryTrend.direction === "down" ? (
-                                <ArrowDownRight className="h-3.5 w-3.5" />
-                              ) : (
-                                <Minus className="h-3.5 w-3.5" />
-                              )}
-                              {salaryTrend.label} {salaryTrend.detail}
-                            </div>
-                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
-                              <div
-                                className={`h-full rounded-full ${salaryTrend.barClass}`}
-                                style={{ width: `${salaryTrend.barWidth}%` }}
-                              />
-                            </div>
-                            <p className="text-xs text-gray-500">Mức điều chỉnh đề xuất</p>
-                          </div>
+                          <div className="font-medium text-gray-900">{avgLabel}</div>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700">{fmtCurrency(item.current_salary ?? undefined)}</td>
                         <td className="px-4 py-3 text-sm text-gray-900">
