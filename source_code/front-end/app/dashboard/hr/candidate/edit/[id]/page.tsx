@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft, User, Building2 } from "lucide-react";
-import { candidateApi, Candidate, CandidateInfo } from "@/app/api/candidateApi";
+import { candidateApi, Candidate, CandidateInfo, UpdateCandidateApplicationPayload } from "@/app/api/candidateApi";
 import { jobDescriptionApi } from "@/app/api/jobDescriptionApi";
 import { showToast } from "@/app/utils/toast";
 import { withAuth } from "@/app/middleware/withAuth";
@@ -15,6 +15,19 @@ interface JobDescription {
   experience_level: string;
   employment_type: string;
 }
+
+const EXPERIENCE_LEVEL_LABELS: Record<string, string> = {
+  intern: "Intern",
+  fresher: "Fresher",
+  mid: "Mid",
+  senior: "Senior",
+  manager: "Manager",
+};
+
+const formatExperienceLevel = (level?: string | null) => {
+  if (!level) return "—";
+  return EXPERIENCE_LEVEL_LABELS[level] || level;
+};
 
 // --- BẮT ĐẦU: Các Type và Hàm Parse Evaluation Comment (Port từ CandidatePage) ---
 type EvaluationSectionTone = 'positive' | 'negative' | 'neutral';
@@ -35,6 +48,11 @@ interface RequirementAnalysisItem {
   requirement: string;
   cvEvidence: string;
   conclusion: string;
+}
+
+interface ApplicationStatusEmailData {
+  interview_time: string;
+  basic_salary: string;
 }
 
 const cleanEvaluationItem = (item: string) => {
@@ -194,6 +212,7 @@ function EditCandidatePage() {
   const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [, setJobDescriptions] = useState<JobDescription[]>([]);
   const [expandedComments, setExpandedComments] = useState<Record<number, boolean>>({});
+  const [applicationEmailData, setApplicationEmailData] = useState<Record<number, ApplicationStatusEmailData>>({});
 
   // Form data state
   const [formData, setFormData] = useState({
@@ -238,7 +257,18 @@ function EditCandidatePage() {
       });
 
       // Set applications data
-      setApplications(candidateData.Candidate_Infos || []);
+      const nextApplications: CandidateInfo[] = candidateData.Candidate_Infos || [];
+      setApplications(nextApplications);
+
+      const emailDataMap: Record<number, ApplicationStatusEmailData> = {};
+      nextApplications.forEach((application, index) => {
+        const key = application.candidate_info_id || index;
+        emailDataMap[key] = {
+          interview_time: "",
+          basic_salary: "",
+        };
+      });
+      setApplicationEmailData(emailDataMap);
     } catch (error) {
       console.error("Error fetching candidate:", error);
       showToast.error('Error loading candidate data');
@@ -273,15 +303,57 @@ function EditCandidatePage() {
     ));
   };
 
+  const handleApplicationEmailDataChange = (key: number, field: keyof ApplicationStatusEmailData, value: string) => {
+    setApplicationEmailData((prev) => ({
+      ...prev,
+      [key]: {
+        interview_time: prev[key]?.interview_time || "",
+        basic_salary: prev[key]?.basic_salary || "",
+        [field]: value,
+      },
+    }));
+  };
+
+  const buildApplicationUpdatePayload = (application: CandidateInfo, index: number): UpdateCandidateApplicationPayload | null => {
+    const key = application.candidate_info_id || index;
+    const statusEmailData = applicationEmailData[key] || { interview_time: "", basic_salary: "" };
+
+    const payload: UpdateCandidateApplicationPayload = {
+      candidate_status: application.candidate_status,
+      evaluation: application.evaluation,
+    };
+
+    if (application.candidate_status === 'interview') {
+      if (!statusEmailData.interview_time) {
+        showToast.error('Vui lòng nhập thời gian phỏng vấn trước khi lưu');
+        return null;
+      }
+      payload.interview_time = statusEmailData.interview_time;
+    }
+
+    if (application.candidate_status === 'offered') {
+      const normalizedSalary = Number(statusEmailData.basic_salary);
+      if (!statusEmailData.basic_salary || Number.isNaN(normalizedSalary) || normalizedSalary <= 0) {
+        showToast.error('Vui lòng nhập mức lương cơ bản hợp lệ trước khi lưu');
+        return null;
+      }
+      payload.basic_salary = normalizedSalary;
+    }
+
+    return payload;
+  };
+
   const handleSaveApplication = async (index: number) => {
     try {
       const application = applications[index];
       if (!application.candidate_info_id) return;
 
-      const result = await candidateApi.updateApplication(application.candidate_info_id, {
-        candidate_status: application.candidate_status,
-        evaluation: application.evaluation
-      });
+      const payload = buildApplicationUpdatePayload(application, index);
+      if (!payload) {
+        return;
+      }
+
+      const result = await candidateApi.updateApplication(application.candidate_info_id, payload);
 
       if (result.error) {
         throw new Error(result.message || 'Error updating application');
@@ -323,10 +395,11 @@ function EditCandidatePage() {
         );
 
         if (hasChanges && app.candidate_info_id) {
-          return candidateApi.updateApplication(app.candidate_info_id, {
-            candidate_status: app.candidate_status,
-            evaluation: app.evaluation
-          });
+          const payload = buildApplicationUpdatePayload(app, index);
+          if (!payload) {
+            throw new Error('Thiếu dữ liệu bắt buộc cho email theo trạng thái đơn ứng tuyển');
+          }
+          return candidateApi.updateApplication(app.candidate_info_id, payload);
         }
         return Promise.resolve({ error: false });
       });
@@ -504,7 +577,7 @@ function EditCandidatePage() {
                           {application.Job_Description?.title || 'No job title'}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {application.Job_Description?.experience_level} · {application.Job_Description?.employment_type}
+                          {formatExperienceLevel(application.experience_level || application.Job_Description?.experience_level)} · {application.Job_Description?.employment_type}
                         </p>
                       </div>
                     </div>
@@ -514,7 +587,18 @@ function EditCandidatePage() {
                       </label>
                       <select
                         value={application.candidate_status}
-                        onChange={(e) => handleApplicationChange(index, 'candidate_status', e.target.value)}
+                        onChange={(e) => {
+                          const nextStatus = e.target.value;
+                          handleApplicationChange(index, 'candidate_status', nextStatus);
+
+                          if (nextStatus !== 'interview') {
+                            handleApplicationEmailDataChange(commentKey, 'interview_time', '');
+                          }
+
+                          if (nextStatus !== 'offered') {
+                            handleApplicationEmailDataChange(commentKey, 'basic_salary', '');
+                          }
+                        }}
                         className="w-full px-3 py-2 border-2 border-indigo-300 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       >
                         <option value="new">New</option>
@@ -525,6 +609,35 @@ function EditCandidatePage() {
                         <option value="rejected">Rejected</option>
                       </select>
                     </div>
+                    {application.candidate_status === 'interview' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Thời gian phỏng vấn *
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={applicationEmailData[commentKey]?.interview_time || ''}
+                          onChange={(e) => handleApplicationEmailDataChange(commentKey, 'interview_time', e.target.value)}
+                          className="w-full px-3 py-2 border-2 border-indigo-300 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                      </div>
+                    )}
+                    {application.candidate_status === 'offered' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Mức lương cơ bản (VND/tháng) *
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          step="100000"
+                          value={applicationEmailData[commentKey]?.basic_salary || ''}
+                          onChange={(e) => handleApplicationEmailDataChange(commentKey, 'basic_salary', e.target.value)}
+                          className="w-full px-3 py-2 border-2 border-indigo-300 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="Ví dụ: 12000000"
+                        />
+                      </div>
+                    )}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Ngày ứng tuyển

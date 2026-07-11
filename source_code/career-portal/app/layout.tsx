@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Roboto_Mono } from "next/font/google";
 import "./globals.css";
+import Providers from "./provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -30,7 +31,9 @@ export default function RootLayout({
   return (
     <html lang="vi" className="scroll-smooth">
       <body className={`${inter.variable} ${robotoMono.variable} antialiased`} suppressHydrationWarning>
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

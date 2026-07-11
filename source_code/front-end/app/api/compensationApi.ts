@@ -27,6 +27,7 @@ export interface CompensationRecommendation {
   bonus_months: number;
   recommended_salary?: number | null;
   recommended_bonus?: number | null;
+  reason?: string;
   ai_comment?: string;
   comment?: string;
 }

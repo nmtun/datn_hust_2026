@@ -8,6 +8,14 @@ import { showToast } from "@/app/utils/toast";
 import Modal from "@/app/components/Modal";
 import { withAuth } from "@/app/middleware/withAuth";
 
+const EXPERIENCE_LEVEL_LABELS: Record<string, string> = {
+  intern: "Intern",
+  fresher: "Fresher",
+  mid: "Mid",
+  senior: "Senior",
+  manager: "Manager",
+};
+
 function DeletedCandidatesPage() {
   const router = useRouter();
   const [searchName, setSearchName] = useState("");
@@ -181,6 +189,11 @@ function DeletedCandidatesPage() {
     }
   };
 
+  const formatExperienceLevel = (level?: string | null) => {
+    if (!level) return "—";
+    return EXPERIENCE_LEVEL_LABELS[level] || level;
+  };
+
   // Define interface for grouped candidate data
   interface GroupedCandidate extends Candidate {
     candidateInfos: CandidateInfo[];
@@ -309,7 +322,7 @@ function DeletedCandidatesPage() {
                                   {candidateInfo.Job_Description.title}
                                 </div>
                                 <div className="text-sm text-gray-500 leading-tight">
-                                  {candidateInfo.Job_Description.experience_level} · {candidateInfo.Job_Description.employment_type}
+                                  {formatExperienceLevel(candidateInfo.experience_level || candidateInfo.Job_Description.experience_level)} · {candidateInfo.Job_Description.employment_type}
                                 </div>
                               </div>
                             ) : (
@@ -508,7 +521,7 @@ function DeletedCandidatesPage() {
                           <div className="mt-1 p-3 bg-white rounded-md border">
                             <p className="font-medium">{candidateInfo.Job_Description.title}</p>
                             <p className="text-sm text-gray-600">
-                              {candidateInfo.Job_Description.experience_level} · {candidateInfo.Job_Description.employment_type}
+                              {formatExperienceLevel(candidateInfo.experience_level || candidateInfo.Job_Description.experience_level)} · {candidateInfo.Job_Description.employment_type}
                             </p>
                           </div>
                         </div>

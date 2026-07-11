@@ -32,6 +32,10 @@ const Employee = sequelize.define("Employee_Info", {
         type: DataTypes.STRING(100),
         allowNull: true,
     },
+    experience_level: {
+        type: DataTypes.ENUM('intern', 'fresher', 'mid', 'senior', 'manager'),
+        allowNull: true,
+    },
     department_id: {
         type: DataTypes.INTEGER,
         allowNull: true,

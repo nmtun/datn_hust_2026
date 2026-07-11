@@ -8,6 +8,14 @@ import { showToast } from "@/app/utils/toast";
 import Modal from "@/app/components/Modal";
 import { withAuth } from "@/app/middleware/withAuth";
 
+const EXPERIENCE_LEVEL_LABELS: Record<string, string> = {
+  intern: "Intern",
+  fresher: "Fresher",
+  mid: "Mid",
+  senior: "Senior",
+  manager: "Manager",
+};
+
 function CandidatePage() {
   const router = useRouter();
   const [searchName, setSearchName] = useState("");
@@ -577,7 +585,11 @@ function CandidatePage() {
                                       )}
                                     </div>
                                     <div className="text-sm text-gray-500 leading-tight">
-                                      {candidateInfo.Job_Description.experience_level} · {candidateInfo.Job_Description.employment_type}
+                                      {candidateInfo.experience_level
+                                        ? (EXPERIENCE_LEVEL_LABELS[candidateInfo.experience_level] || candidateInfo.experience_level)
+                                        : candidateInfo.Job_Description.experience_level}
+                                      {' · '}
+                                      {candidateInfo.Job_Description.employment_type}
                                     </div>
                                   </div>
                                   {candidateInfo.cv_file_path && (
@@ -826,7 +838,9 @@ function CandidatePage() {
                             <div className="mt-1 p-3 bg-white rounded-md border">
                               <p className="font-medium">{candidateInfo.Job_Description.title}</p>
                               <p className="text-sm text-gray-600">
-                                {candidateInfo.Job_Description.experience_level} · {candidateInfo.Job_Description.employment_type}
+                                {candidateInfo.experience_level
+                                  ? (EXPERIENCE_LEVEL_LABELS[candidateInfo.experience_level] || candidateInfo.experience_level)
+                                  : candidateInfo.Job_Description.experience_level} · {candidateInfo.Job_Description.employment_type}
                               </p>
                             </div>
                           </div>

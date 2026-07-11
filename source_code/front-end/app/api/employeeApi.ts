@@ -14,6 +14,7 @@ export interface EmployeeProfile {
     employee_id: number;
     employee_id_number?: string;
     position?: string;
+    experience_level?: 'intern' | 'fresher' | 'mid' | 'senior' | 'manager';
     hire_date?: string;
     department_id?: number;
     team_id?: number;
@@ -46,7 +47,7 @@ export const employeeApi = {
     const response = await apiClient.get(`/api/employee/get/${id}`);
     return response.data;
   },
-  update: async (id: number, data: Partial<EmployeeProfile & { position?: string; department_id?: number; team_id?: number; manager_id?: number; hire_date?: string; role?: string }>) => {
+  update: async (id: number, data: Partial<EmployeeProfile & { position?: string; experience_level?: string; department_id?: number; team_id?: number; manager_id?: number; hire_date?: string; role?: string }>) => {
     const response = await apiClient.put(`/api/employee/update/${id}`, data);
     return response.data;
   },

@@ -13,18 +13,26 @@ export interface CandidateInfo {
   } | string;
   cover_letter?: string;
   job_id?: number;
+  experience_level?: 'intern' | 'fresher' | 'mid' | 'senior' | 'manager';
   Job_Description?: {
     job_id: number;
     title: string;
     experience_level: string;
     employment_type: string;
     department_id?: number;
+    salary_range_min?: number | string;
+    salary_range_max?: number | string;
     department?: {
       department_id: number;
       name: string;
       code: string;
     } | null;
   };
+}
+
+export interface UpdateCandidateApplicationPayload extends Partial<CandidateInfo> {
+  interview_time?: string;
+  basic_salary?: number | string;
 }
 
 export interface EmployeeInfo {
@@ -107,7 +115,7 @@ export const candidateApi = {
     return response.data;
   },
 
-  updateApplication: async (candidateInfoId: number, data: Partial<CandidateInfo>) => {
+  updateApplication: async (candidateInfoId: number, data: UpdateCandidateApplicationPayload) => {
     const response = await apiClient.put(`/api/candidate/application/${candidateInfoId}`, data);
     return response.data;
   },

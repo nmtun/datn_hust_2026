@@ -1,6 +1,7 @@
 import React from 'react';
 import { JobDescription } from '@/app/api/jobDescriptionApi';
 import { departmentApi, Department } from '@/app/api/departmentApi';
+import { formatVndInput, parseVndInput } from '@/app/utils/money';
 
 interface JobDescriptionFormProps {
   initialData?: Partial<JobDescription>;
@@ -122,19 +123,11 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
     }));
   };
 
-  const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat('vi-VN').format(value);
-  };
-
-  const parseCurrencyValue = (value: string): number => {
-    return Number(value.replace(/[,.]/g, ''));
-  };
-
   const handleSalaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
     const numericValue =
-      value === '' ? 0 : parseCurrencyValue(value);
+      value === '' ? 0 : parseVndInput(value);
 
     setFormData((prev) => ({
       ...prev,
@@ -314,7 +307,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
               type="text"
               id="salary_range_min"
               name="salary_range_min"
-              value={formData.salary_range_min ? formatCurrency(formData.salary_range_min) : ''}
+              value={formData.salary_range_min ? formatVndInput(formData.salary_range_min) : ''}
               onChange={handleSalaryChange}
               required
               placeholder="0"
@@ -335,7 +328,7 @@ const JobDescriptionForm: React.FC<JobDescriptionFormProps> = ({
               type="text"
               id="salary_range_max"
               name="salary_range_max"
-              value={formData.salary_range_max ? formatCurrency(formData.salary_range_max) : ''}
+              value={formData.salary_range_max ? formatVndInput(formData.salary_range_max) : ''}
               onChange={handleSalaryChange}
               required
               placeholder="0"

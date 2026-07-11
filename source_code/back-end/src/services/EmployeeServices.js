@@ -1,8 +1,10 @@
 import '../models/associations.js';
 import Employee from '../models/Employee.js';
 import User from '../models/User.js';
+import Candidate from '../models/Candidate.js';
 import Department from '../models/Department.js';
 import Team from '../models/Team.js';
+import JobDescription from '../models/JobDescription.js';
 import { Op } from 'sequelize';
 import { getLedTeamIds, getManagedDepartmentIds, getManagementTargetUserIds, resolveHierarchyRole } from './HierarchyServices.js';
 import { withTenantWhere } from '../utils/tenantScope.js';
@@ -11,6 +13,19 @@ import { withTenantWhere } from '../utils/tenantScope.js';
 export const createEmployeeService = async (employeeData) => {
     return await Employee.create(employeeData);
 };
+
+const getHiredCandidateInfoInclude = () => ({
+    model: Candidate,
+    required: false,
+    where: withTenantWhere({ candidate_status: 'hired' }),
+    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id', 'experience_level'],
+    include: [
+        {
+            model: JobDescription,
+            attributes: ['job_id', 'title', 'experience_level', 'employment_type']
+        }
+    ]
+});
 
 // Get my profile (Employee / Manager self-service)
 export const getMyProfileService = async (userId) => {
@@ -23,10 +38,20 @@ export const getMyProfileService = async (userId) => {
                     model: Employee,
                     as: 'Employee_Info',
                     required: false,
+                    attributes: ['employee_info_id', 'position', 'experience_level', 'department_id', 'team_id', 'manager_id', 'hire_date', 'termination_date', 'employee_id_number'],
                     include: [
                         { model: Department, as: 'department', attributes: ['department_id', 'name', 'code'] },
                         { model: Team, as: 'team', attributes: ['team_id', 'name', 'code'] },
                         { model: User, as: 'manager', attributes: ['user_id', 'full_name', 'company_email'] }
+                    ]
+                },
+                {
+                    model: Candidate,
+                    required: false,
+                    where: withTenantWhere({ candidate_status: 'hired' }),
+                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id', 'experience_level'],
+                    include: [
+                        { model: JobDescription, attributes: ['job_id', 'title', 'experience_level', 'employment_type'] }
                     ]
                 }
             ]
@@ -141,12 +166,14 @@ export const getAllEmployeesService = async (query = {}, requestingUser = null, 
                     as: 'Employee_Info',
                     required: employeeRequired,
                     where: Object.keys(employeeWhere).length > 0 ? employeeWhere : undefined,
+                    attributes: ['employee_info_id', 'position', 'experience_level', 'department_id', 'team_id', 'manager_id', 'hire_date', 'termination_date', 'employee_id_number'],
                     include: [
                         { model: Department, as: 'department', attributes: ['department_id', 'name', 'code'] },
                         { model: Team, as: 'team', attributes: ['team_id', 'name', 'code'] },
                         { model: User, as: 'manager', attributes: ['user_id', 'full_name', 'company_email'] }
                     ]
-                }
+                },
+                getHiredCandidateInfoInclude()
             ],
             order: [['full_name', 'ASC']],
             limit: parsedLimit,
@@ -197,12 +224,14 @@ export const getEmployeeByIdService = async (userId, requestingUser = null) => {
                     model: Employee,
                     as: 'Employee_Info',
                     required: false,
+                    attributes: ['employee_info_id', 'position', 'experience_level', 'department_id', 'team_id', 'manager_id', 'hire_date', 'termination_date', 'employee_id_number'],
                     include: [
                         { model: Department, as: 'department', attributes: ['department_id', 'name', 'code'] },
                         { model: Team, as: 'team', attributes: ['team_id', 'name', 'code'] },
                         { model: User, as: 'manager', attributes: ['user_id', 'full_name', 'company_email'] }
                     ]
-                }
+                },
+                getHiredCandidateInfoInclude()
             ]
         });
         if (!user) return { status: 404, data: { error: true, message: "Employee not found" } };
@@ -226,7 +255,7 @@ export const updateEmployeeService = async (userId, updateData) => {
         });
 
         const userFields = ['full_name', 'phone_number', 'address', 'role'];
-        const employeeFields = ['position', 'department_id', 'team_id', 'manager_id', 'hire_date', 'termination_date', 'employee_id_number'];
+        const employeeFields = ['position', 'experience_level', 'department_id', 'team_id', 'manager_id', 'hire_date', 'termination_date', 'employee_id_number'];
 
         const userUpdate = {};
         const employeeUpdate = {};

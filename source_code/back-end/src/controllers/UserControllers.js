@@ -1,10 +1,13 @@
 import * as userService from '../services/UserServices.js';
 import { resolveHierarchyRole } from '../services/HierarchyServices.js';
+import { OAuth2Client } from 'google-auth-library';
 
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { sendEmailFromSuperAdmin } from '../utils/sendEmail.js';
 import Tenant from '../models/Tenant.js';
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export const login = async (req, res) => {
     try {
@@ -302,5 +305,29 @@ export const changePassword = async (req, res) => {
     } catch (error) {
         console.error("Error changing password:", error);
         return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
+
+export const googleLogin = async (req, res) => {
+    try {
+
+        const { credential } = req.body;
+
+
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+
+        const payload = ticket.getPayload();
+
+        return res.json(payload);
+
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({
+            error: true,
+            message: err.message,
+        });
     }
 };
