@@ -18,6 +18,7 @@ import {
 import { candidateApi, Candidate, CandidateInfo } from "@/app/api/candidateApi";
 import { compensationApi } from "@/app/api/compensationApi";
 import { showToast } from "@/app/utils/toast";
+import { formatVnd } from "@/app/utils/money";
 import Modal from "@/app/components/Modal";
 import { withAuth } from "@/app/middleware/withAuth";
 
@@ -694,6 +695,11 @@ function HiredCandidatesPage() {
               step="0.01"
               required
             />
+            {salaryFormData.salary && (
+              <p className="mt-2 text-sm text-gray-600">
+                <span className="font-semibold">Định dạng:</span> {formatVnd(Number(salaryFormData.salary))}
+              </p>
+            )}
           </div>
 
           <div>
@@ -710,6 +716,11 @@ function HiredCandidatesPage() {
               min="0"
               step="0.01"
             />
+            {salaryFormData.bonus && salaryFormData.bonus !== "0" && (
+              <p className="mt-2 text-sm text-gray-600">
+                <span className="font-semibold">Định dạng:</span> {formatVnd(Number(salaryFormData.bonus))}
+              </p>
+            )}
           </div>
 
           <div>
