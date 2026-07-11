@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { JobDescriptionApi } from '../../api/jobDescriptionApi';
+import LoginButton from '../../components/Login';
 
 interface JobDescription {
   job_id: number;
@@ -46,6 +47,21 @@ export default function JobDetail() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [showApplyModal, setShowApplyModal] = useState<boolean>(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+
+  useEffect(() => {
+    const syncAuthState = () => {
+      const storedUser = window.localStorage.getItem('career-portal-user');
+      setIsLoggedIn(!!storedUser);
+    };
+
+    syncAuthState();
+    window.addEventListener('career-portal-auth-changed', syncAuthState);
+
+    return () => {
+      window.removeEventListener('career-portal-auth-changed', syncAuthState);
+    };
+  }, []);
 
   useEffect(() => {
     async function fetchJobDescription() {
@@ -242,7 +258,14 @@ export default function JobDetail() {
                   </p>
                   <div className="mt-4">
                     <button
-                      onClick={() => setShowApplyModal(true)}
+                      onClick={() => {
+                        if (!isLoggedIn) {
+                          setShowApplyModal(true);
+                          return;
+                        }
+
+                        setShowApplyModal(true);
+                      }}
                       className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
                       Ứng tuyển ngay
@@ -324,6 +347,20 @@ export default function JobDetail() {
                 Bạn sẽ được chuyển đến trang ứng tuyển để điền thông tin chi tiết và gửi hồ sơ.
               </p>
 
+              {!isLoggedIn && (
+                <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/60 dark:bg-amber-900/20">
+                  <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+                    Bạn cần đăng nhập trước khi ứng tuyển.
+                  </p>
+                  <p className="mt-1 text-sm text-amber-800 dark:text-amber-300">
+                    Đăng nhập xong, hãy bấm lại nút ứng tuyển để tiếp tục.
+                  </p>
+                  <div className="mt-4">
+                    <LoginButton />
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-end space-x-3">
                 <button
                   onClick={() => setShowApplyModal(false)}
@@ -331,12 +368,22 @@ export default function JobDetail() {
                 >
                   Quay lại
                 </button>
-                <Link
-                  href={`/apply?position=${job.job_id}`}
-                  className="px-4 py-2 border border-transparent rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Tiếp tục ứng tuyển
-                </Link>
+                {isLoggedIn ? (
+                  <Link
+                    href={`/apply?position=${job.job_id}`}
+                    className="px-4 py-2 border border-transparent rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Tiếp tục ứng tuyển
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    className="cursor-not-allowed px-4 py-2 border border-transparent rounded-md text-white bg-blue-300 dark:bg-blue-800"
+                  >
+                    Cần đăng nhập
+                  </button>
+                )}
               </div>
             </div>
           </div>

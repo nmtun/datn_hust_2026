@@ -10,6 +10,7 @@ const upload = multer({ storage });
 
 router.post('/create', authenticateOptional, upload.single('cv'), candidateController.createCandidate);
 router.get('/get-all', authenticate, authorize("hr"), candidateController.getAllCandidates);
+router.get('/get-hired', authenticate, authorize("hr"), candidateController.getHiredCandidates);
 router.get('/get/:id', authenticate, authorize("hr"), candidateController.getCandidateById);
 router.put('/update/:id', authenticate, authorize("hr"), candidateController.updateCandidate);
 router.delete('/delete/:id', authenticate, authorize("hr"), candidateController.deleteCandidate);

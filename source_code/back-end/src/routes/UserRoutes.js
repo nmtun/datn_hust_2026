@@ -5,6 +5,7 @@ import { authenticate, authorize } from "../middleware/auth.js";
 const router = expess.Router();
 
 router.post("/login", userController.login);
+router.post("/auth/google", userController.googleLogin);
 
 // Admin: user management
 router.post('/create', authenticate, authorize('tenant_admin', 'super_admin'), userController.createUser);

@@ -6,6 +6,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Suspense } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import LoginButton from '../components/Login';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { JobDescriptionApi } from '../api/jobDescriptionApi';
 import { CandidateApi } from '../api/candidateApi';
@@ -56,6 +57,8 @@ function ApplyContent() {
   const [jobTitle, setJobTitle] = useState<string>('');
   const [jobDepartmentName, setJobDepartmentName] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
+  const [loggedInEmail, setLoggedInEmail] = useState<string>('');
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -76,6 +79,38 @@ function ApplyContent() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    const syncAuthState = () => {
+      const storedUser = window.localStorage.getItem('career-portal-user');
+
+      if (!storedUser) {
+        setIsLoggedIn(false);
+        setLoggedInEmail('');
+        return;
+      }
+
+      try {
+        const parsedUser = JSON.parse(storedUser) as { email?: string };
+        setIsLoggedIn(true);
+
+        if (parsedUser.email) {
+          setLoggedInEmail(parsedUser.email);
+          setFormData(prev => ({ ...prev, personal_email: parsedUser.email ?? '' }));
+        }
+      } catch (err) {
+        console.error('Error reading stored user:', err);
+        setIsLoggedIn(false);
+      }
+    };
+
+    syncAuthState();
+    window.addEventListener('career-portal-auth-changed', syncAuthState);
+
+    return () => {
+      window.removeEventListener('career-portal-auth-changed', syncAuthState);
+    };
+  }, []);
 
   // Get job details from URL parameters
   useEffect(() => {
@@ -176,6 +211,11 @@ function ApplyContent() {
     e.preventDefault();
     setError(null);
     setSuccess(false);
+
+    if (!isLoggedIn) {
+      setError('Bạn cần đăng nhập bằng Google trước khi ứng tuyển.');
+      return;
+    }
 
     // Basic validations
     if (!jobPosition) {
@@ -298,6 +338,20 @@ function ApplyContent() {
 
         <section className="py-12 bg-gray-50 dark:bg-gray-900">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            {!isLoggedIn && (
+              <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/60 dark:bg-amber-900/20">
+                <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+                  Bạn cần đăng nhập để tiếp tục ứng tuyển.
+                </p>
+                <p className="mt-1 text-sm text-amber-800 dark:text-amber-300">
+                  Sau khi đăng nhập, bạn có thể gửi hồ sơ.
+                </p>
+                <div className="mt-4">
+                  <LoginButton />
+                </div>
+              </div>
+            )}
+
             <div ref={formRef} className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 md:p-8">
               <form className="space-y-6" onSubmit={handleSubmit}>
                 <div>
@@ -346,9 +400,16 @@ function ApplyContent() {
                       required
                       value={formData.personal_email}
                       onChange={handleChange}
-                      className={`mt-1 block w-full py-2 px-3 border ${formErrors.personal_email ? 'border-red-300 ring-red-500' : 'border-gray-300 dark:border-gray-700'} bg-white dark:bg-gray-900 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900 dark:text-gray-100`}
+                      readOnly={!!loggedInEmail}
+                      disabled={!!loggedInEmail}
+                      className={`mt-1 block w-full py-2 px-3 border ${formErrors.personal_email ? 'border-red-300 ring-red-500' : 'border-gray-300 dark:border-gray-700'} ${loggedInEmail ? 'bg-gray-100 text-gray-500 cursor-not-allowed dark:bg-gray-800 dark:text-gray-400' : 'bg-white dark:bg-gray-900'} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900 dark:text-gray-100`}
                       placeholder="VD: email@example.com"
                     />
+                    {loggedInEmail && (
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Email được lấy từ tài khoản của bạn.
+                      </p>
+                    )}
                     {formErrors.personal_email && (
                       <p className="mt-1 text-sm text-red-600 dark:text-red-400">{formErrors.personal_email}</p>
                     )}
@@ -479,14 +540,14 @@ function ApplyContent() {
                 <div className="mt-6 flex justify-end">
                   <button
                     type="submit"
-                    disabled={submitting || !!formErrors.full_name || !!formErrors.birthdate || !!formErrors.personal_email || !!formErrors.phone_number}
+                    disabled={!isLoggedIn || submitting || !!formErrors.full_name || !!formErrors.birthdate || !!formErrors.personal_email || !!formErrors.phone_number}
                     className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                      submitting || !!formErrors.full_name || !!formErrors.birthdate || !!formErrors.personal_email || !!formErrors.phone_number 
+                      !isLoggedIn || submitting || !!formErrors.full_name || !!formErrors.birthdate || !!formErrors.personal_email || !!formErrors.phone_number 
                         ? 'bg-blue-400 cursor-not-allowed' 
                         : 'bg-blue-600 hover:bg-blue-700'
                     }`}
                   >
-                    {submitting ? 'Đang gửi...' : 'Gửi đơn ứng tuyển'}
+                    {!isLoggedIn ? 'Cần đăng nhập' : submitting ? 'Đang gửi...' : 'Gửi đơn ứng tuyển'}
                   </button>
                 </div>
               </form>

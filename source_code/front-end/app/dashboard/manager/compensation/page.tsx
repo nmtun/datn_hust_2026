@@ -2,14 +2,180 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { Plus, Eye, Edit2, DollarSign, ChevronDown, X, Save, Search, TrendingUp } from "lucide-react";
+import {
+  Plus,
+  Eye,
+  Edit2,
+  DollarSign,
+  ChevronDown,
+  X,
+  Save,
+  Search,
+  TrendingUp,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
+} from "lucide-react";
 import { compensationApi, Compensation, CompensationRecommendation } from "@/app/api/compensationApi";
 import { employeeApi, EmployeeProfile } from "@/app/api/employeeApi";
 import { showToast } from "@/app/utils/toast";
+import { formatVnd } from "@/app/utils/money";
 import Modal from "@/app/components/Modal";
 import { withAuth } from "@/app/middleware/withAuth";
 
 const emptyForm = { user_id: "", salary: "", bonus: "", effective_date: "", reason: "", comment: "" };
+const defaultRecommendationReason = (year: number) => `Kỳ đánh giá lương&thưởng năm ${year}`;
+
+type RecommendationEditorForm = {
+  reason: string;
+  salary_increase_percent: string;
+  bonus_months: string;
+  recommended_salary: string;
+  recommended_bonus: string;
+  comment: string;
+};
+
+const emptyRecommendationEditorForm: RecommendationEditorForm = {
+  reason: "",
+  salary_increase_percent: "",
+  bonus_months: "",
+  recommended_salary: "",
+  recommended_bonus: "",
+  comment: "",
+};
+
+const formatEditableNumber = (value?: number | null) => (value == null ? "" : String(value));
+
+const parseEditableNumber = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const getAiCommentPreview = (comment?: string | null, maxLength = 52) => {
+  if (!comment) return "—";
+  const compact = comment.replace(/\s+/g, " ").trim();
+  if (compact.length <= maxLength) return compact;
+  return `${compact.slice(0, maxLength).trimEnd()}…`;
+};
+
+type TrendDirection = "up" | "down" | "flat";
+
+type TrendMeta = {
+  direction: TrendDirection;
+  label: string;
+  detail: string;
+  badgeClass: string;
+  barClass: string;
+  barWidth: number;
+};
+
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+const getSalaryTrendMeta = (value?: number | null): TrendMeta => {
+  const percent = value ?? 0;
+  const absWidth = clamp(Math.abs(percent) * 4, 8, 100);
+
+  if (percent < 0) {
+    return {
+      direction: "down",
+      label: "Giảm",
+      detail: `${Math.abs(percent).toFixed(1)}%`,
+      badgeClass: "bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200",
+      barClass: "bg-rose-500",
+      barWidth: absWidth,
+    };
+  }
+
+  if (percent >= 15) {
+    return {
+      direction: "up",
+      label: "Tăng mạnh",
+      detail: `${percent.toFixed(1)}%`,
+      badgeClass: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200",
+      barClass: "bg-emerald-500",
+      barWidth: absWidth,
+    };
+  }
+
+  if (percent >= 5) {
+    return {
+      direction: "up",
+      label: "Tăng",
+      detail: `${percent.toFixed(1)}%`,
+      badgeClass: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200",
+      barClass: "bg-emerald-500",
+      barWidth: absWidth,
+    };
+  }
+
+  if (percent > 0) {
+    return {
+      direction: "up",
+      label: "Tăng nhẹ",
+      detail: `${percent.toFixed(1)}%`,
+      badgeClass: "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200",
+      barClass: "bg-amber-500",
+      barWidth: absWidth,
+    };
+  }
+
+  return {
+    direction: "flat",
+    label: "Không đổi",
+    detail: "0.0%",
+    badgeClass: "bg-slate-50 text-slate-700 ring-1 ring-inset ring-slate-200",
+    barClass: "bg-slate-400",
+    barWidth: 8,
+  };
+};
+
+const getRatingTrendMeta = (rating: number): TrendMeta => {
+  const barWidth = clamp((rating / 5) * 100, 8, 100);
+
+  if (rating >= 4.25) {
+    return {
+      direction: "up",
+      label: "Tốt lên",
+      detail: `${rating.toFixed(2)}/5`,
+      badgeClass: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200",
+      barClass: "bg-emerald-500",
+      barWidth,
+    };
+  }
+
+  if (rating >= 3.5) {
+    return {
+      direction: "flat",
+      label: "Ổn định",
+      detail: `${rating.toFixed(2)}/5`,
+      badgeClass: "bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-200",
+      barClass: "bg-sky-500",
+      barWidth,
+    };
+  }
+
+  if (rating >= 3) {
+    return {
+      direction: "down",
+      label: "Cần cải thiện",
+      detail: `${rating.toFixed(2)}/5`,
+      badgeClass: "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200",
+      barClass: "bg-amber-500",
+      barWidth,
+    };
+  }
+
+  return {
+    direction: "down",
+    label: "Kém đi",
+    detail: `${rating.toFixed(2)}/5`,
+    badgeClass: "bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200",
+    barClass: "bg-rose-500",
+    barWidth,
+  };
+};
 
 function CompensationPage() {
   const [records, setRecords] = useState<Compensation[]>([]);
@@ -28,9 +194,11 @@ function CompensationPage() {
   const [recommendLoading, setRecommendLoading] = useState(false);
   const [recommendError, setRecommendError] = useState<string | null>(null);
   const [recommendSaving, setRecommendSaving] = useState(false);
-  const [commentModalOpen, setCommentModalOpen] = useState(false);
-  const [commentDraft, setCommentDraft] = useState("");
-  const [commentTarget, setCommentTarget] = useState<CompensationRecommendation | null>(null);
+  const [recommendationEditorOpen, setRecommendationEditorOpen] = useState(false);
+  const [recommendationEditorTarget, setRecommendationEditorTarget] = useState<CompensationRecommendation | null>(null);
+  const [recommendationEditorForm, setRecommendationEditorForm] = useState<RecommendationEditorForm>({
+    ...emptyRecommendationEditorForm,
+  });
 
   const yearOptions = useMemo(() => {
     const currentYear = new Date().getFullYear();
@@ -99,8 +267,7 @@ function CompensationPage() {
     }
   };
 
-  const fmtCurrency = (v?: number) =>
-    v != null ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(v) : "—";
+  const fmtCurrency = (v?: number) => formatVnd(v);
 
   const employeeNameById = useMemo(
     () => new Map(employees.map((employee) => [employee.user_id, employee.full_name])),
@@ -142,6 +309,37 @@ function CompensationPage() {
     });
   }, [records, employeeNameById]);
 
+  const compensationTrendById = useMemo(() => {
+    const trendMap = new Map<
+      number,
+      {
+        salaryChangePercent: number | null;
+        bonusChangePercent: number | null;
+      }
+    >();
+
+    groupedRecords.forEach((group) => {
+      group.records.forEach((record, index) => {
+        const previousRecord = group.records[index + 1];
+        if (!record.comp_id || !previousRecord) return;
+
+        const salaryChangePercent =
+          record.salary != null && previousRecord.salary != null && previousRecord.salary !== 0
+            ? ((record.salary - previousRecord.salary) / previousRecord.salary) * 100
+            : null;
+
+        const bonusChangePercent =
+          record.bonus != null && previousRecord.bonus != null && previousRecord.bonus !== 0
+            ? ((record.bonus - previousRecord.bonus) / previousRecord.bonus) * 100
+            : null;
+
+        trendMap.set(record.comp_id, { salaryChangePercent, bonusChangePercent });
+      });
+    });
+
+    return trendMap;
+  }, [groupedRecords]);
+
   const filteredGroups = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     if (!query) return groupedRecords;
@@ -158,6 +356,49 @@ function CompensationPage() {
     setRecommendations([]);
     setRecommendError(null);
     setRecommendModalOpen(true);
+  };
+
+  const openRecommendationEditor = (item: CompensationRecommendation) => {
+    setRecommendationEditorTarget(item);
+    setRecommendationEditorForm({
+      reason: item.reason ?? defaultRecommendationReason(recommendYear),
+      salary_increase_percent: formatEditableNumber(item.salary_increase_percent),
+      bonus_months: formatEditableNumber(item.bonus_months),
+      recommended_salary: formatEditableNumber(item.recommended_salary),
+      recommended_bonus: formatEditableNumber(item.recommended_bonus),
+      comment: item.comment ?? item.ai_comment ?? "",
+    });
+    setRecommendationEditorOpen(true);
+  };
+
+  const saveRecommendationEditor = () => {
+    if (!recommendationEditorTarget) return;
+
+    const nextReason = recommendationEditorForm.reason.trim();
+    const nextSalaryIncreasePercent = parseEditableNumber(recommendationEditorForm.salary_increase_percent);
+    const nextBonusMonths = parseEditableNumber(recommendationEditorForm.bonus_months);
+    const nextRecommendedSalary = parseEditableNumber(recommendationEditorForm.recommended_salary);
+    const nextRecommendedBonus = parseEditableNumber(recommendationEditorForm.recommended_bonus);
+    const nextComment = recommendationEditorForm.comment.trim();
+
+    setRecommendations((prev) =>
+      prev.map((item) => {
+        if (item.user_id !== recommendationEditorTarget.user_id) return item;
+
+        return {
+          ...item,
+          reason: nextReason || undefined,
+          salary_increase_percent: nextSalaryIncreasePercent ?? item.salary_increase_percent,
+          bonus_months: nextBonusMonths ?? item.bonus_months,
+          recommended_salary: nextRecommendedSalary ?? item.recommended_salary,
+          recommended_bonus: nextRecommendedBonus ?? item.recommended_bonus,
+          comment: nextComment || undefined,
+        };
+      })
+    );
+
+    setRecommendationEditorOpen(false);
+    setRecommendationEditorTarget(null);
   };
 
   const handleGenerateRecommendations = async () => {
@@ -212,25 +453,7 @@ function CompensationPage() {
     }
   };
 
-  const openCommentEditor = (item: CompensationRecommendation) => {
-    setCommentTarget(item);
-    setCommentDraft(item.comment ?? item.ai_comment ?? "");
-    setCommentModalOpen(true);
-  };
-
-  const handleCommentSave = () => {
-    if (!commentTarget) return;
-    const nextComment = commentDraft.trim();
-    setRecommendations((prev) =>
-      prev.map((item) =>
-        item.user_id === commentTarget.user_id
-          ? { ...item, comment: nextComment || undefined }
-          : item
-      )
-    );
-    setCommentModalOpen(false);
-    setCommentTarget(null);
-  };
+  const selectedRecordTrend = viewRecord?.comp_id ? compensationTrendById.get(viewRecord.comp_id) : undefined;
 
   return (
     <div>
@@ -291,6 +514,9 @@ function CompensationPage() {
                 const latest = group.records[0];
                 const hasMultiple = group.records.length > 1;
                 const isExpanded = !!expandedGroups[group.key];
+                const latestTrend = latest.comp_id ? compensationTrendById.get(latest.comp_id) : undefined;
+                const salaryTrend = getSalaryTrendMeta(latestTrend?.salaryChangePercent ?? null);
+                const bonusTrend = getSalaryTrendMeta(latestTrend?.bonusChangePercent ?? null);
 
                 return (
                   <Fragment key={group.key}>
@@ -324,11 +550,43 @@ function CompensationPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3 text-sm font-medium text-gray-900">
-                        {fmtCurrency(latest.salary)}
+                      <td className="px-5 py-3 text-sm font-medium text-gray-900 align-top">
+                        <div className="space-y-2">
+                          <div>{fmtCurrency(latest.salary)}</div>
+                          {latestTrend?.salaryChangePercent != null ? (
+                            <div className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium ${salaryTrend.badgeClass}`}>
+                              {salaryTrend.direction === "up" ? (
+                                <ArrowUpRight className="h-3.5 w-3.5" />
+                              ) : salaryTrend.direction === "down" ? (
+                                <ArrowDownRight className="h-3.5 w-3.5" />
+                              ) : (
+                                <Minus className="h-3.5 w-3.5" />
+                              )}
+                              So với kỳ trước: {salaryTrend.label} {salaryTrend.detail}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">Chưa có mốc so sánh</span>
+                          )}
+                        </div>
                       </td>
-                      <td className="px-5 py-3 text-sm text-amber-700">
-                        {latest.bonus ? fmtCurrency(latest.bonus) : <span className="text-gray-400">—</span>}
+                      <td className="px-5 py-3 text-sm text-amber-700 align-top">
+                        <div className="space-y-2">
+                          <div>{latest.bonus ? fmtCurrency(latest.bonus) : <span className="text-gray-400">—</span>}</div>
+                          {latestTrend?.bonusChangePercent != null ? (
+                            <div className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium ${bonusTrend.badgeClass}`}>
+                              {bonusTrend.direction === "up" ? (
+                                <ArrowUpRight className="h-3.5 w-3.5" />
+                              ) : bonusTrend.direction === "down" ? (
+                                <ArrowDownRight className="h-3.5 w-3.5" />
+                              ) : (
+                                <Minus className="h-3.5 w-3.5" />
+                              )}
+                              So với kỳ trước: {bonusTrend.label} {bonusTrend.detail}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">Chưa có mốc so sánh</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-5 py-3 text-sm text-gray-700">
                         {latest.effective_date ? new Date(latest.effective_date).toLocaleDateString("vi-VN") : "—"}
@@ -341,7 +599,7 @@ function CompensationPage() {
                             )}
                             {latest.comment && (
                               <p className="text-xs text-emerald-700 line-clamp-1">
-                                AI: {latest.comment}
+                                AI: {getAiCommentPreview(latest.comment)}
                               </p>
                             )}
                           </div>
@@ -399,7 +657,7 @@ function CompensationPage() {
                                 )}
                                 {record.comment && (
                                   <p className="text-xs text-emerald-700 whitespace-pre-wrap break-words">
-                                    AI: {record.comment}
+                                    AI: {getAiCommentPreview(record.comment)}
                                   </p>
                                 )}
                               </div>
@@ -491,6 +749,46 @@ function CompensationPage() {
                 </div>
               )}
             </div>
+            {selectedRecordTrend && (
+              <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">So với kỳ trước</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {selectedRecordTrend.salaryChangePercent != null ? (
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${getSalaryTrendMeta(selectedRecordTrend.salaryChangePercent).badgeClass}`}>
+                      {getSalaryTrendMeta(selectedRecordTrend.salaryChangePercent).direction === "up" ? (
+                        <ArrowUpRight className="h-3.5 w-3.5" />
+                      ) : getSalaryTrendMeta(selectedRecordTrend.salaryChangePercent).direction === "down" ? (
+                        <ArrowDownRight className="h-3.5 w-3.5" />
+                      ) : (
+                        <Minus className="h-3.5 w-3.5" />
+                      )}
+                      Lương {getSalaryTrendMeta(selectedRecordTrend.salaryChangePercent).label} {getSalaryTrendMeta(selectedRecordTrend.salaryChangePercent).detail}
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-white px-2 py-1 text-xs text-gray-500 ring-1 ring-inset ring-gray-200">
+                      Chưa đủ dữ liệu lương để so sánh
+                    </span>
+                  )}
+
+                  {selectedRecordTrend.bonusChangePercent != null ? (
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${getSalaryTrendMeta(selectedRecordTrend.bonusChangePercent).badgeClass}`}>
+                      {getSalaryTrendMeta(selectedRecordTrend.bonusChangePercent).direction === "up" ? (
+                        <ArrowUpRight className="h-3.5 w-3.5" />
+                      ) : getSalaryTrendMeta(selectedRecordTrend.bonusChangePercent).direction === "down" ? (
+                        <ArrowDownRight className="h-3.5 w-3.5" />
+                      ) : (
+                        <Minus className="h-3.5 w-3.5" />
+                      )}
+                      Thưởng {getSalaryTrendMeta(selectedRecordTrend.bonusChangePercent).label} {getSalaryTrendMeta(selectedRecordTrend.bonusChangePercent).detail}
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-white px-2 py-1 text-xs text-gray-500 ring-1 ring-inset ring-gray-200">
+                      Chưa đủ dữ liệu thưởng để so sánh
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </Modal>
@@ -545,8 +843,8 @@ function CompensationPage() {
                     {[
                       "Nhân viên",
                       "Điểm TB",
+                      "Xu hướng",
                       "Lương hiện tại",
-                      "Tăng lương",
                       "Lương đề xuất",
                       "Thưởng",
                       "Nhận xét"
@@ -565,9 +863,8 @@ function CompensationPage() {
                     const avgLabel = item.rating_count
                       ? `${item.average_rating.toFixed(2)} (${item.rating_count})`
                       : "—";
-                    const increaseLabel = item.salary_increase_percent
-                      ? `+${item.salary_increase_percent}%`
-                      : "0%";
+                    const ratingTrend = getRatingTrendMeta(item.average_rating);
+                    const salaryTrend = getSalaryTrendMeta(item.salary_increase_percent);
                     const bonusLabel = item.bonus_months
                       ? `${item.bonus_months} tháng`
                       : "0 tháng";
@@ -578,9 +875,50 @@ function CompensationPage() {
                           <div className="font-medium">{item.full_name}</div>
                           <div className="text-xs text-gray-400">{item.company_email || "—"}</div>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{avgLabel}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          <div className="space-y-2 min-w-[140px]">
+                            <div className="font-medium text-gray-900">{avgLabel}</div>
+                            <div className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium ${ratingTrend.badgeClass}`}>
+                              {ratingTrend.direction === "up" ? (
+                                <ArrowUpRight className="h-3.5 w-3.5" />
+                              ) : ratingTrend.direction === "down" ? (
+                                <ArrowDownRight className="h-3.5 w-3.5" />
+                              ) : (
+                                <Minus className="h-3.5 w-3.5" />
+                              )}
+                              {ratingTrend.label}
+                            </div>
+                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                              <div
+                                className={`h-full rounded-full ${ratingTrend.barClass}`}
+                                style={{ width: `${ratingTrend.barWidth}%` }}
+                              />
+                            </div>
+                            <p className="text-xs text-gray-500">Điểm trung bình hiện tại</p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          <div className="space-y-2 min-w-[150px]">
+                            <div className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium ${salaryTrend.badgeClass}`}>
+                              {salaryTrend.direction === "up" ? (
+                                <ArrowUpRight className="h-3.5 w-3.5" />
+                              ) : salaryTrend.direction === "down" ? (
+                                <ArrowDownRight className="h-3.5 w-3.5" />
+                              ) : (
+                                <Minus className="h-3.5 w-3.5" />
+                              )}
+                              {salaryTrend.label} {salaryTrend.detail}
+                            </div>
+                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                              <div
+                                className={`h-full rounded-full ${salaryTrend.barClass}`}
+                                style={{ width: `${salaryTrend.barWidth}%` }}
+                              />
+                            </div>
+                            <p className="text-xs text-gray-500">Mức điều chỉnh đề xuất</p>
+                          </div>
+                        </td>
                         <td className="px-4 py-3 text-sm text-gray-700">{fmtCurrency(item.current_salary ?? undefined)}</td>
-                        <td className="px-4 py-3 text-sm font-medium text-emerald-700">{increaseLabel}</td>
                         <td className="px-4 py-3 text-sm text-gray-900">
                           {fmtCurrency(item.recommended_salary ?? undefined)}
                         </td>
@@ -594,7 +932,7 @@ function CompensationPage() {
                           <div className="flex items-start gap-2">
                             <div className="min-w-0">
                               <p className="text-sm text-gray-600 whitespace-pre-wrap break-words">
-                                {item.comment ?? item.ai_comment ?? "—"}
+                                {getAiCommentPreview(item.comment ?? item.ai_comment ?? null)}
                               </p>
                               {item.comment && (
                                 <p className="text-[10px] text-emerald-600 mt-1">Đã sửa</p>
@@ -602,9 +940,9 @@ function CompensationPage() {
                             </div>
                             <button
                               type="button"
-                              onClick={() => openCommentEditor(item)}
+                              onClick={() => openRecommendationEditor(item)}
                               className="text-gray-400 hover:text-indigo-600"
-                              aria-label="Sua nhan xet"
+                              aria-label="Chỉnh sửa đề xuất"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
@@ -639,44 +977,136 @@ function CompensationPage() {
       </Modal>
 
       <Modal
-        isOpen={commentModalOpen}
+        isOpen={recommendationEditorOpen}
         onClose={() => {
-          setCommentModalOpen(false);
-          setCommentTarget(null);
+          setRecommendationEditorOpen(false);
+          setRecommendationEditorTarget(null);
         }}
-        title="Chỉnh sửa nhận xét"
+        title="Chỉnh sửa đề xuất"
       >
-        <div className="p-1 space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Nhận xét</label>
-            <textarea
-              value={commentDraft}
-              onChange={(e) => setCommentDraft(e.target.value)}
-              rows={4}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Nội dung sẽ được lưu khi bấm "Lưu kết quả".
-            </p>
+        {recommendationEditorTarget && (
+          <div className="p-1 space-y-4">
+            <div className="grid grid-cols-2 gap-3 rounded-lg bg-gray-50 p-3 text-xs text-gray-600">
+              <div>
+                <p className="font-medium text-gray-500">Nhân viên</p>
+                <p className="text-sm text-gray-900">{recommendationEditorTarget.full_name}</p>
+              </div>
+              <div>
+                <p className="font-medium text-gray-500">Lương hiện tại</p>
+                <p className="text-sm text-gray-900">
+                  {fmtCurrency(recommendationEditorTarget.current_salary ?? undefined)}
+                </p>
+              </div>
+              <div>
+                <p className="font-medium text-gray-500">Điểm TB</p>
+                <p className="text-sm text-gray-900">{recommendationEditorTarget.average_rating.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="font-medium text-gray-500">Số lượt đánh giá</p>
+                <p className="text-sm text-gray-900">{recommendationEditorTarget.rating_count}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <label className="block text-xs font-medium text-gray-600 mb-1">Lý do</label>
+                <textarea
+                  value={recommendationEditorForm.reason}
+                  onChange={(event) =>
+                    setRecommendationEditorForm((prev) => ({ ...prev, reason: event.target.value }))
+                  }
+                  rows={2}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Tăng lương (%)</label>
+                <input
+                  type="number"
+                  value={recommendationEditorForm.salary_increase_percent}
+                  onChange={(event) =>
+                    setRecommendationEditorForm((prev) => ({
+                      ...prev,
+                      salary_increase_percent: event.target.value,
+                    }))
+                  }
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Số tháng thưởng</label>
+                <input
+                  type="number"
+                  value={recommendationEditorForm.bonus_months}
+                  onChange={(event) =>
+                    setRecommendationEditorForm((prev) => ({
+                      ...prev,
+                      bonus_months: event.target.value,
+                    }))
+                  }
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Lương đề xuất (VND)</label>
+                <input
+                  type="number"
+                  value={recommendationEditorForm.recommended_salary}
+                  onChange={(event) =>
+                    setRecommendationEditorForm((prev) => ({
+                      ...prev,
+                      recommended_salary: event.target.value,
+                    }))
+                  }
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Thưởng đề xuất (VND)</label>
+                <input
+                  type="number"
+                  value={recommendationEditorForm.recommended_bonus}
+                  onChange={(event) =>
+                    setRecommendationEditorForm((prev) => ({
+                      ...prev,
+                      recommended_bonus: event.target.value,
+                    }))
+                  }
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-medium text-gray-600 mb-1">Nhận xét</label>
+                <textarea
+                  value={recommendationEditorForm.comment}
+                  onChange={(event) =>
+                    setRecommendationEditorForm((prev) => ({ ...prev, comment: event.target.value }))
+                  }
+                  rows={4}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-1">
+              <button
+                onClick={() => {
+                  setRecommendationEditorOpen(false);
+                  setRecommendationEditorTarget(null);
+                }}
+                className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+              >
+                <X className="w-4 h-4 inline mr-1" />Hủy
+              </button>
+              <button
+                onClick={saveRecommendationEditor}
+                className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
+              >
+                <Save className="w-4 h-4 inline mr-1" />Cập nhật
+              </button>
+            </div>
           </div>
-          <div className="flex justify-end gap-3 pt-1">
-            <button
-              onClick={() => {
-                setCommentModalOpen(false);
-                setCommentTarget(null);
-              }}
-              className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
-            >
-              <X className="w-4 h-4 inline mr-1" />Hủy
-            </button>
-            <button
-              onClick={handleCommentSave}
-              className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
-            >
-              <Save className="w-4 h-4 inline mr-1" />Cập nhật
-            </button>
-          </div>
-        </div>
+        )}
       </Modal>
 
       <Modal

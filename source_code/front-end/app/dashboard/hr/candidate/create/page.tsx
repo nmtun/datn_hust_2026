@@ -23,6 +23,19 @@ interface JobDescription {
   } | null;
 }
 
+const EXPERIENCE_LEVEL_LABELS: Record<string, string> = {
+  intern: "Intern",
+  fresher: "Fresher",
+  mid: "Mid",
+  senior: "Senior",
+  manager: "Manager",
+};
+
+const formatExperienceLevel = (level?: string | null) => {
+  if (!level) return "—";
+  return EXPERIENCE_LEVEL_LABELS[level] || level;
+};
+
 function CreateCandidatePage() {
   const router = useRouter();
 
@@ -283,7 +296,7 @@ function CreateCandidatePage() {
                 <option value="">{loadingJobs ? 'Loading positions...' : 'Select a job position'}</option>
                 {jobDescriptions.map(job => (
                   <option key={job.job_id} value={job.job_id}>
-                    {job.title} - {job.department?.name || 'No department'} ({job.experience_level} · {job.employment_type})
+                    {job.title} - {job.department?.name || 'No department'} ({formatExperienceLevel(job.experience_level)} · {job.employment_type})
                   </option>
                 ))}
               </select>
@@ -313,7 +326,7 @@ function CreateCandidatePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-indigo-900">
                 <p><span className="font-medium">Position:</span> {selectedJob.title}</p>
                 <p><span className="font-medium">Department:</span> {selectedJob.department?.name || 'No department'}</p>
-                <p><span className="font-medium">Level:</span> {selectedJob.experience_level}</p>
+                <p><span className="font-medium">Level:</span> {formatExperienceLevel(selectedJob.experience_level)}</p>
                 <p><span className="font-medium">Type:</span> {selectedJob.employment_type}{selectedJob.type_of_work ? ` · ${selectedJob.type_of_work}` : ''}</p>
               </div>
             </div>
