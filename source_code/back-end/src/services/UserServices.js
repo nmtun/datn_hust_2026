@@ -86,6 +86,7 @@ export const createAdminUserService = async (userData = {}, requestingUser = nul
             phone_number,
             address,
             position,
+            experience_level,
             role = 'employee',
             status = 'active',
             tenant_id
@@ -171,6 +172,7 @@ export const createAdminUserService = async (userData = {}, requestingUser = nul
                     user_id: user.user_id,
                     hire_date: new Date(),
                     position: normalizedPosition || null,
+                    experience_level: experience_level || null,
                     department_id: null,
                     team_id: null,
                     manager_id: null,

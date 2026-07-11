@@ -21,6 +21,14 @@ import { showToast } from "@/app/utils/toast";
 import Modal from "@/app/components/Modal";
 import { withAuth } from "@/app/middleware/withAuth";
 
+const EXPERIENCE_LEVEL_LABELS: Record<string, string> = {
+  intern: "Intern",
+  fresher: "Fresher",
+  mid: "Mid",
+  senior: "Senior",
+  manager: "Manager",
+};
+
 function HiredCandidatesPage() {
   const router = useRouter();
   const [searchName, setSearchName] = useState("");
@@ -366,6 +374,11 @@ function HiredCandidatesPage() {
     }
   };
 
+  const formatExperienceLevel = (level?: string | null) => {
+    if (!level) return "—";
+    return EXPERIENCE_LEVEL_LABELS[level] || level;
+  };
+
   return (
     <div>
       {/* Header */}
@@ -470,7 +483,7 @@ function HiredCandidatesPage() {
                                 Ứng tuyển: {hiredJob.Job_Description.title}
                               </div>
                               <div className="text-sm text-gray-500">
-                                {hiredJob.Job_Description.experience_level} · {hiredJob.Job_Description.employment_type}
+                                {formatExperienceLevel(hiredJob.experience_level || hiredJob.Job_Description.experience_level)} · {hiredJob.Job_Description.employment_type}
                               </div>
                               <span className={`mt-1 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(hiredJob.candidate_status)}`}>
                                 Đã tuyển
@@ -621,7 +634,7 @@ function HiredCandidatesPage() {
                           <div className="mt-1 p-3 bg-white rounded-md border">
                             <p className="font-medium">{candidateInfo.Job_Description.title}</p>
                             <p className="text-sm text-gray-600">
-                              {candidateInfo.Job_Description.experience_level} · {candidateInfo.Job_Description.employment_type}
+                              {formatExperienceLevel(candidateInfo.experience_level || candidateInfo.Job_Description.experience_level)} · {candidateInfo.Job_Description.employment_type}
                             </p>
                           </div>
                         </div>

@@ -175,6 +175,16 @@ export const getAllCandidates = async (req, res) => {
     }
 };
 
+export const getHiredCandidates = async (req, res) => {
+    try {
+        const result = await candidateService.getHiredCandidatesService();
+        return res.status(result.status).json(result.data);
+    } catch (error) {
+        console.error("Error fetching hired candidates:", error);
+        return res.status(500).json({ error: true, message: "Internal server error" });
+    }
+};
+
 export const getCandidateById = async (req, res) => {
     try {
         const candidateId = req.params.id;

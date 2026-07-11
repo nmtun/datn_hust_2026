@@ -20,6 +20,7 @@ export const createEmployee = async (req, res) => {
             role,
             hire_date = new Date(),
             position,
+            experience_level,
             termination_date = null,
             employee_id_number,
         } = req.body;
@@ -52,6 +53,7 @@ export const createEmployee = async (req, res) => {
             user_id: user.user_id,
             hire_date,
             position,
+            experience_level,
             termination_date,
             employee_id_number,
             tenant_id: tenantResult.tenantId

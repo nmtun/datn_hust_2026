@@ -180,7 +180,7 @@ const getEmployeeInfoInclude = () => ({
     as: 'Employee_Info',
     required: false,
     where: withTenantWhere({}),
-    attributes: ['employee_info_id', 'position', 'department_id', 'team_id', 'manager_id', 'hire_date']
+    attributes: ['employee_info_id', 'position', 'experience_level', 'department_id', 'team_id', 'manager_id', 'hire_date']
 });
 
 const sendHrNotificationForNewApplication = async ({ candidate, candidateUser, candidateData, tenantId }) => {
@@ -295,7 +295,7 @@ export const createCandidateService = async (candidateData) => {
             job_id: normalizedJobId,
             is_deleted: false
         },
-        attributes: ['job_id', 'title', 'department_id', 'tenant_id'],
+        attributes: ['job_id', 'title', 'department_id', 'tenant_id', 'experience_level'],
         include: [
             {
                 model: Department,
@@ -319,6 +319,7 @@ export const createCandidateService = async (candidateData) => {
     const appliedJob = {
         job_id: selectedJob.job_id,
         title: selectedJob.title,
+        experience_level: selectedJob.experience_level,
         department_id: selectedJob.department_id || null,
         department_name: selectedJob.department?.name || null,
         department_code: selectedJob.department?.code || null
@@ -393,6 +394,7 @@ export const createCandidateService = async (candidateData) => {
                     evaluation,
                     evaluation_comment,
                     job_id: normalizedJobId,
+                    experience_level: selectedJob.experience_level,
                     cover_letter: processedCoverLetter
                 });
 
@@ -449,6 +451,7 @@ export const createCandidateService = async (candidateData) => {
                 evaluation,
                 evaluation_comment,
                 job_id: normalizedJobId,
+                experience_level: selectedJob.experience_level,
                 cover_letter: processedCoverLetter
             });
 
@@ -512,7 +515,7 @@ export const getAllCandidatesService = async () => {
                     model: Candidate,
                     required: false, // LEFT JOIN - bao gồm cả users không có candidate info
                     where: withTenantWhere({}),
-                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id'],
+                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id', 'experience_level'],
                     include: [
                         {
                             model: JobDescription,
@@ -547,6 +550,58 @@ export const getAllCandidatesService = async () => {
     }
 };
 
+export const getHiredCandidatesService = async () => {
+    try {
+        const tenantResult = requireTenantId();
+        if (!tenantResult.ok) {
+            return { status: 400, data: { error: true, message: "Tenant id is required" } };
+        }
+
+        const users = await User.findAll({
+            where: withTenantWhere({
+                is_deleted: false
+            }),
+            include: [
+                {
+                    model: Candidate,
+                    required: true,
+                    where: withTenantWhere({ candidate_status: 'hired' }),
+                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id', 'experience_level'],
+                    include: [
+                        {
+                            model: JobDescription,
+                            required: false,
+                            attributes: ['job_id', 'title', 'experience_level', 'employment_type']
+                        }
+                    ]
+                },
+                getEmployeeInfoInclude()
+            ],
+            attributes: ['user_id', 'personal_email', 'full_name', 'phone_number', 'address', 'status', 'company_email', 'role'],
+            order: [['full_name', 'ASC']]
+        });
+
+        return {
+            status: 200,
+            data: {
+                error: false,
+                message: "Get hired candidates successfully",
+                candidates: users
+            }
+        };
+    } catch (error) {
+        console.error('Error in getHiredCandidatesService:', error);
+        return {
+            status: 500,
+            data: {
+                error: true,
+                message: "Internal server error",
+                details: error.message
+            }
+        };
+    }
+};
+
 export const getCandidateByIdService = async (userId) => {
     try {
         const tenantResult = requireTenantId();
@@ -564,7 +619,7 @@ export const getCandidateByIdService = async (userId) => {
                     model: Candidate,
                     required: false,
                     where: withTenantWhere({}),
-                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id'],
+                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id', 'experience_level'],
                     include: [
                         {
                             model: JobDescription,
@@ -691,7 +746,7 @@ export const updateCandidateService = async (userId, updateData) => {
                     model: Candidate,
                     required: false,
                     where: withTenantWhere({}),
-                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id'],
+                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id', 'experience_level'],
                     include: [
                         {
                             model: JobDescription,
@@ -785,7 +840,7 @@ export const getDeletedCandidatesService = async () => {
                     model: Candidate,
                     required: false,
                     where: withTenantWhere({}),
-                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id'],
+                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id', 'experience_level'],
                     include: [
                         {
                             model: JobDescription,
@@ -902,7 +957,7 @@ export const searchCandidatesService = async (query = {}) => {
                     model: Candidate,
                     required: false,
                     where: withTenantWhere(candidateWhere),
-                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id'],
+                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id', 'experience_level'],
                     include: [
                         {
                             model: JobDescription,
@@ -977,7 +1032,7 @@ export const searchDeletedCandidatesService = async (query = {}) => {
                     model: Candidate,
                     required: false,
                     where: withTenantWhere(candidateWhere),
-                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id'],
+                    attributes: ['candidate_info_id', 'cv_file_path', 'candidate_status', 'source', 'apply_date', 'evaluation', 'evaluation_comment', 'cover_letter', 'job_id', 'experience_level'],
                     include: [
                         {
                             model: JobDescription,
@@ -1276,17 +1331,23 @@ export const createCompanyEmailService = async (candidateId, companyEmail, passw
                     user_id: candidate.user_id,
                     hire_date: new Date(),
                     position: resolvedPosition,
+                    experience_level: hiredJob?.experience_level || null,
                     department_id: hiredJob?.department_id || null,
                     tenant_id: candidate.tenant_id
                 }, { transaction });
             } else {
                 const resolvedPosition = resolveEmployeePositionFromJob(hiredJob);
                 const resolvedDepartmentId = hiredJob?.department_id || null;
+                const resolvedExperienceLevel = hiredJob?.experience_level || null;
 
                 const employeeUpdateData = {};
 
                 if (existingEmployeeInfo.position !== resolvedPosition) {
                     employeeUpdateData.position = resolvedPosition;
+                }
+
+                if (!existingEmployeeInfo.experience_level && resolvedExperienceLevel) {
+                    employeeUpdateData.experience_level = resolvedExperienceLevel;
                 }
 
                 if (!existingEmployeeInfo.department_id && resolvedDepartmentId) {

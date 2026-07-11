@@ -57,6 +57,10 @@ const Candidate = sequelize.define("Candidate_Info", {
             key: "job_id"
         }
     },
+    experience_level: {
+        type: DataTypes.ENUM('intern', 'fresher', 'mid', 'senior', 'manager'),
+        allowNull: true,
+    },
     cover_letter: {
         type: DataTypes.TEXT,
         allowNull: true,

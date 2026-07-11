@@ -16,6 +16,19 @@ interface JobDescription {
   employment_type: string;
 }
 
+const EXPERIENCE_LEVEL_LABELS: Record<string, string> = {
+  intern: "Intern",
+  fresher: "Fresher",
+  mid: "Mid",
+  senior: "Senior",
+  manager: "Manager",
+};
+
+const formatExperienceLevel = (level?: string | null) => {
+  if (!level) return "—";
+  return EXPERIENCE_LEVEL_LABELS[level] || level;
+};
+
 // --- BẮT ĐẦU: Các Type và Hàm Parse Evaluation Comment (Port từ CandidatePage) ---
 type EvaluationSectionTone = 'positive' | 'negative' | 'neutral';
 
@@ -564,7 +577,7 @@ function EditCandidatePage() {
                           {application.Job_Description?.title || 'No job title'}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {application.Job_Description?.experience_level} · {application.Job_Description?.employment_type}
+                          {formatExperienceLevel(application.experience_level || application.Job_Description?.experience_level)} · {application.Job_Description?.employment_type}
                         </p>
                       </div>
                     </div>

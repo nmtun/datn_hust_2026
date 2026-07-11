@@ -13,6 +13,7 @@ export interface CandidateInfo {
   } | string;
   cover_letter?: string;
   job_id?: number;
+  experience_level?: 'intern' | 'fresher' | 'mid' | 'senior' | 'manager';
   Job_Description?: {
     job_id: number;
     title: string;

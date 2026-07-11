@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Search, User, Eye, Edit2, ChevronDown, Save, Building2, Users, Briefcase, Calendar, Mail, Phone, MapPin } from "lucide-react";
 import { employeeApi, EmployeeProfile } from "@/app/api/employeeApi";
+import { candidateApi, CandidateInfo } from "@/app/api/candidateApi";
 import { departmentApi, Department } from "@/app/api/departmentApi";
 import { teamApi, Team } from "@/app/api/teamApi";
 import { showToast } from "@/app/utils/toast";
@@ -16,10 +17,19 @@ const STATUS_COLORS: Record<string, string> = {
   terminated: "bg-red-100 text-red-800",
 };
 
+const EXPERIENCE_LEVEL_LABELS: Record<string, string> = {
+  intern: "Intern",
+  fresher: "Fresher",
+  mid: "Mid",
+  senior: "Senior",
+  manager: "Manager",
+};
+
 function HREmployeePage() {
   const [employees, setEmployees] = useState<EmployeeProfile[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [hiredApplicationsByUserId, setHiredApplicationsByUserId] = useState<Record<number, CandidateInfo[]>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterDept, setFilterDept] = useState("");
@@ -38,6 +48,7 @@ function HREmployeePage() {
   useEffect(() => {
     fetchDepartments();
     fetchEmployeesData(1);
+    fetchHiredCandidateHistory();
   }, []);
 
   const fetchDepartments = async () => {
@@ -73,6 +84,35 @@ function HREmployeePage() {
     }
   };
 
+  const fetchHiredCandidateHistory = async () => {
+    try {
+      const res = await candidateApi.getHiredCandidates();
+      if (res.error) {
+        console.error(res.message || "Lỗi tải lịch sử ứng tuyển của nhân viên");
+        return;
+      }
+
+      const nextApplicationsByUserId = (res.candidates || []).reduce(
+        (acc: Record<number, CandidateInfo[]>, candidate: { user_id: number; Candidate_Infos?: CandidateInfo[] }) => {
+          const hiredApplications = (candidate.Candidate_Infos || []).filter(
+            (application) => application.candidate_status === "hired"
+          );
+
+          if (hiredApplications.length > 0) {
+            acc[candidate.user_id] = hiredApplications;
+          }
+
+          return acc;
+        },
+        {}
+      );
+
+      setHiredApplicationsByUserId(nextApplicationsByUserId);
+    } catch {
+      console.error("Error fetching hired candidate history");
+    }
+  };
+
   const handleSearch = () => {
     setCurrentPage(1);
     fetchEmployeesData(1);
@@ -102,6 +142,7 @@ function HREmployeePage() {
       address: emp.address || "",
       role: emp.role || "",
       position: emp.Employee_Info?.position || "",
+      experience_level: emp.Employee_Info?.experience_level || "",
       department_id: deptId || "",
       team_id: emp.Employee_Info?.team_id || "",
       hire_date: emp.Employee_Info?.hire_date?.split("T")[0] || "",
@@ -124,6 +165,7 @@ function HREmployeePage() {
       if (editForm.address !== undefined) payload.address = editForm.address;
       if (editForm.role) payload.role = editForm.role;
       if (editForm.position !== undefined) payload.position = editForm.position;
+      if (editForm.experience_level !== undefined) payload.experience_level = editForm.experience_level;
       if (editForm.department_id) payload.department_id = Number(editForm.department_id);
       if (editForm.team_id) payload.team_id = Number(editForm.team_id);
       if (editForm.hire_date) payload.hire_date = editForm.hire_date;
@@ -139,6 +181,18 @@ function HREmployeePage() {
   };
 
   const emp = (e: EmployeeProfile) => e.Employee_Info;
+
+  const handleViewCV = (cvPath: string) => {
+    if (!cvPath) return;
+
+    const fileName = cvPath.split(/[/\\]/).pop();
+    if (!fileName) return;
+
+    const viewUrl = `${process.env.NEXT_PUBLIC_API_URL}/uploads/cvs/${fileName}`;
+    window.open(viewUrl, "_blank");
+  };
+
+  const getHiredApplicationsForEmployee = (userId: number) => hiredApplicationsByUserId[userId] || [];
 
   return (
     <div>
@@ -238,6 +292,11 @@ function HREmployeePage() {
                     </td>
                     <td className="px-5 py-4">
                       <p className="text-sm text-gray-800">{emp(e)?.position || <span className="text-gray-400">—</span>}</p>
+                      {emp(e)?.experience_level && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {EXPERIENCE_LEVEL_LABELS[emp(e)!.experience_level!] || emp(e)!.experience_level}
+                        </p>
+                      )}
                       {emp(e)?.department && (
                         <span className="inline-flex items-center text-xs text-gray-500 mt-0.5">
                           <Building2 className="w-3 h-3 mr-1" />{emp(e)!.department!.name}
@@ -342,6 +401,7 @@ function HREmployeePage() {
                 { icon: null, label: "Trạng thái", val: STATUS_LABELS[viewEmployee.status] || viewEmployee.status },
                 { icon: null, label: "Role", val: viewEmployee.role },
                 { icon: <Briefcase className="w-4 h-4" />, label: "Chức vụ", val: emp(viewEmployee)?.position || "—" },
+                { icon: <Briefcase className="w-4 h-4" />, label: "Level kinh nghiệm", val: emp(viewEmployee)?.experience_level ? (EXPERIENCE_LEVEL_LABELS[emp(viewEmployee)!.experience_level!] || emp(viewEmployee)!.experience_level) : "—" },
                 { icon: <Building2 className="w-4 h-4" />, label: "Phòng ban", val: emp(viewEmployee)?.department?.name || "—" },
                 { icon: <Users className="w-4 h-4" />, label: "Nhóm", val: emp(viewEmployee)?.team?.name || "—" },
                 { icon: <User className="w-4 h-4" />, label: "Quản lý", val: emp(viewEmployee)?.manager?.full_name || "—" },
@@ -353,6 +413,40 @@ function HREmployeePage() {
                 </div>
               ))}
             </div>
+
+            {getHiredApplicationsForEmployee(viewEmployee.user_id).length > 0 && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-900 mb-3">CV ứng tuyển trước đây</h3>
+                <div className="space-y-3">
+                  {getHiredApplicationsForEmployee(viewEmployee.user_id).map((application) => (
+                    <div key={application.candidate_info_id} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {application.Job_Description?.title || "Vị trí đã ứng tuyển"}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {application.apply_date ? new Date(application.apply_date).toLocaleDateString("vi-VN") : "—"}
+                          </p>
+                        </div>
+                        {application.cv_file_path ? (
+                          <button
+                            type="button"
+                            onClick={() => handleViewCV(application.cv_file_path!)}
+                            className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            Xem CV
+                          </button>
+                        ) : (
+                          <span className="text-sm text-gray-500">Không có CV đính kèm</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </Modal>
@@ -374,6 +468,21 @@ function HREmployeePage() {
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                 </div>
               ))}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Level kinh nghiệm</label>
+                <select
+                  value={editForm.experience_level || ""}
+                  onChange={e => setEditForm({ ...editForm, experience_level: e.target.value })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">— Chọn level —</option>
+                  <option value="intern">Intern</option>
+                  <option value="fresher">Fresher</option>
+                  <option value="mid">Mid</option>
+                  <option value="senior">Senior</option>
+                  <option value="manager">Manager</option>
+                </select>
+              </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Phòng ban</label>
                 <select value={editForm.department_id || ""} onChange={e => {
